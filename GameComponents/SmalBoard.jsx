@@ -1,12 +1,15 @@
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import React, { useState } from 'react';
 import Player from './Player';
+import { MaterialIcons } from '@expo/vector-icons';
 
 export default function SmalBoard() {
     const colors = ["red", "yellow", "blue", "green"];
     const directions = ["left", "top", "bottom", "right"];
 
-    const [player, setPlayerPosition] = useState('1a')
+    const [player, setPlayerPosition] = useState({ position: '1a', color: "blue" })
+    const [player2, setPlayerPosition2] = useState({ position: '1b', color: "red" })
+    const [player3, setPlayerPosition3] = useState({ position: '1c', color: "yellow" })
 
     const verbs = {
         column1: ["12b", "11b", "10b", "9b", "8b", "7b"],
@@ -19,35 +22,72 @@ export default function SmalBoard() {
         row4: ["1d", "2d", "3d", "4d", "5d", "6d"]
     };
 
-    const movePlayer = () => {
-        setPlayerPosition(prev => {
-            const numbers = prev.match(/\d+/)[0];
-            const letters = prev.match(/[a-zA-Z]+/)[0];
-            console.log("First letter:", letters);
+    const updatePlayerPosition = (prev) => {
+        const numbers = prev.position.match(/\d+/)[0];
+        const letters = prev.position.match(/[a-zA-Z]+/)[0];
 
-            const nextPosition = parseInt(prev) + 1;
+        let nextPosition = parseInt(prev.position) + 1;
 
-            let categorie = letters
-            switch (prev) {
-                case '12a':
-                    return '1b';
-                case '12b':
-                    return '1c';
-                case '12c':
-                    return '1d';
-                default:
-                    break;
-            }
+        let categorie = letters
+        switch (prev.position) {
+            case '12a':
+                return {
+                    ...prev,  // Spread existing state to preserve other properties
+                    position: `1b` // Update only the position
+                };
+            case '12b':
+                return {
+                    ...prev,  // Spread existing state to preserve other properties
+                    position: `1c` // Update only the position
+                };
+            case '12c':
+                return {
+                    ...prev,  // Spread existing state to preserve other properties
+                    position: `1d` // Update only the position
+                };
+            case '12d':
+                return {
+                    ...prev,  // Spread existing state to preserve other properties
+                    position: `1a` // Update only the position
+                };
+            default:
+                break;
+        }
 
-            // console.log(categorie)
-            return nextPosition.toString() + categorie;
-        });
+        // console.log(categorie)
+        let newPosition = nextPosition.toString() + categorie;
+
+        return {
+            position: newPosition,
+            color: prev.color
+        };
+    }
+    const movePlayer = (playerNum) => {
+        switch (playerNum) {
+            case 1:
+                setPlayerPosition(prev => updatePlayerPosition(prev)
+                );
+                break;
+            case 2:
+                setPlayerPosition2(prev => updatePlayerPosition(prev)
+                );
+                break;
+            case 3:
+                setPlayerPosition3(prev => updatePlayerPosition(prev)
+                );
+                break;
+            default:
+                break;
+        }
+
     };
 
-    const renderBox = (number, i, color) => (
-        <View key={`${color}-${i}`} style={[styles.verbBox, { position: 'relative' }]}>
+    const renderBox = (number, i) => (
+        <View key={i + player.position} style={[styles.verbBox, { position: 'relative' }]}>
             <Text style={styles.verbText}>{number}</Text>
-            {number === player && <Player color={color} />}
+            {number === player.position && <Player color={player.color} />}
+            {number === player2.position && <Player color={player2.color} />}
+            {number === player3.position && <Player color={player3.color} />}
         </View>
     );
 
@@ -56,46 +96,54 @@ export default function SmalBoard() {
             <View style={styles.cross}>
                 <View style={styles.verticalContainer}>
                     <View style={styles.verticalColumn}>
-                        {verbs.column1.map((number, i) => renderBox(number, i, 'blue'))}
+                        {verbs.column1.map((number, i) => renderBox(number, i))}
                     </View>
                     <View style={styles.verticalColumn}>
-                        {verbs.column2.map((number, i) => renderBox(number, i, 'red'))}
+                        {verbs.column2.map((number, i) => renderBox(number, i))}
                     </View>
                 </View>
 
                 <View style={[styles.verticalContainer, { marginLeft: 100 }]}>
                     <View style={styles.verticalColumn}>
-                        {verbs.column3.map((number, i) => renderBox(number, i, 'yellow'))}
+                        {verbs.column3.map((number, i) => renderBox(number, i))}
                     </View>
                     <View style={styles.verticalColumn}>
-                        {verbs.column4.map((number, i) => renderBox(number, i, 'green'))}
+                        {verbs.column4.map((number, i) => renderBox(number, i))}
                     </View>
                 </View>
 
                 <View style={styles.horizontalContainer}>
                     <View style={[styles.horizontalRow, { transform: [{ rotate: "90deg" }] }]}>
-                        {verbs.row1.map((number, i) => renderBox(number, i, 'blue'))}
+                        {verbs.row1.map((number, i) => renderBox(number, i))}
                     </View>
                     <View style={styles.horizontalRow}>
-                        {verbs.row2.map((number, i) => renderBox(number, i, 'red'))}
+                        {verbs.row2.map((number, i) => renderBox(number, i))}
                     </View>
                 </View>
 
                 <View style={[styles.horizontalContainer, { marginTop: 100 }]}>
                     <View style={styles.horizontalRow}>
-                        {verbs.row3.map((number, i) => renderBox(number, i, 'yellow'))}
+                        {verbs.row3.map((number, i) => renderBox(number, i))}
                     </View>
                     <View style={[styles.horizontalRow, { transform: [{ rotate: "90deg" }] }]}>
-                        {verbs.row4.map((number, i) => renderBox(number, i, 'green'))}
+                        {verbs.row4.map((number, i) => renderBox(number, i))}
                     </View>
                 </View>
 
                 <View style={styles.controls}>
                     <Pressable
                         style={styles.button}
-                        onPress={movePlayer}
+                        onPress={() => movePlayer(1)}
                     >
-
+                        <MaterialIcons name="arrow-forward" size={24} color="black" />
+                        <Text style={styles.buttonText}>Move</Text>
+                    </Pressable>
+                    <Pressable
+                        style={styles.button}
+                        onPress={() => movePlayer(2)}
+                    >
+                        <MaterialIcons name="casino" size={24} color="black" />
+                        <Text style={styles.buttonText}>Roll</Text>
                     </Pressable>
                 </View>
             </View>
