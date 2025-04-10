@@ -6,10 +6,19 @@ import { MaterialIcons } from '@expo/vector-icons';
 export default function SmalBoard() {
     const colors = ["red", "yellow", "blue", "green"];
     const directions = ["left", "top", "bottom", "right"];
+    const playerType = ["red", "yellow", "blue", "green"]
 
-    const [player, setPlayerPosition] = useState({ position: '1a', color: "blue" })
-    const [player2, setPlayerPosition2] = useState({ position: '1b', color: "red" })
-    const [player3, setPlayerPosition3] = useState({ position: '1c', color: "yellow" })
+    const [playerBlue1, setPlayerBlue1Position] = useState({ position: '1a', color: "blue", initialPosition: '1a', onBoard: true })
+    const [playerBlue2, setPlayerBlue2Position] = useState({ position: '2blue', color: "blue", initialPosition: '2blue' })
+    const [playerBlue3, setPlayerBlue3Position] = useState({ position: '3blue', color: "blue", initialPosition: '3blue' })
+    const [playerBlue4, setPlayerBlue4Position] = useState({ position: '4blue', color: "blue", initialPosition: '4blue' })
+
+    const [playerRed1, setPlayerRed1Position] = useState({ position: '1b', color: "red", initialPosition: '1b' })
+    const [playerRed2, setPlayerRed2Position] = useState({ position: '2red', color: "red", initialPosition: '2red' })
+    const [playerRed3, setPlayerRed3Position] = useState({ position: '3red', color: "red", initialPosition: '3red' })
+    const [playerRed4, setPlayerRed4Position] = useState({ position: '4red', color: "red", initialPosition: '4red' })
+
+    const [player3, setPlayerPosition3] = useState({ position: '1c', color: "yellow", initialPosition: '1c' })
 
     const verbs = {
         column1: ["12b", "11b", "10b", "9b", "8b", "7b"],
@@ -65,11 +74,11 @@ export default function SmalBoard() {
     const movePlayer = (playerNum) => {
         switch (playerNum) {
             case 1:
-                setPlayerPosition(prev => updatePlayerPosition(prev)
+                setPlayerBlue1Position(prev => updatePlayerPosition(prev)
                 );
                 break;
             case 2:
-                setPlayerPosition2(prev => updatePlayerPosition(prev)
+                setPlayerRed1Position(prev => updatePlayerPosition(prev)
                 );
                 break;
             case 3:
@@ -79,23 +88,47 @@ export default function SmalBoard() {
             default:
                 break;
         }
-
     };
 
     const renderBox = (number, i) => (
-        <View key={i + player.position} style={[styles.verbBox, { position: 'relative' }]}>
+        <View key={i + playerBlue1.position} style={[styles.verbBox, { position: 'relative' }]}>
             <Text style={styles.verbText}>{number}</Text>
-            {number === player.position && <Player color={player.color} />}
-            {number === player2.position && <Player color={player2.color} />}
+            {number === playerBlue1.position && <Player color={playerBlue1.color} />}
+            {number === playerRed1.position && <Player color={playerRed1.color} />}
             {number === player3.position && <Player color={player3.color} />}
         </View>
+    );
+
+    const renderInCirclePlayers = (j, playerType, i) => (
+        <>
+            {[
+                { player: playerBlue1, setter: setPlayerBlue1Position },
+                { player: playerBlue2, setter: setPlayerBlue2Position },
+                { player: playerBlue3, setter: setPlayerBlue3Position },
+                { player: playerBlue4, setter: setPlayerBlue4Position },
+                { player: playerRed1, setter: setPlayerRed1Position },
+                { player: playerRed2, setter: setPlayerRed2Position },
+                { player: playerRed3, setter: setPlayerRed3Position },
+                { player: playerRed4, setter: setPlayerRed4Position },
+                { player: player3, setter: setPlayerPosition3 }
+            ].map((item, index) => (
+                item.player.initialPosition === `${j + 1}${playerType[i]}` && (
+                    <Player
+                        key={`player-${index}`}
+                        color={item.player.color}
+                        size={20}
+                        style={styles.cornerPlayer}
+                    />
+                )
+            ))}
+        </>
     );
 
     return (
         <View style={styles.container}>
             <View style={styles.cross}>
                 <View style={styles.verticalContainer}>
-                    <View style={styles.verticalColumn}>
+                    <View style={[styles.verticalColumn, {marginBottom: 100, marginTop: 0}]}>
                         {verbs.column1.map((number, i) => renderBox(number, i))}
                     </View>
                     <View style={styles.verticalColumn}>
@@ -104,7 +137,7 @@ export default function SmalBoard() {
                 </View>
 
                 <View style={[styles.verticalContainer, { marginLeft: 100 }]}>
-                    <View style={styles.verticalColumn}>
+                    <View style={[styles.verticalColumn, {marginBottom: 100}]}>
                         {verbs.column3.map((number, i) => renderBox(number, i))}
                     </View>
                     <View style={styles.verticalColumn}>
@@ -147,6 +180,26 @@ export default function SmalBoard() {
                     </Pressable>
                 </View>
             </View>
+            <View style={styles.centerCircle}>
+                <View style={styles.centerQuadrants}>
+                    {/* Yellow quadrant */}
+                    <View style={[styles.quadrant, { backgroundColor: '#ff8' }]}>
+                        <MaterialIcons name="home" size={24} color="goldenrod" />
+                    </View>
+                    {/* Green quadrant */}
+                    <View style={[styles.quadrant, { backgroundColor: '#8f8' }]}>
+                        <MaterialIcons name="home" size={24} color="darkgreen" />
+                    </View>
+                    {/* Red quadrant */}
+                    <View style={[styles.quadrant, { backgroundColor: '#f88' }]}>
+                        <MaterialIcons name="home" size={24} color="darkred" />
+                    </View>
+                    {/* Blue quadrant */}
+                    <View style={[styles.quadrant, { backgroundColor: '#88f' }]}>
+                        <MaterialIcons name="home" size={24} color="darkblue" />
+                    </View>
+                </View>
+            </View>
 
             {colors.map((color, i) => (
                 <View
@@ -154,7 +207,9 @@ export default function SmalBoard() {
                     style={[styles.corner, styles[color], styles[directions[i]]]}
                 >
                     {[...Array(4)].map((_, j) => (
-                        <View key={j} style={styles.circle} />
+                        <View key={j} style={styles.circle}>
+                            {renderInCirclePlayers(j, playerType, i)}
+                        </View>
                     ))}
                 </View>
             ))}
@@ -163,6 +218,36 @@ export default function SmalBoard() {
 }
 
 const styles = StyleSheet.create({
+    centerCircle: {
+        position: 'absolute',
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        backgroundColor: 'white',
+        borderWidth: 2,
+        borderColor: '#000',
+        overflow: 'hidden',
+        zIndex: 1,
+        top: '50%',
+        left: '50%',
+        transform: [
+            { translateX: -36 },
+            { translateY: -35 }
+        ],
+    },
+    centerQuadrants: {
+        flex: 1,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+    },
+    quadrant: {
+        width: '50%',
+        height: '50%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#000',
+    },
     container: {
         flex: 1,
         backgroundColor: "#fff",
@@ -171,30 +256,25 @@ const styles = StyleSheet.create({
     },
     cross: {
         position: "absolute",
-        width: "80%",
-        height: "80%",
+        width: "90%",
+        height: "90%",
         justifyContent: "center",
         alignItems: "center",
     },
-    crossInner: {
-        width: "100%",
-        height: "100%",
-        position: "relative",
-    },
     verticalContainer: {
         position: "absolute",
-        top: 0,
-        bottom: 0,
-        width: "100%",
+        top: 80,  // Reduced from 100 to give more room
+        bottom: 80, // Reduced from 100 to give more room
+        width: 50,
         flexDirection: "column",
         justifyContent: "space-between",
         alignItems: "center",
     },
     horizontalContainer: {
         position: "absolute",
-        left: 0,
-        right: 0,
-        height: "100%",
+        left: 80,  // Reduced from 100
+        right: 80, // Reduced from 100
+        height: 50,
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
@@ -202,10 +282,12 @@ const styles = StyleSheet.create({
     verticalColumn: {
         width: "auto",
         padding: 3,
+        marginHorizontal: 15, // Added margin between columns
     },
     horizontalRow: {
         width: "auto",
         padding: 3,
+        marginVertical: 15, // Added margin between rows
         transform: [{ rotate: "-90deg" }],
     },
     verbBox: {
@@ -214,19 +296,28 @@ const styles = StyleSheet.create({
         borderColor: "#ccc",
         padding: 6,
         margin: 2,
-        minWidth: 40,
-        textAlign: "center",
+        width: 40,
+        height: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative',
+    },
+    verbText: {
+        textAlign: 'center',
+        fontSize: 14,
     },
     corner: {
         position: "absolute",
-        width: 100,
-        height: 100,
+        width: 120,
+        height: 120,
         borderRadius: 10,
         flexWrap: "wrap",
         flexDirection: "row",
         justifyContent: "space-around",
         alignItems: "center",
         padding: 10,
+        borderWidth: 2,
+        borderColor: '#000',
     },
     red: {
         backgroundColor: "#f88",
@@ -264,32 +355,47 @@ const styles = StyleSheet.create({
         margin: 5,
         borderWidth: 1,
         borderColor: "#000",
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative',
+        overflow: 'hidden', // Add this to keep player within circle
     },
-    controls: {
+    cornerPlayer: {
         position: 'absolute',
-        bottom: 20,
+        top: '50%',
+        left: '50%',
+        transform: [
+            { translateX: -10 },
+            { translateY: -10 }
+        ],
+    },
+      controls: {
+        position: 'absolute',
+        bottom: -60,
         flexDirection: 'row',
-        gap: 10,
+        gap: 20,
+        backgroundColor: '#fff',
+        padding: 10,
+        borderRadius: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
     },
     button: {
+        flexDirection: 'row',
+        alignItems: 'center',
         padding: 10,
-        backgroundColor: '#ddd',
-        borderRadius: 5,
+        backgroundColor: '#f0f0f0',
+        borderRadius: 8,
         borderWidth: 1,
-        borderColor: '#999',
+        borderColor: '#ccc',
+        gap: 8,
+    },
+    buttonText: {
+        fontSize: 16,
+        color: '#333',
+        fontWeight: '500',
     },
 });
-
-
-{/* 
-
-<Text>ludoBoard</Text>
-      {/* <View >
-      <View style={{ width: 30, height: 30, backgroundColor: 'blue' }}></View>
-      <View style={{ width: 30, height: 30, backgroundColor: 'red' }}></View>
-        <View style={{ width: 30, height: 30, backgroundColor: 'green' }}></View>
-        <View style={{ width: 30, height: 30, backgroundColor: 'yellow' }}></View>
-        <View style={{ width: 30, height: 30, backgroundColor: 'red' }}></View>
-        <View style={{ width: 30, height: 30, backgroundColor: 'green' }}></View>
-        </View> */}
-
