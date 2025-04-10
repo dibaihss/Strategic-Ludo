@@ -6,23 +6,41 @@ export default function SmalBoard() {
     const colors = ["red", "yellow", "blue", "green"];
     const directions = ["left", "top", "bottom", "right"];
 
-    const [player, setPlayerPosition] = useState('1')
+    const [player, setPlayerPosition] = useState('1a')
 
     const verbs = {
-        column1: ["48", "47", "46", "45", "44", "43"],
-        column2: ["42", "41", "40", "39", "38", "37"],
-        column3: ["36", "35", "34", "33", "32", "31"],
-        column4: ["30", "29", "28", "27", "26", "25"],
-        row1: ["24", "23", "22", "21", "20", "19"],
-        row2: ["18", "17", "16", "15", "14", "13"],
-        row3: ["12", "11", "10", "9", "8", "7"],
-        row4: ["6", "5", "4", "3", "2", "1"]
+        column1: ["12b", "11b", "10b", "9b", "8b", "7b"],
+        column2: ["6a", "5a", "4a", "3a", "2a", "1a"],
+        column3: ["1c", "2c", "3c", "4c", "5c", "6c"],
+        column4: ["7d", "8d", "9d", "10d", "11d", "12d"],
+        row1: ["6b", "5b", "4b", "3b", "2b", "1b"],
+        row2: ["7c", "8c", "9c", "10c", "11c", "12c"],
+        row3: ["12a", "11a", "10a", "9a", "8a", "7a"],
+        row4: ["1d", "2d", "3d", "4d", "5d", "6d"]
     };
 
     const movePlayer = () => {
         setPlayerPosition(prev => {
-            const nextPosition = parseInt(prev) - 1;
-            return nextPosition < 1 ? '48' : nextPosition.toString();
+            const numbers = prev.match(/\d+/)[0];
+            const letters = prev.match(/[a-zA-Z]+/)[0];
+            console.log("First letter:", letters);
+
+            const nextPosition = parseInt(prev) + 1;
+
+            let categorie = letters
+            switch (prev) {
+                case '12a':
+                    return '1b';
+                case '12b':
+                    return '1c';
+                case '12c':
+                    return '1d';
+                default:
+                    break;
+            }
+
+            // console.log(categorie)
+            return nextPosition.toString() + categorie;
         });
     };
 
@@ -55,7 +73,7 @@ export default function SmalBoard() {
                 </View>
 
                 <View style={styles.horizontalContainer}>
-                    <View style={styles.horizontalRow}>
+                    <View style={[styles.horizontalRow, { transform: [{ rotate: "90deg" }] }]}>
                         {verbs.row1.map((number, i) => renderBox(number, i, 'blue'))}
                     </View>
                     <View style={styles.horizontalRow}>
@@ -67,7 +85,7 @@ export default function SmalBoard() {
                     <View style={styles.horizontalRow}>
                         {verbs.row3.map((number, i) => renderBox(number, i, 'yellow'))}
                     </View>
-                    <View style={styles.horizontalRow}>
+                    <View style={[styles.horizontalRow, { transform: [{ rotate: "90deg" }] }]}>
                         {verbs.row4.map((number, i) => renderBox(number, i, 'green'))}
                     </View>
                 </View>
@@ -77,7 +95,7 @@ export default function SmalBoard() {
                         style={styles.button}
                         onPress={movePlayer}
                     >
-                     
+
                     </Pressable>
                 </View>
             </View>
@@ -140,7 +158,7 @@ const styles = StyleSheet.create({
     horizontalRow: {
         width: "auto",
         padding: 3,
-        transform: [{ rotate: "90deg" }],
+        transform: [{ rotate: "-90deg" }],
     },
     verbBox: {
         backgroundColor: "#eee",
