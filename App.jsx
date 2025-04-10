@@ -1,10 +1,12 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
+import LudoBoard from './GameComponents/LudoBoard.jsx';
+import SmalBoard from './GameComponents/SmalBoard.jsx';
 
 export default function App() {
   return (
     <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
+      <SmalBoard />
       <StatusBar style="auto" />
     </View>
   );
@@ -12,9 +14,8 @@ export default function App() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
+  padding: 10,
+  flex: 1,
+  margin: 10,
   },
 });
