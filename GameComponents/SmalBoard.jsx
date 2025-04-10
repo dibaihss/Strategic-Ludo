@@ -4,19 +4,18 @@ import Player from './Player';
 import { MaterialIcons } from '@expo/vector-icons';
 
 export default function SmalBoard() {
-    const colors = ["red", "yellow", "blue", "green"];
     const directions = ["left", "top", "bottom", "right"];
     const playerType = ["red", "yellow", "blue", "green"]
 
-    const [playerBlue1, setPlayerBlue1Position] = useState({ position: '1a', color: "blue", initialPosition: '1a', onBoard: true })
-    const [playerBlue2, setPlayerBlue2Position] = useState({ position: '2blue', color: "blue", initialPosition: '2blue' })
-    const [playerBlue3, setPlayerBlue3Position] = useState({ position: '3blue', color: "blue", initialPosition: '3blue' })
-    const [playerBlue4, setPlayerBlue4Position] = useState({ position: '4blue', color: "blue", initialPosition: '4blue' })
+    const [playerBlue1, setPlayerBlue1Position] = useState({ position: '1a', color: "blue", initialPosition: '1a', onBoard: false })
+    const [playerBlue2, setPlayerBlue2Position] = useState({ position: '2blue', color: "blue", initialPosition: '2blue', onBoard: false })
+    const [playerBlue3, setPlayerBlue3Position] = useState({ position: '3blue', color: "blue", initialPosition: '3blue', onBoard: false })
+    const [playerBlue4, setPlayerBlue4Position] = useState({ position: '4blue', color: "blue", initialPosition: '4blue', onBoard: false })
 
-    const [playerRed1, setPlayerRed1Position] = useState({ position: '1b', color: "red", initialPosition: '1b' })
-    const [playerRed2, setPlayerRed2Position] = useState({ position: '2red', color: "red", initialPosition: '2red' })
-    const [playerRed3, setPlayerRed3Position] = useState({ position: '3red', color: "red", initialPosition: '3red' })
-    const [playerRed4, setPlayerRed4Position] = useState({ position: '4red', color: "red", initialPosition: '4red' })
+    const [playerRed1, setPlayerRed1Position] = useState({ position: '1b', color: "red", initialPosition: '1b', onBoard: false })
+    const [playerRed2, setPlayerRed2Position] = useState({ position: '2red', color: "red", initialPosition: '2red', onBoard: false })
+    const [playerRed3, setPlayerRed3Position] = useState({ position: '3red', color: "red", initialPosition: '3red', onBoard: false })
+    const [playerRed4, setPlayerRed4Position] = useState({ position: '4red', color: "red", initialPosition: '4red', onBoard: false })
 
     const [player3, setPlayerPosition3] = useState({ position: '1c', color: "yellow", initialPosition: '1c' })
 
@@ -30,46 +29,88 @@ export default function SmalBoard() {
         row3: ["12a", "11a", "10a", "9a", "8a", "7a"],
         row4: ["1d", "2d", "3d", "4d", "5d", "6d"]
     };
+    const CheckOutOfBoardCondition = (prev) => {
 
-    const updatePlayerPosition = (prev) => {
-        const numbers = prev.position.match(/\d+/)[0];
-        const letters = prev.position.match(/[a-zA-Z]+/)[0];
-
-        let nextPosition = parseInt(prev.position) + 1;
-
-        let categorie = letters
-        switch (prev.position) {
-            case '12a':
-                return {
-                    ...prev,  // Spread existing state to preserve other properties
-                    position: `1b` // Update only the position
-                };
-            case '12b':
-                return {
-                    ...prev,  // Spread existing state to preserve other properties
-                    position: `1c` // Update only the position
-                };
-            case '12c':
-                return {
-                    ...prev,  // Spread existing state to preserve other properties
-                    position: `1d` // Update only the position
-                };
-            case '12d':
-                return {
-                    ...prev,  // Spread existing state to preserve other properties
-                    position: `1a` // Update only the position
-                };
+        switch (prev.color) {
+            case 'blue':
+                if (prev.position === '6d') {
+                    return { ...prev, position: "", onBoard: true };
+                }
+                break;
+            case 'red':
+                if (prev.position === '6a') {
+                    return { ...prev, position: "", onBoard: true };
+                }
+                break;
+            case 'yellow':
+                if (prev.position === '6b') {
+                    return { ...prev, position: "", onBoard: false };
+                }
+                break;
+            case 'green':
+                if (prev.position === '6c') {
+                    return { ...prev, position: "", onBoard: false };
+                }
+                break;
             default:
                 break;
         }
 
-        // console.log(categorie)
-        let newPosition = nextPosition.toString() + categorie;
+    }
 
-        return {
-            position: newPosition,
-            color: prev.color
-        };
+    const updatePlayerPosition = (prev) => {
+        if (prev.onBoard === true) {
+            return prev;
+        }
+
+        if (!CheckOutOfBoardCondition(prev)) {
+          
+            const numbers = prev.position.match(/\d+/)[0];
+            const letters = prev.position.match(/[a-zA-Z]+/)[0];
+
+            let nextPosition = parseInt(prev.position) + 1;
+
+
+            let categorie = letters
+            switch (prev.position) {
+                case '12a':
+                    return {
+                        ...prev,  // Spread existing state to preserve other properties
+                        position: `1b` // Update only the position
+                    };
+                case '12b':
+                    return {
+                        ...prev,  // Spread existing state to preserve other properties
+                        position: `1c` // Update only the position
+                    };
+                case '12c':
+                    return {
+                        ...prev,  // Spread existing state to preserve other properties
+                        position: `1d` // Update only the position
+                    };
+                case '12d':
+                    return {
+                        ...prev,  // Spread existing state to preserve other properties
+                        position: `1a` // Update only the position
+                    };
+                default:
+                    break;
+            }
+
+            // console.log(categorie)
+            let newPosition = nextPosition.toString() + categorie;
+
+            return {
+                ...prev,  // Spread existing state to preserve other properties
+                // Update only the position
+                // position: newPosition,}
+                position: newPosition,
+
+            };
+        } else {
+            return CheckOutOfBoardCondition(prev)
+
+        }
     }
     const movePlayer = (playerNum) => {
         switch (playerNum) {
@@ -90,6 +131,27 @@ export default function SmalBoard() {
         }
     };
 
+    const enterNewSoldier = (color) => {
+        // Check if the player is already on the board
+    
+        switch (color) {
+            case 'blue':
+                setPlayerBlue1Position(prev => ({ ...prev, position: '1a', onBoard: true }));
+                break;
+            case 'red':
+                setPlayerRed1Position(prev => ({ ...prev, position: '1b', onBoard: true }));
+                break;
+            case 'yellow':
+                setPlayerPosition3(prev => ({ ...prev, position: '1c', onBoard: true }));
+                break;
+            case 'green':
+                setPlayerPosition3(prev => ({ ...prev, position: '1d', onBoard: true }));
+                break;
+            default:
+                break;
+        }
+    };
+
     const renderBox = (number, i) => (
         <View key={i + playerBlue1.position} style={[styles.verbBox, { position: 'relative' }]}>
             <Text style={styles.verbText}>{number}</Text>
@@ -102,15 +164,15 @@ export default function SmalBoard() {
     const renderInCirclePlayers = (j, playerType, i) => (
         <>
             {[
-                { player: playerBlue1, setter: setPlayerBlue1Position },
-                { player: playerBlue2, setter: setPlayerBlue2Position },
-                { player: playerBlue3, setter: setPlayerBlue3Position },
-                { player: playerBlue4, setter: setPlayerBlue4Position },
-                { player: playerRed1, setter: setPlayerRed1Position },
-                { player: playerRed2, setter: setPlayerRed2Position },
-                { player: playerRed3, setter: setPlayerRed3Position },
-                { player: playerRed4, setter: setPlayerRed4Position },
-                { player: player3, setter: setPlayerPosition3 }
+                { player: playerBlue1 },
+                { player: playerBlue2 },
+                { player: playerBlue3 },
+                { player: playerBlue4 },
+                { player: playerRed1 },
+                { player: playerRed2 },
+                { player: playerRed3 },
+                { player: playerRed4 },
+                { player: player3 }
             ].map((item, index) => (
                 item.player.initialPosition === `${j + 1}${playerType[i]}` && (
                     <Player
@@ -128,7 +190,7 @@ export default function SmalBoard() {
         <View style={styles.container}>
             <View style={styles.cross}>
                 <View style={styles.verticalContainer}>
-                    <View style={[styles.verticalColumn, {marginBottom: 100, marginTop: 0}]}>
+                    <View style={[styles.verticalColumn, { marginBottom: 100, marginTop: 0 }]}>
                         {verbs.column1.map((number, i) => renderBox(number, i))}
                     </View>
                     <View style={styles.verticalColumn}>
@@ -137,7 +199,7 @@ export default function SmalBoard() {
                 </View>
 
                 <View style={[styles.verticalContainer, { marginLeft: 100 }]}>
-                    <View style={[styles.verticalColumn, {marginBottom: 100}]}>
+                    <View style={[styles.verticalColumn, { marginBottom: 100 }]}>
                         {verbs.column3.map((number, i) => renderBox(number, i))}
                     </View>
                     <View style={styles.verticalColumn}>
@@ -178,6 +240,13 @@ export default function SmalBoard() {
                         <MaterialIcons name="casino" size={24} color="black" />
                         <Text style={styles.buttonText}>Roll</Text>
                     </Pressable>
+                    <Pressable
+                        style={styles.button}
+                        onPress={() => enterNewSoldier('blue')}
+                    >
+                        <MaterialIcons name="plus" size={24} color="black" />
+                        <Text style={styles.buttonText}>Roll</Text>
+                    </Pressable>
                 </View>
             </View>
             <View style={styles.centerCircle}>
@@ -193,15 +262,17 @@ export default function SmalBoard() {
                     {/* Red quadrant */}
                     <View style={[styles.quadrant, { backgroundColor: '#f88' }]}>
                         <MaterialIcons name="home" size={24} color="darkred" />
+                        {playerRed1.onBoard && <Player color={playerRed1.color} />}
                     </View>
                     {/* Blue quadrant */}
                     <View style={[styles.quadrant, { backgroundColor: '#88f' }]}>
                         <MaterialIcons name="home" size={24} color="darkblue" />
+                        {playerBlue1.onBoard && <Player color={playerBlue1.color} />}
                     </View>
                 </View>
             </View>
 
-            {colors.map((color, i) => (
+            {playerType.map((color, i) => (
                 <View
                     key={color}
                     style={[styles.corner, styles[color], styles[directions[i]]]}
@@ -369,7 +440,7 @@ const styles = StyleSheet.create({
             { translateY: -10 }
         ],
     },
-      controls: {
+    controls: {
         position: 'absolute',
         bottom: -60,
         flexDirection: 'row',
