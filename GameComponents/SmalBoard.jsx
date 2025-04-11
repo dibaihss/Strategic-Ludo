@@ -21,43 +21,43 @@ export default function SmalBoard() {
     const [currentPlayer, setCurrentPlayer] = useState(1);
 
     const [blueSoldiers, setBlueSoldiers] = useState([
-        { id: 1, position: '1c', color: "blue", initialPosition: '1a', onBoard: true, isOut: false },
-        { id: 2, position: '2blue', color: "blue", initialPosition: '2blue', onBoard: false,  isOut: false },
+        { id: 1, position: '1a', color: "blue", initialPosition: '1a', onBoard: true, isOut: false },
+        { id: 2, position: '2blue', color: "blue", initialPosition: '2blue', onBoard: false, isOut: false },
         { id: 3, position: '3blue', color: "blue", initialPosition: '3blue', onBoard: false, isOut: false },
         { id: 4, position: '4blue', color: "blue", initialPosition: '4blue', onBoard: false, isOut: false }
     ]);
 
-  
+
     const [redSoldiers, setRedSoldiers] = useState([
-        { id: 5, position: '1b', color: "red", initialPosition: '1b', onBoard: true,   isOut: false },
+        { id: 5, position: '1b', color: "red", initialPosition: '1b', onBoard: true, isOut: false },
         { id: 6, position: '2red', color: "red", initialPosition: '2red', onBoard: false, isOut: false },
         { id: 7, position: '3red', color: "red", initialPosition: '3red', onBoard: false, isOut: false },
         { id: 8, position: '4red', color: "red", initialPosition: '4red', onBoard: false, isOut: false }
     ]);
 
-    const CheckOutOfBoardCondition = (prev) => {
+    const CheckOutOfBoardCondition = (object) => {
 
-        switch (prev.color) {
+        switch (object.color) {
             case 'blue':
-                if (prev.position === '6d') {
+                if (object.position === '6d') {
                     setCurrentPlayer("")
-                    return { ...prev, position: "", isOut: true };
+                    return true;
                 }
                 break;
             case 'red':
-                if (prev.position === '6a') {
+                if (object.position === '6a') {
                     setCurrentPlayer("")
-                    return { ...prev, position: "", isOut: true };
+                    return true;
                 }
                 break;
             case 'yellow':
-                if (prev.position === '6b') {
-                    return { ...prev, position: "", isOut: true };
+                if (object.position === '6b') {
+                    return true;
                 }
                 break;
             case 'green':
-                if (prev.position === '6c') {
-                    return { ...prev, position: "", isOut: true };
+                if (object.position === '6c') {
+                    return true;
                 }
                 break;
             default:
@@ -66,82 +66,64 @@ export default function SmalBoard() {
 
     }
 
-    const updatePlayerPosition = (prev) => {
-       console.log(currentPlayer)
-       const getToMoveSoldier = blueSoldiers.find(soldier => soldier.id === currentPlayer.id && soldier.isOut === false) 
-       || 
-       redSoldiers.find(soldier => soldier.id === currentPlayer.id && soldier.isOut === false);
+    const updateObject = (prev, newPosition, options = {}) => {
+        setCurrentPlayer((prev) => ({
+            ...prev,
+            position: newPosition,
+        }));
 
-       console.log(getToMoveSoldier)
-
-     if(getToMoveSoldier) {
-
-        if (getToMoveSoldier.isOut === true) {
-            return prev;
-        }
-        if (!CheckOutOfBoardCondition(getToMoveSoldier)) {
-            const numbers = getToMoveSoldier.position.match(/\d+/)[0];
-            const letters = getToMoveSoldier.position.match(/[a-zA-Z]+/)[0];
-
-            let nextPosition = parseInt(getToMoveSoldier.position) + 1;
-
-            let categorie = letters
-            switch (getToMoveSoldier.position) {
-                case '12a':
-                    return [{
-                        ...getToMoveSoldier,  // Spread existing state to preserve other properties
-                        position: `1b` // Update only the position
-                    },
-                    ...prev.slice(1) // Keep the rest of the array unchanged
-                    ];
-                case '12b':
-                    return [{
-                        ...getToMoveSoldier,  // Spread existing state to preserve other properties
-                        position: `1c` // Update only the position
-                    },
-                    ...prev.slice(1)
-                    ];
-                case '12c':
-                    return [{
-                        ...getToMoveSoldier,  // Spread existing state to preserve other properties
-                        position: `1d` // Update only the position
-                    },
-                    ...prev.slice(1)
-                    ];
-                case '12d':
-                    return [{
-                        ...getToMoveSoldier,  // Spread existing state to preserve other properties
-                        position: `1a` // Update only the position
-                    },
-                    ...prev.slice(1)
-                    ];
-                default:
-                    break;
+        return prev.map((soldier) => {
+            if (soldier.id === currentPlayer.id) {
+                return {
+                    ...soldier,
+                    position: newPosition,
+                    onBoard: options.onBoard ?? true,
+                    isOut: options.isOut ?? false
+                };
             }
+            return soldier;
+        });
+    };
+    const updatePlayerPosition = (prev) => {
 
-            // console.log(categorie)
-            let newPosition = nextPosition.toString() + categorie;
+        if (currentPlayer) {
 
-            return [{
-                ...getToMoveSoldier,  // Spread the first object's properties
-                position: newPosition // Update position of first object
-            },
-            ...prev.slice(1) // Keep the rest of the array unchanged
-            ];
+            if (currentPlayer.isOut === true) {
+                return prev;
+            }
+            if (!CheckOutOfBoardCondition(currentPlayer)) {
+                const numbers = currentPlayer.position.match(/\d+/)[0];
+                const letters = currentPlayer.position.match(/[a-zA-Z]+/)[0];
+
+                let nextPosition = parseInt(currentPlayer.position) + 1;
+
+                let categorie = letters
+                switch (currentPlayer.position) {
+                    case '12a':
+                        return updateObject(prev, '1b'); 
+                    case '12b':
+                        return updateObject(prev, '1c'); 
+                    case '12c':
+                        return updateObject(prev, '1d'); 
+                    case '12d':
+                        return updateObject(prev, '1a'); 
+                    default:
+                        break;
+                }
+
+                let newPosition = nextPosition.toString() + categorie;
+
+                return updateObject(prev, newPosition);
+            }
+            else {
+                return updateObject(prev, '', { onBoard: false, isOut: true });
+
+            }
+        } else {
+            return prev;
+
         }
-        else {
-           return [{
-                ...CheckOutOfBoardCondition(getToMoveSoldier) // Update position of first object
-            },
-            ...prev.slice(1) // Keep the rest of the array unchanged
-            ]; 
-
-        }
-    }else {
-        return prev; // Return unchanged state if no matching soldier is found
-    
     }
-}
     const movePlayer = () => {
         console.log(blueSoldiers)
         switch (currentPlayer.color) {
@@ -162,18 +144,18 @@ export default function SmalBoard() {
     };
 
     const enterNewSoldier = (color) => {
-        // Check if the player is already on the board
-
+       
         switch (color) {
             case 'blue':
-               const NotOnBoardSoldier = blueSoldiers.find(soldier =>
-                 soldier.onBoard === false && soldier.isOut === false
-            )
-         
-                setBlueSoldiers(prev => prev.map(soldier => 
-                    soldier.id === NotOnBoardSoldier.id 
-                    ? { ...soldier, position: "1a" }
-                    : soldier
+                const NotOnBoardSoldier = blueSoldiers.find(soldier =>
+                    soldier.onBoard === false && soldier.isOut === false
+                )
+                if (!NotOnBoardSoldier) return; // No available soldier to place
+
+                setBlueSoldiers(prev => prev.map(soldier =>
+                    soldier.id === NotOnBoardSoldier.id
+                        ? { ...soldier, position: "1c" }
+                        : soldier
                 ));
 
 
@@ -200,38 +182,38 @@ export default function SmalBoard() {
 
 
     const renderBox = (number, i) => (
-        <View 
+        <View
             // Fix: Use string concatenation for the key instead of addition
             key={`box-${i}-${number}`}
             style={[styles.verbBox, { position: 'relative' }]}
         >
             <Text style={styles.verbText}>{number}</Text>
-            {blueSoldiers.map((soldier, index) => 
+            {blueSoldiers.map((soldier, index) =>
                 soldier.position === number && (
-                    <Player 
+                    <Player
                         key={`blue-${soldier.id}`}
                         isSelected={currentPlayer.id === soldier.id}
-                        onPress={() => currentSelectedPlayer(soldier)} 
-                        color={soldier.color} 
+                        onPress={() => currentSelectedPlayer(soldier)}
+                        color={soldier.color}
                     />
                 )
             )}
-            {redSoldiers.map((soldier, index) => 
+            {redSoldiers.map((soldier, index) =>
                 soldier.position === number && (
-                    <Player 
+                    <Player
                         key={`red-${soldier.id}`}
                         isSelected={currentPlayer.id === soldier.id}
-                        onPress={() => currentSelectedPlayer(soldier)} 
-                        color={soldier.color} 
+                        onPress={() => currentSelectedPlayer(soldier)}
+                        color={soldier.color}
                     />
                 )
             )}
         </View>
     );
-    
+
     const renderInCirclePlayers = (j, playerType, i) => (
-  
-   <>
+
+        <>
             {[
                 ...blueSoldiers.map(soldier => ({ player: soldier })),
                 ...redSoldiers.map(soldier => ({ player: soldier }))
@@ -308,7 +290,7 @@ export default function SmalBoard() {
                     >
                         <MaterialIcons name="add" size={24} color="black" />
                         <Text style={styles.buttonText}>Roll</Text>
-                    </Pressable> 
+                    </Pressable>
                 </View>
             </View>
             <View style={styles.centerCircle}>
