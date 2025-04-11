@@ -52,11 +52,13 @@ export default function SmalBoard() {
                 break;
             case 'yellow':
                 if (object.position === '6b') {
+                    setCurrentPlayer("")
                     return true;
                 }
                 break;
             case 'green':
                 if (object.position === '6c') {
+                    setCurrentPlayer("")
                     return true;
                 }
                 break;
@@ -100,13 +102,13 @@ export default function SmalBoard() {
                 let categorie = letters
                 switch (currentPlayer.position) {
                     case '12a':
-                        return updateObject(prev, '1b'); 
+                        return updateObject(prev, '1b');
                     case '12b':
-                        return updateObject(prev, '1c'); 
+                        return updateObject(prev, '1c');
                     case '12c':
-                        return updateObject(prev, '1d'); 
+                        return updateObject(prev, '1d');
                     case '12d':
-                        return updateObject(prev, '1a'); 
+                        return updateObject(prev, '1a');
                     default:
                         break;
                 }
@@ -143,8 +145,12 @@ export default function SmalBoard() {
         }
     };
 
-    const enterNewSoldier = (color) => {
+    const setMovingSteps = (steps) => {
        
+    }
+
+    const enterNewSoldier = (color) => {
+
         switch (color) {
             case 'blue':
                 const NotOnBoardSoldier = blueSoldiers.find(soldier =>
@@ -154,14 +160,23 @@ export default function SmalBoard() {
 
                 setBlueSoldiers(prev => prev.map(soldier =>
                     soldier.id === NotOnBoardSoldier.id
-                        ? { ...soldier, position: "1c" }
+                        ? { ...soldier, position: "1a" }
                         : soldier
                 ));
 
-
                 break;
             case 'red':
-                setPlayerRed1Position(prev => ({ ...prev, position: '1b', onBoard: true }));
+                const NotOnBoardSoldier1 = redSoldiers.find(soldier =>
+                    soldier.onBoard === false && soldier.isOut === false
+                )
+                console.log(NotOnBoardSoldier1)
+                if (!NotOnBoardSoldier1) return; // No available soldier to place
+
+                setRedSoldiers(prev => prev.map(soldier =>
+                    soldier.id === NotOnBoardSoldier1.id
+                        ? { ...soldier, position: "1b" }
+                        : soldier
+                ));
                 break;
             // case 'yellow':
             //     setPlayerPosition3(prev => ({ ...prev, position: '1c', onBoard: true }));
@@ -175,8 +190,7 @@ export default function SmalBoard() {
     };
 
     const currentSelectedPlayer = (selectedPlayer) => {
-        console.log(selectedPlayer)
-        console.log(currentPlayer.id)
+      console.log(redSoldiers.find(obj => obj.isOut === true))  
         setCurrentPlayer(selectedPlayer);
     }
 
@@ -286,7 +300,7 @@ export default function SmalBoard() {
                     </Pressable>
                     <Pressable
                         style={styles.button}
-                        onPress={() => enterNewSoldier('blue')}
+                        onPress={() => enterNewSoldier('red')}
                     >
                         <MaterialIcons name="add" size={24} color="black" />
                         <Text style={styles.buttonText}>Roll</Text>
@@ -306,12 +320,12 @@ export default function SmalBoard() {
                     {/* Red quadrant */}
                     <View style={[styles.quadrant, { backgroundColor: '#f88' }]}>
                         <MaterialIcons name="home" size={24} color="darkred" />
-                        {redSoldiers[0].isOut && <Player color={redSoldiers[0].color} />}
+                        {redSoldiers.find(obj => obj.isOut === true) && <Player color={redSoldiers[0].color} />}
                     </View>
                     {/* Blue quadrant */}
                     <View style={[styles.quadrant, { backgroundColor: '#88f' }]}>
                         <MaterialIcons name="home" size={24} color="darkblue" />
-                        {blueSoldiers[0].isOut && <Player color={blueSoldiers[0].color} />}
+                        {blueSoldiers.find(obj => obj.isOut === true) && <Player color={blueSoldiers[0].color} />}
                     </View>
                 </View>
             </View>
