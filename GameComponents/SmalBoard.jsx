@@ -3,8 +3,9 @@ import React, { useState } from 'react';
 import Player from './Player';
 import { MaterialIcons } from '@expo/vector-icons';
 
+
 export default function SmalBoard() {
-    const verbs = {
+    const boxes = {
         column1: ["12b", "11b", "10b", "9b", "8b", "7b"],
         column2: ["6a", "5a", "4a", "3a", "2a", "1a"],
         column3: ["1c", "2c", "3c", "4c", "5c", "6c"],
@@ -14,6 +15,8 @@ export default function SmalBoard() {
         row3: ["12a", "11a", "10a", "9a", "8a", "7a"],
         row4: ["1d", "2d", "3d", "4d", "5d", "6d"]
     };
+
+    const categories = ["a", "b", "c", "d"];
 
     const directions = ["left", "top", "bottom", "right"];
     const playerType = ["red", "yellow", "blue", "green"]
@@ -35,29 +38,35 @@ export default function SmalBoard() {
         { id: 8, position: '4red', color: "red", initialPosition: '4red', onBoard: false, isOut: false }
     ]);
 
-    const CheckOutOfBoardCondition = (object) => {
+    const getNextCatergory = (currentCategory) => {
+        const currentIndex = categories.indexOf(currentCategory);
+        const nextIndex = (currentIndex + 1) % categories.length;
+        return categories[nextIndex];
+    };
 
-        switch (object.color) {
+    const CheckOutOfBoardCondition = (position) => {
+
+        switch (currentPlayer.color) {
             case 'blue':
-                if (object.position === '6d') {
+                if (position === '6d') {
                     setCurrentPlayer("")
                     return true;
                 }
                 break;
             case 'red':
-                if (object.position === '6a') {
+                if (position === '6a') {
                     setCurrentPlayer("")
                     return true;
                 }
                 break;
             case 'yellow':
-                if (object.position === '6b') {
+                if (position === '6b') {
                     setCurrentPlayer("")
                     return true;
                 }
                 break;
             case 'green':
-                if (object.position === '6c') {
+                if (position === '6c') {
                     setCurrentPlayer("")
                     return true;
                 }
@@ -69,10 +78,13 @@ export default function SmalBoard() {
     }
 
     const updateObject = (prev, newPosition, options = {}) => {
-        setCurrentPlayer((prev) => ({
-            ...prev,
-            position: newPosition,
-        }));
+        setCurrentPlayer((prev) => (
+            console.log(prev),
+            {
+                ...prev,
+                position: newPosition,
+            }
+        ));
 
         return prev.map((soldier) => {
             if (soldier.id === currentPlayer.id) {
@@ -86,68 +98,47 @@ export default function SmalBoard() {
             return soldier;
         });
     };
-    const updatePlayerPosition = (prev) => {
+    const updatePlayerPosition = (prev, steps) => {
 
-        if (currentPlayer) {
+        if (currentPlayer.isOut === true) return prev;
 
-            if (currentPlayer.isOut === true) {
-                return prev;
+        let numbers = parseInt(currentPlayer.position.match(/\d+/)[0]);
+        let categorie = currentPlayer.position.match(/[a-zA-Z]+/)[0];
+
+        if(steps === 1) {
+            numbers = numbers === 12 ? 1 : numbers + 1;
+            categorie = numbers === 1 ? getNextCatergory(categorie) : categorie;
+            if (CheckOutOfBoardCondition(numbers + categorie)) {
+                return updateObject(prev, "", { onBoard: false, isOut: true });
             }
-            if (!CheckOutOfBoardCondition(currentPlayer)) {
-                const numbers = currentPlayer.position.match(/\d+/)[0];
-                const letters = currentPlayer.position.match(/[a-zA-Z]+/)[0];
-
-                let nextPosition = parseInt(currentPlayer.position) + 1;
-
-                let categorie = letters
-                switch (currentPlayer.position) {
-                    case '12a':
-                        return updateObject(prev, '1b');
-                    case '12b':
-                        return updateObject(prev, '1c');
-                    case '12c':
-                        return updateObject(prev, '1d');
-                    case '12d':
-                        return updateObject(prev, '1a');
-                    default:
-                        break;
-                }
-
-                let newPosition = nextPosition.toString() + categorie;
-
-                return updateObject(prev, newPosition);
-            }
-            else {
-                return updateObject(prev, '', { onBoard: false, isOut: true });
-
-            }
-        } else {
-            return prev;
-
+            return updateObject(prev, numbers + categorie);
         }
+
+        for(let i = 0; i < steps; i++) {
+            numbers = numbers === 12 ? 1 : numbers + 1;
+            categorie = numbers === 1 ? getNextCatergory(categorie) : categorie;
+               
+            if (CheckOutOfBoardCondition(numbers + categorie)) {
+                return updateObject(prev, "", { onBoard: false, isOut: true });
+            }
+        }
+        return updateObject(prev, numbers + categorie);
     }
-    const movePlayer = () => {
-        console.log(blueSoldiers)
+
+    const movePlayer = (steps) => {
+        if (!currentPlayer) return;
         switch (currentPlayer.color) {
             case "blue":
-                setBlueSoldiers(prev => updatePlayerPosition(prev));
+                setBlueSoldiers(prev => updatePlayerPosition(prev, steps));
                 break;
             case 'red':
-                setRedSoldiers(prev => updatePlayerPosition(prev)
-                );
-                break;
-            case 3:
-                setPlayerPosition3(prev => updatePlayerPosition(prev)
+                setRedSoldiers(prev => updatePlayerPosition(prev, steps)
                 );
                 break;
             default:
                 break;
         }
     };
-
-    const setMovingSteps = (steps) => {
-       
-    }
 
     const enterNewSoldier = (color) => {
 
@@ -190,7 +181,6 @@ export default function SmalBoard() {
     };
 
     const currentSelectedPlayer = (selectedPlayer) => {
-      console.log(redSoldiers.find(obj => obj.isOut === true))  
         setCurrentPlayer(selectedPlayer);
     }
 
@@ -226,7 +216,6 @@ export default function SmalBoard() {
     );
 
     const renderInCirclePlayers = (j, playerType, i) => (
-
         <>
             {[
                 ...blueSoldiers.map(soldier => ({ player: soldier })),
@@ -243,70 +232,35 @@ export default function SmalBoard() {
             ))}
         </>
     );
-
-    return (
-        <View style={styles.container}>
-            <View style={styles.cross}>
-                <View style={styles.verticalContainer}>
-                    <View style={[styles.verticalColumn, { marginBottom: 100, marginTop: 0 }]}>
-                        {verbs.column1.map((number, i) => renderBox(number, i))}
-                    </View>
-                    <View style={styles.verticalColumn}>
-                        {verbs.column2.map((number, i) => renderBox(number, i))}
-                    </View>
-                </View>
-
-                <View style={[styles.verticalContainer, { marginLeft: 100 }]}>
-                    <View style={[styles.verticalColumn, { marginBottom: 100 }]}>
-                        {verbs.column3.map((number, i) => renderBox(number, i))}
-                    </View>
-                    <View style={styles.verticalColumn}>
-                        {verbs.column4.map((number, i) => renderBox(number, i))}
-                    </View>
-                </View>
-
-                <View style={styles.horizontalContainer}>
-                    <View style={[styles.horizontalRow, { transform: [{ rotate: "90deg" }] }]}>
-                        {verbs.row1.map((number, i) => renderBox(number, i))}
-                    </View>
-                    <View style={styles.horizontalRow}>
-                        {verbs.row2.map((number, i) => renderBox(number, i))}
-                    </View>
-                </View>
-
-                <View style={[styles.horizontalContainer, { marginTop: 100 }]}>
-                    <View style={styles.horizontalRow}>
-                        {verbs.row3.map((number, i) => renderBox(number, i))}
-                    </View>
-                    <View style={[styles.horizontalRow, { transform: [{ rotate: "90deg" }] }]}>
-                        {verbs.row4.map((number, i) => renderBox(number, i))}
-                    </View>
-                </View>
-
-                <View style={styles.controls}>
-                    <Pressable
-                        style={styles.button}
-                        onPress={() => movePlayer(1)}
-                    >
-                        <MaterialIcons name="arrow-forward" size={24} color="black" />
-                        <Text style={styles.buttonText}>Move</Text>
-                    </Pressable>
-                    <Pressable
-                        style={styles.button}
-                        onPress={() => movePlayer(2)}
-                    >
-                        <MaterialIcons name="casino" size={24} color="black" />
-                        <Text style={styles.buttonText}>Roll</Text>
-                    </Pressable>
-                    <Pressable
-                        style={styles.button}
-                        onPress={() => enterNewSoldier('red')}
-                    >
-                        <MaterialIcons name="add" size={24} color="black" />
-                        <Text style={styles.buttonText}>Roll</Text>
-                    </Pressable>
-                </View>
+    const renderControls = () => {
+        return (
+            <View style={styles.controls}>
+                <Pressable
+                    style={styles.button}
+                    onPress={() => movePlayer(1)}
+                >
+                    <MaterialIcons name="arrow-forward" size={24} color="black" />
+                    <Text style={styles.buttonText}>Move</Text>
+                </Pressable>
+                <Pressable
+                    style={styles.button}
+                    onPress={() => movePlayer(6)}
+                >
+                    <MaterialIcons name="casino" size={24} color="black" />
+                    <Text style={styles.buttonText}>Roll</Text>
+                </Pressable>
+                <Pressable
+                    style={styles.button}
+                    onPress={() => enterNewSoldier(currentPlayer?.color)}
+                >
+                    <MaterialIcons name="add" size={24} color="black" />
+                    <Text style={styles.buttonText}>Enter</Text>
+                </Pressable>
             </View>
+        );
+    };
+    const renderGoals = () => {
+        return (
             <View style={styles.centerCircle}>
                 <View style={styles.centerQuadrants}>
                     {/* Yellow quadrant */}
@@ -320,15 +274,63 @@ export default function SmalBoard() {
                     {/* Red quadrant */}
                     <View style={[styles.quadrant, { backgroundColor: '#f88' }]}>
                         <MaterialIcons name="home" size={24} color="darkred" />
-                        {redSoldiers.find(obj => obj.isOut === true) && <Player color={redSoldiers[0].color} />}
+                        {redSoldiers.find(obj => obj.isOut === true) &&
+                            <Player color={redSoldiers[0].color} />}
                     </View>
                     {/* Blue quadrant */}
                     <View style={[styles.quadrant, { backgroundColor: '#88f' }]}>
                         <MaterialIcons name="home" size={24} color="darkblue" />
-                        {blueSoldiers.find(obj => obj.isOut === true) && <Player color={blueSoldiers[0].color} />}
+                        {blueSoldiers.find(obj => obj.isOut === true) &&
+                            <Player color={blueSoldiers[0].color} />}
                     </View>
                 </View>
             </View>
+        );
+    };
+
+    return (
+        <View style={styles.container}>
+            <View style={styles.cross}>
+                <View style={styles.verticalContainer}>
+                    <View style={[styles.verticalColumn, { marginBottom: 100, marginTop: 0 }]}>
+                        {boxes.column1.map((number, i) => renderBox(number, i))}
+                    </View>
+                    <View style={styles.verticalColumn}>
+                        {boxes.column2.map((number, i) => renderBox(number, i))}
+                    </View>
+                </View>
+
+                <View style={[styles.verticalContainer, { marginLeft: 100 }]}>
+                    <View style={[styles.verticalColumn, { marginBottom: 100 }]}>
+                        {boxes.column3.map((number, i) => renderBox(number, i))}
+                    </View>
+                    <View style={styles.verticalColumn}>
+                        {boxes.column4.map((number, i) => renderBox(number, i))}
+                    </View>
+                </View>
+
+                <View style={styles.horizontalContainer}>
+                    <View style={[styles.horizontalRow, { transform: [{ rotate: "90deg" }] }]}>
+                        {boxes.row1.map((number, i) => renderBox(number, i))}
+                    </View>
+                    <View style={styles.horizontalRow}>
+                        {boxes.row2.map((number, i) => renderBox(number, i))}
+                    </View>
+                </View>
+
+                <View style={[styles.horizontalContainer, { marginTop: 100 }]}>
+                    <View style={styles.horizontalRow}>
+                        {boxes.row3.map((number, i) => renderBox(number, i))}
+                    </View>
+                    <View style={[styles.horizontalRow, { transform: [{ rotate: "90deg" }] }]}>
+                        {boxes.row4.map((number, i) => renderBox(number, i))}
+                    </View>
+                </View>
+
+                {renderControls()}
+
+            </View>
+            {renderGoals()}
 
             {playerType.map((color, i) => (
                 <View

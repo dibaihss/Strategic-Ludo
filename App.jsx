@@ -4,8 +4,10 @@ import LudoBoard from './GameComponents/LudoBoard.jsx';
 import SmalBoard from './GameComponents/SmalBoard.jsx';
 
 export default function App() {
+
   return (
     <View style={styles.container}>
+      {/* <LudoBoard /> */}
       <SmalBoard />
       <StatusBar style="auto" />
     </View>
