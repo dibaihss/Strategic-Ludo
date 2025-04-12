@@ -3,14 +3,19 @@ import { StyleSheet, Text, View } from 'react-native';
 import LudoBoard from './GameComponents/LudoBoard.jsx';
 import SmalBoard from './GameComponents/SmalBoard.jsx';
 
+import { Provider } from 'react-redux';
+import { store } from './assets/store/store.jsx';
+
+
 export default function App() {
 
   return (
-    <View style={styles.container}>
-      {/* <LudoBoard /> */}
-      <SmalBoard />
-      <StatusBar style="auto" />
-    </View>
+    <Provider store={store}>
+            <View style={styles.container}>
+                <SmalBoard />
+                {/* <LudoBoard /> */}
+            </View>
+        </Provider>
   );
 }
 
