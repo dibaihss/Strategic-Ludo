@@ -11,7 +11,7 @@ import {
 } from '../assets/store/gameSlice.jsx';
 
 
-import {categories, directions, playerType } from "../assets/shared/hardCodedData.js";
+import { categories, directions, playerType } from "../assets/shared/hardCodedData.js";
 import { MaterialIcons } from '@expo/vector-icons';
 import Feather from '@expo/vector-icons/Feather';
 
@@ -20,9 +20,13 @@ export default function Bases() {
     const blueSoldiers = useSelector(state => state.game.blueSoldiers);
     const redSoldiers = useSelector(state => state.game.redSoldiers);
     const currentPlayer = useSelector(state => state.game.currentPlayer);
+    const yellowSoldiers = useSelector(state => state.game.yellowSoldiers);
+    const greenSoldiers = useSelector(state => state.game.greenSoldiers);
 
     const blueCards = useSelector(state => state.game.blueCards);
     const redCards = useSelector(state => state.game.redCards);
+    const yellowCards = useSelector(state => state.game.yellowCards);
+    const greenCards = useSelector(state => state.game.greenCards);
 
     const dispatch = useDispatch();
 
@@ -35,10 +39,7 @@ export default function Bases() {
         if (currentPlayer.color !== color) return; // Check if the current player is the one who is trying to move
 
 
-
-       console.log(checkIfCardUsed(color, steps))  // Check if the card is already used
-
-       if(checkIfCardUsed(color, steps)) return; // Check if the card is already used
+        if (checkIfCardUsed(color, steps)) return; // Check if the card is already used
 
         const newPosition = calculateNewPosition(currentPlayer, steps);
 
@@ -49,9 +50,51 @@ export default function Bases() {
             steps
         }));
         dispatch(setCurrentPlayer({ ...currentPlayer, position: newPosition })); // Clear current player after moving
-   
-  
+
+
+
+        // Redudances
+        if (currentPlayer.color === 'blue') {
+            const checkIfGotEnemy = redSoldiers.filter(soldier => soldier.position === newPosition);
+            //    console.log("checkIfGotEnemy", checkIfGotEnemy , currentPlayer.position);
+            if (checkIfGotEnemy.length === 1) {
+                dispatch(moveSoldier({
+                    color: 'red',
+                    position: checkIfGotEnemy[0].initialPosition,
+                    soldierID: checkIfGotEnemy[0].id,
+                    steps: 0
+                    , returenToBase: true
+                }));
+            }
+        }
+
+        if (currentPlayer.color === 'red') {
+            const checkIfGotEnemy = blueSoldiers.filter(soldier => soldier.position === newPosition);
+            //    console.log("checkIfGotEnemy", checkIfGotEnemy , currentPlayer.position);
+            if (checkIfGotEnemy.length === 1) {
+                dispatch(moveSoldier({
+                    color: 'blue',
+                    position: checkIfGotEnemy[0].initialPosition,
+                    soldierID: checkIfGotEnemy[0].id,
+                    steps: 0,
+                    returenToBase: true
+                }));
+            }
+        }
     };
+    checkIfGotEnemy = (color, position) => {
+        if (color === "red") {
+            const enemySoldiers = [...blueSoldiers];
+        }
+        if (color === 'blue') {
+            const checkIfGotEnemy = redSoldiers.filter(soldier => soldier.position === position);
+            return checkIfGotEnemy.length === 1;
+        } else if (color === 'red') {
+            const checkIfGotEnemy = blueSoldiers.filter(soldier => soldier.position === position);
+            return checkIfGotEnemy.length === 1;
+        }
+        return false;
+    }
 
     calculateNewPosition = (player, steps) => {
         console.log("Calculating new position for player: ", player);
@@ -121,43 +164,43 @@ export default function Bases() {
     }
 
     const checkIfCardUsed = (color, steps) => {
-        
+
         if (color === 'blue') {
             const checkIfareUsed = blueCards.filter(card => card.used === false);
-           
-            
+
+
             if (checkIfareUsed.length === 1) {
                 dispatch(updateBlueCards({ used: false, value: 0, updateAll: true }));
                 return false;
             }
             const card = blueCards.find(card => card.value === steps);
-         
-            if(card && card.used) {
+
+            if (card && card.used) {
                 return true;
             }
             dispatch(updateBlueCards({ used: true, value: steps }));
             return false;
-            
+
         }
         if (color === 'red') {
             const checkIfareUsed = redCards.filter(card => card.used === false);
-           
-            
+
+
             if (checkIfareUsed.length === 1) {
                 dispatch(updateRedCards({ used: false, value: 0, updateAll: true }));
                 return false;
             }
             const card = redCards.find(card => card.value === steps);
-         
-            if(card && card.used) {
+
+            if (card && card.used) {
                 return true;
             }
             dispatch(updateRedCards({ used: true, value: steps }));
             return false;
-            
+
         }
     }
-    
+
     const getCorrectArrow = (color) => {
         switch (color) {
             case "red":
@@ -175,7 +218,9 @@ export default function Bases() {
         <>
             {[
                 ...blueSoldiers.map(soldier => ({ player: soldier })),
-                ...redSoldiers.map(soldier => ({ player: soldier }))
+                ...redSoldiers.map(soldier => ({ player: soldier })),
+                ...yellowSoldiers.map(soldier => ({ player: soldier })),
+                ...greenSoldiers.map(soldier => ({ player: soldier }))
             ].map((item, index) => (
                 item.player.position === `${j + 1}${playerType[i]}` && (
                     <Player
@@ -198,14 +243,14 @@ export default function Bases() {
                         <View style={{ display: "flex" }}>
                             {blueCards.map((card) => (
                                 color === "blue" && (
-                                    <Pressable 
-                                        key={card.id} 
-                                        disabled={card.used} 
+                                    <Pressable
+                                        key={card.id}
+                                        disabled={card.used}
                                         style={[
-                                            styles.button, 
+                                            styles.button,
                                             { marginVertical: 5 },
                                             card.used && { backgroundColor: '#ddd', opacity: 0.7 }
-                                        ]} 
+                                        ]}
                                         onPress={() => movePlayer(color, card.value)}
                                     >
                                         <Text style={[
@@ -217,14 +262,52 @@ export default function Bases() {
                             ))}
                             {redCards.map((card) => (
                                 color === "red" && (
-                                    <Pressable 
-                                        key={card.id} 
-                                        disabled={card.used} 
+                                    <Pressable
+                                        key={card.id}
+                                        disabled={card.used}
                                         style={[
-                                            styles.button, 
+                                            styles.button,
                                             { marginVertical: 5 },
                                             card.used && { backgroundColor: '#ddd', opacity: 0.7 }
-                                        ]} 
+                                        ]}
+                                        onPress={() => movePlayer(color, card.value)}
+                                    >
+                                        <Text style={[
+                                            styles.buttonText,
+                                            card.used && { color: '#999' }
+                                        ]}>{card.value}</Text>
+                                    </Pressable>
+                                )
+                            ))}
+                            {yellowCards.map((card) => (
+                                color === "yellow" && (
+                                    <Pressable
+                                        key={card.id}
+                                        disabled={card.used}
+                                        style={[
+                                            styles.button,
+                                            { marginVertical: 5 },
+                                            card.used && { backgroundColor: '#ddd', opacity: 0.7 }
+                                        ]}
+                                        onPress={() => movePlayer(color, card.value)}
+                                    >
+                                        <Text style={[
+                                            styles.buttonText,
+                                            card.used && { color: '#999' }
+                                        ]}>{card.value}</Text>
+                                    </Pressable>
+                                )
+                            ))}
+                            {greenCards.map((card) => (
+                                color === "green" && (
+                                    <Pressable
+                                        key={card.id}
+                                        disabled={card.used}
+                                        style={[
+                                            styles.button,
+                                            { marginVertical: 5 },
+                                            card.used && { backgroundColor: '#ddd', opacity: 0.7 }
+                                        ]}
                                         onPress={() => movePlayer(color, card.value)}
                                     >
                                         <Text style={[
