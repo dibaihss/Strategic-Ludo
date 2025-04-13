@@ -12,6 +12,7 @@ import {
     enterNewSoldier
 } from '../assets/store/gameSlice.jsx';
 import Goals from "./Goals.jsx";
+import Bases from "./Bases.jsx";
 
 
 export default function SmalBoard() {
@@ -172,23 +173,6 @@ export default function SmalBoard() {
             </View>
         );
     };
-    const renderInCirclePlayers = (j, playerType, i) => (
-        <>
-            {[
-                ...blueSoldiers.map(soldier => ({ player: soldier })),
-                ...redSoldiers.map(soldier => ({ player: soldier }))
-            ].map((item, index) => (
-                item.player.position === `${j + 1}${playerType[i]}` && (
-                    <Player
-                        key={`circle-player-${item.player.id}-${index}`}
-                        color={item.player.color}
-                        size={20}
-                        style={styles.cornerPlayer}
-                    />
-                )
-            ))}
-        </>
-    );
 
     return (
         <View style={styles.container}>
@@ -233,19 +217,8 @@ export default function SmalBoard() {
 
             </View>
             <Goals />
-
-            {playerType.map((color, i) => (
-                <View
-                    key={color}
-                    style={[styles.corner, styles[color], styles[directions[i]]]}
-                >
-                    {[...Array(4)].map((_, j) => (
-                        <View key={j} style={styles.circle}>
-                            {renderInCirclePlayers(j, playerType, i)}
-                        </View>
-                    ))}
-                </View>
-            ))}
+            <Bases />
+          
         </View>
     );
 }

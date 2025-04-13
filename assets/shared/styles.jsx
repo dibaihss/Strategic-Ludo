@@ -89,69 +89,7 @@ export const styles = StyleSheet.create({
         textAlign: 'center',
         fontSize: 14,
     },
-    corner: {
-        position: "absolute",
-        width: 120,
-        height: 120,
-        borderRadius: 10,
-        flexWrap: "wrap",
-        flexDirection: "row",
-        justifyContent: "space-around",
-        alignItems: "center",
-        padding: 10,
-        borderWidth: 2,
-        borderColor: '#000',
-    },
-    red: {
-        backgroundColor: "#f88",
-    },
-    yellow: {
-        backgroundColor: "#ff8",
-    },
-    blue: {
-        backgroundColor: "#88f",
-    },
-    green: {
-        backgroundColor: "#8f8",
-    },
-    left: {
-        top: 20,
-        left: 20,
-    },
-    top: {
-        top: 20,
-        right: 20,
-    },
-    bottom: {
-        bottom: 20,
-        left: 20,
-    },
-    right: {
-        bottom: 20,
-        right: 20,
-    },
-    circle: {
-        width: 30,
-        height: 30,
-        borderRadius: 15,
-        backgroundColor: "white",
-        margin: 5,
-        borderWidth: 1,
-        borderColor: "#000",
-        justifyContent: 'center',
-        alignItems: 'center',
-        position: 'relative',
-        overflow: 'hidden', // Add this to keep player within circle
-    },
-    cornerPlayer: {
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: [
-            { translateX: -10 },
-            { translateY: -10 }
-        ],
-    },
+ 
     controls: {
         position: 'absolute',
         bottom: -60,
