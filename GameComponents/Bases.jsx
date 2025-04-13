@@ -3,10 +3,15 @@ import React from 'react';
 import Player from './Player';
 import { useDispatch, useSelector } from 'react-redux';
 import {
-    enterNewSoldier
+    setCurrentPlayer,
+    moveSoldier,
+    enterNewSoldier,
+    updateBlueCards,
+    updateRedCards
 } from '../assets/store/gameSlice.jsx';
 
-import { directions, playerType } from "../assets/shared/hardCodedData.js";
+
+import {categories, directions, playerType } from "../assets/shared/hardCodedData.js";
 import { MaterialIcons } from '@expo/vector-icons';
 import Feather from '@expo/vector-icons/Feather';
 
@@ -14,12 +19,145 @@ export default function Bases() {
     // Get soldiers from Redux store
     const blueSoldiers = useSelector(state => state.game.blueSoldiers);
     const redSoldiers = useSelector(state => state.game.redSoldiers);
+    const currentPlayer = useSelector(state => state.game.currentPlayer);
+
+    const blueCards = useSelector(state => state.game.blueCards);
+    const redCards = useSelector(state => state.game.redCards);
 
     const dispatch = useDispatch();
 
     const handleEnterNewSoldier = (color) => {
         dispatch(enterNewSoldier({ color }));
     };
+
+    const movePlayer = (color, steps) => {
+        if (!currentPlayer || currentPlayer.isOut) return;
+        if (currentPlayer.color !== color) return; // Check if the current player is the one who is trying to move
+
+
+
+       console.log(checkIfCardUsed(color, steps))  // Check if the card is already used
+
+       if(checkIfCardUsed(color, steps)) return; // Check if the card is already used
+
+        const newPosition = calculateNewPosition(currentPlayer, steps);
+
+        dispatch(moveSoldier({
+            color: currentPlayer.color,
+            position: newPosition,
+            soldierID: currentPlayer.id,
+            steps
+        }));
+        dispatch(setCurrentPlayer({ ...currentPlayer, position: newPosition })); // Clear current player after moving
+   
+  
+    };
+
+    calculateNewPosition = (player, steps) => {
+        console.log("Calculating new position for player: ", player);
+        if (!player.position || player.isOut) return;
+        let numbers = parseInt(player.position.match(/\d+/)[0]);
+        let categorie = player.position.match(/[a-zA-Z]+/)[0];
+
+        console.log("Current Player: ", player);
+
+        if (steps === 1) {
+            numbers = numbers === 12 ? 1 : numbers + 1;
+            categorie = numbers === 1 ? getNextCatergory(categorie) : categorie;
+            if (CheckOutOfBoardCondition(numbers + categorie)) {
+                return "";
+            }
+            return numbers + categorie;
+        }
+
+        for (let i = 0; i < steps; i++) {
+            numbers = numbers === 12 ? 1 : numbers + 1;
+            categorie = numbers === 1 ? getNextCatergory(categorie) : categorie;
+
+            if (CheckOutOfBoardCondition(numbers + categorie)) {
+                return "";
+            }
+        }
+        return numbers + categorie;
+    }
+
+    const getNextCatergory = (currentCategory) => {
+        const currentIndex = categories.indexOf(currentCategory);
+        const nextIndex = (currentIndex + 1) % categories.length;
+        return categories[nextIndex];
+    };
+
+    const CheckOutOfBoardCondition = (position) => {
+
+        switch (currentPlayer.color) {
+            case 'blue':
+                if (position === '6d') {
+                    setCurrentPlayer("")
+                    return true;
+                }
+                break;
+            case 'red':
+                if (position === '6a') {
+                    setCurrentPlayer("")
+                    return true;
+                }
+                break;
+            case 'yellow':
+                if (position === '6b') {
+                    setCurrentPlayer("")
+                    return true;
+                }
+                break;
+            case 'green':
+                if (position === '6c') {
+                    setCurrentPlayer("")
+                    return true;
+                }
+                break;
+            default:
+                break;
+        }
+
+    }
+
+    const checkIfCardUsed = (color, steps) => {
+        
+        if (color === 'blue') {
+            const checkIfareUsed = blueCards.filter(card => card.used === false);
+           
+            
+            if (checkIfareUsed.length === 1) {
+                dispatch(updateBlueCards({ used: false, value: 0, updateAll: true }));
+                return false;
+            }
+            const card = blueCards.find(card => card.value === steps);
+         
+            if(card && card.used) {
+                return true;
+            }
+            dispatch(updateBlueCards({ used: true, value: steps }));
+            return false;
+            
+        }
+        if (color === 'red') {
+            const checkIfareUsed = redCards.filter(card => card.used === false);
+           
+            
+            if (checkIfareUsed.length === 1) {
+                dispatch(updateRedCards({ used: false, value: 0, updateAll: true }));
+                return false;
+            }
+            const card = redCards.find(card => card.value === steps);
+         
+            if(card && card.used) {
+                return true;
+            }
+            dispatch(updateRedCards({ used: true, value: steps }));
+            return false;
+            
+        }
+    }
+    
     const getCorrectArrow = (color) => {
         switch (color) {
             case "red":
@@ -58,27 +196,45 @@ export default function Bases() {
                 <View key={color} style={[styles.circleContainer, styles[directions[i]]]}>
                     <View style={{ flexDirection: 'column' }}>
                         <View style={{ display: "flex" }}>
-                            <Pressable style={[styles.button, { marginVertical: 5 }]} onPress={() => handleEnterNewSoldier(color)}>
-                                <Text style={styles.buttonText}>1</Text>
-                            </Pressable>
-                            <Pressable style={[styles.button, { marginVertical: 5 }]} onPress={() => handleEnterNewSoldier(color)}>
-                                <Text style={styles.buttonText}>2</Text>
-                            </Pressable>
-                            <Pressable style={[styles.button, { marginVertical: 5 }]} onPress={() => handleEnterNewSoldier(color)}>
-                                <Text style={styles.buttonText}>3</Text>
-                            </Pressable>
-                            <Pressable style={[styles.button, { marginVertical: 5 }]} onPress={() => handleEnterNewSoldier(color)}>
-                                <Text style={styles.buttonText}>4</Text>
-                            </Pressable>
-                            <Pressable style={[styles.button, { marginVertical: 5 }]} onPress={() => handleEnterNewSoldier(color)}>
-                                <Text style={styles.buttonText}>5</Text>
-                            </Pressable>
-                            <Pressable style={[styles.button, { marginVertical: 5 }]} onPress={() => handleEnterNewSoldier(color)}>
-                                <Text style={styles.buttonText}>1</Text>
-                            </Pressable>
+                            {blueCards.map((card) => (
+                                color === "blue" && (
+                                    <Pressable 
+                                        key={card.id} 
+                                        disabled={card.used} 
+                                        style={[
+                                            styles.button, 
+                                            { marginVertical: 5 },
+                                            card.used && { backgroundColor: '#ddd', opacity: 0.7 }
+                                        ]} 
+                                        onPress={() => movePlayer(color, card.value)}
+                                    >
+                                        <Text style={[
+                                            styles.buttonText,
+                                            card.used && { color: '#999' }
+                                        ]}>{card.value}</Text>
+                                    </Pressable>
+                                )
+                            ))}
+                            {redCards.map((card) => (
+                                color === "red" && (
+                                    <Pressable 
+                                        key={card.id} 
+                                        disabled={card.used} 
+                                        style={[
+                                            styles.button, 
+                                            { marginVertical: 5 },
+                                            card.used && { backgroundColor: '#ddd', opacity: 0.7 }
+                                        ]} 
+                                        onPress={() => movePlayer(color, card.value)}
+                                    >
+                                        <Text style={[
+                                            styles.buttonText,
+                                            card.used && { color: '#999' }
+                                        ]}>{card.value}</Text>
+                                    </Pressable>
+                                )
+                            ))}
                         </View>
-
-
                     </View>
                     <View style={[styles.corner, styles[color]]}>
                         {[...Array(4)].map((_, j) => (
@@ -182,7 +338,7 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     buttonText: {
-        fontSize: 10,
+        fontSize: 14,
         color: '#333',
         fontWeight: '1000',
     },

@@ -1,15 +1,13 @@
 import { View, Text, Pressable } from "react-native";
-import React, { useState } from 'react';
+import React from 'react';
 import Player from './Player';
 import { MaterialIcons } from '@expo/vector-icons';
-import { boxes, categories, directions, playerType } from "../assets/shared/hardCodedData.js"
+import { boxes } from "../assets/shared/hardCodedData.js"
 import { styles } from "../assets/shared/styles.jsx"
 
 import { useDispatch, useSelector } from 'react-redux';
 import {
-    setCurrentPlayer,
-    moveSoldier,
-    enterNewSoldier
+    setCurrentPlayer
 } from '../assets/store/gameSlice.jsx';
 import Goals from "./Goals.jsx";
 import Bases from "./Bases.jsx";
@@ -22,98 +20,10 @@ export default function SmalBoard() {
     const blueSoldiers = useSelector(state => state.game.blueSoldiers);
     const redSoldiers = useSelector(state => state.game.redSoldiers);
 
-    console.log("Current Player: ", currentPlayer);
-    console.log("Blue Soldiers: ", blueSoldiers);
-    console.log("Red Soldiers: ", redSoldiers);
-
-    const movePlayer = (steps) => {
-        if (!currentPlayer || currentPlayer.isOut) return;
-
-
-        const newPosition = calculateNewPosition(currentPlayer, steps);
-
-        dispatch(moveSoldier({
-            color: currentPlayer.color,
-            position: newPosition,
-            soldierID: currentPlayer.id
-        }));
-        dispatch(setCurrentPlayer({ ...currentPlayer, position: newPosition })); // Clear current player after moving
-
-    };
-
-    const handleEnterNewSoldier = (color) => {
-        dispatch(enterNewSoldier({ color }));
-    };
-
     const currentSelectedPlayer = (selectedPlayer) => {
         dispatch(setCurrentPlayer(selectedPlayer));
     };
 
-    calculateNewPosition = (player, steps) => {
-        console.log("Calculating new position for player: ", player);
-        if (!player.position || player.isOut) return;
-        let numbers = parseInt(player.position.match(/\d+/)[0]);
-        let categorie = player.position.match(/[a-zA-Z]+/)[0];
-
-        console.log("Current Player: ", player);
-
-        if (steps === 1) {
-            numbers = numbers === 12 ? 1 : numbers + 1;
-            categorie = numbers === 1 ? getNextCatergory(categorie) : categorie;
-            if (CheckOutOfBoardCondition(numbers + categorie)) {
-                return "";
-            }
-            return numbers + categorie;
-        }
-
-        for (let i = 0; i < steps; i++) {
-            numbers = numbers === 12 ? 1 : numbers + 1;
-            categorie = numbers === 1 ? getNextCatergory(categorie) : categorie;
-
-            if (CheckOutOfBoardCondition(numbers + categorie)) {
-                return "";
-            }
-        }
-        return numbers + categorie;
-    }
-    const getNextCatergory = (currentCategory) => {
-        const currentIndex = categories.indexOf(currentCategory);
-        const nextIndex = (currentIndex + 1) % categories.length;
-        return categories[nextIndex];
-    };
-
-    const CheckOutOfBoardCondition = (position) => {
-
-        switch (currentPlayer.color) {
-            case 'blue':
-                if (position === '6d') {
-                    setCurrentPlayer("")
-                    return true;
-                }
-                break;
-            case 'red':
-                if (position === '6a') {
-                    setCurrentPlayer("")
-                    return true;
-                }
-                break;
-            case 'yellow':
-                if (position === '6b') {
-                    setCurrentPlayer("")
-                    return true;
-                }
-                break;
-            case 'green':
-                if (position === '6c') {
-                    setCurrentPlayer("")
-                    return true;
-                }
-                break;
-            default:
-                break;
-        }
-
-    }
 
     const renderBox = (number, i) => (
         <View
@@ -132,7 +42,7 @@ export default function SmalBoard() {
                     />
                 )
             )}
-            {redSoldiers.map((soldier, index) =>
+            {redSoldiers.map((soldier) =>
                 soldier.position === number && (
                     <Player
                         key={`red-${soldier.id}`}
@@ -151,24 +61,17 @@ export default function SmalBoard() {
             <View style={styles.controls}>
                 <Pressable
                     style={styles.button}
-                    onPress={() => movePlayer(1)}
+                   
                 >
                     <MaterialIcons name="arrow-forward" size={24} color="black" />
                     <Text style={styles.buttonText}>Move</Text>
                 </Pressable>
                 <Pressable
                     style={styles.button}
-                    onPress={() => movePlayer(3)}
+                 
                 >
                     <MaterialIcons name="casino" size={24} color="black" />
                     <Text style={styles.buttonText}>Roll</Text>
-                </Pressable>
-                <Pressable
-                    style={styles.button}
-                    onPress={() => handleEnterNewSoldier(currentPlayer?.color)}
-                >
-                    <MaterialIcons name="add" size={24} color="black" />
-                    <Text style={styles.buttonText}>Enter</Text>
                 </Pressable>
             </View>
         );
@@ -218,7 +121,6 @@ export default function SmalBoard() {
             </View>
             <Goals />
             <Bases />
-          
         </View>
     );
 }
