@@ -34,6 +34,7 @@ export default function Bases() {
     const dispatch = useDispatch();
 
     const handleEnterNewSoldier = (color) => {
+        checkIfGotEnemy(color, currentPlayer.position)
         dispatch(enterNewSoldier({ color }));
     };
 
@@ -55,29 +56,29 @@ export default function Bases() {
         dispatch(setCurrentPlayer({ ...currentPlayer, position: newPosition })); // Clear current player after moving
 
 
- checkIfGotEnemy(color, newPosition); // Check if the player got an enemy soldier
-    
+        checkIfGotEnemy(color, newPosition); // Check if the player got an enemy soldier
+
     };
     checkIfGotEnemy = (color, position) => {
         let checkIfGotEnemy = [];
         if (!position) return;
         switch (color) {
             case 'blue':
-            const enemySoldiers = [...redSoldiers, ...yellowSoldiers, ...greenSoldiers];
-            checkIfGotEnemy = enemySoldiers.filter(soldier => soldier.position === position);
-            break;
+                const enemySoldiers = [...redSoldiers, ...yellowSoldiers, ...greenSoldiers];
+                checkIfGotEnemy = enemySoldiers.filter(soldier => soldier.position === position);
+                break;
             case 'red':
-            const redEnemySoldiers = [...blueSoldiers, ...yellowSoldiers, ...greenSoldiers];
-            checkIfGotEnemy = redEnemySoldiers.filter(soldier => soldier.position === position);
-            break;
+                const redEnemySoldiers = [...blueSoldiers, ...yellowSoldiers, ...greenSoldiers];
+                checkIfGotEnemy = redEnemySoldiers.filter(soldier => soldier.position === position);
+                break;
             case 'yellow':
-            const yellowEnemySoldiers = [...redSoldiers, ...blueSoldiers, ...greenSoldiers];
-            checkIfGotEnemy = yellowEnemySoldiers.filter(soldier => soldier.position === position);
-            break;
+                const yellowEnemySoldiers = [...redSoldiers, ...blueSoldiers, ...greenSoldiers];
+                checkIfGotEnemy = yellowEnemySoldiers.filter(soldier => soldier.position === position);
+                break;
             case 'green':
-            const greenEnemySoldiers = [...redSoldiers, ...yellowSoldiers, ...blueSoldiers];
-            checkIfGotEnemy = greenEnemySoldiers.filter(soldier => soldier.position === position);
-            break;
+                const greenEnemySoldiers = [...redSoldiers, ...yellowSoldiers, ...blueSoldiers];
+                checkIfGotEnemy = greenEnemySoldiers.filter(soldier => soldier.position === position);
+                break;
         }
         if (checkIfGotEnemy.length === 1) {
             dispatch(moveSoldier({
@@ -88,7 +89,7 @@ export default function Bases() {
                 , returenToBase: true
             }));
         }
-       
+
     }
 
     calculateNewPosition = (player, steps) => {
@@ -444,11 +445,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         padding: 10,
+        paddingHorizontal: 15,
         backgroundColor: '#f0f0f0',
         borderRadius: 8,
         borderWidth: 1,
         borderColor: '#ccc',
-        gap: 8,
+        gap: 8
     },
     buttonText: {
         fontSize: 14,

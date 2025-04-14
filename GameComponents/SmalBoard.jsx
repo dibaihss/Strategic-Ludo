@@ -1,8 +1,13 @@
-import { View, Text, Pressable } from "react-native";
+import {
+    View,
+    Text,
+    Pressable
+  } from 'react-native';
 import React from 'react';
 import Player from './Player';
 import { boxes } from "../assets/shared/hardCodedData.js"
 import { styles } from "../assets/shared/styles.jsx"
+import { MaterialIcons } from '@expo/vector-icons';
 
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -13,6 +18,9 @@ import Bases from "./Bases.jsx";
 
 
 export default function SmalBoard() {
+ 
+
+      let elementPositions = []
 
     const dispatch = useDispatch();
     const currentPlayer = useSelector(state => state.game.currentPlayer);
@@ -24,13 +32,21 @@ export default function SmalBoard() {
     const currentSelectedPlayer = (selectedPlayer) => {
         dispatch(setCurrentPlayer(selectedPlayer));
     };
-
+ 
+        const saveElementsPositions = (x, y, number) =>{
+          elementPositions.push([y, x, number][1])
+       
+        //   console.log(elementPositions)
+        }
 
     const renderBox = (number, i) => (
         <View
-            // Fix: Use string concatenation for the key instead of addition
             key={`box-${i}-${number}`}
             style={[styles.verbBox, { position: 'relative' }]}
+            onLayout={(event) => {
+                const { x, y } = event.nativeEvent.layout;
+                saveElementsPositions({ x, y,number });
+            }}
         >
             <Text style={styles.verbText}>{number}</Text>
             {blueSoldiers.map((soldier, index) =>
@@ -77,26 +93,24 @@ export default function SmalBoard() {
     );
 
 
-    // const renderControls = () => {
-    //     return (
-    //         <View style={styles.controls}>
-    //             <Pressable
-    //                 style={styles.button}
-                   
-    //             >
-    //                 <MaterialIcons name="arrow-forward" size={24} color="black" />
-    //                 <Text style={styles.buttonText}>Move</Text>
-    //             </Pressable>
-    //             <Pressable
-    //                 style={styles.button}
-                 
-    //             >
-    //                 <MaterialIcons name="casino" size={24} color="black" />
-    //                 <Text style={styles.buttonText}>Roll</Text>
-    //             </Pressable>
-    //         </View>
-    //     );
-    // };
+    const renderControls = () => {
+        return (
+            <View style={styles.controls}>
+                <Pressable
+                    style={styles.button}
+                    onPress={() => {
+                        // Example: Move current player to position "24"
+                        
+                            console.log("fdsfgfd")
+                        
+                    }}
+                >
+                    <MaterialIcons name="casino" size={24} color="black" />
+                    <Text style={styles.buttonText}>Roll</Text>
+                </Pressable>
+            </View>
+        );
+    };
 
     return (
         <View style={styles.container}>
@@ -137,7 +151,7 @@ export default function SmalBoard() {
                     </View>
                 </View>
 
-                {/* {renderControls()} */}
+                {renderControls()}
 
             </View>
             <Goals />
