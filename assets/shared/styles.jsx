@@ -6,7 +6,7 @@ export const styles = StyleSheet.create({
         width: 120,
         height: 120,
         borderRadius: 60,
-        backgroundColor: 'white',
+        backgroundColor: '#f8f8f8',
         borderWidth: 2,
         borderColor: '#000',
         overflow: 'hidden',
@@ -33,9 +33,9 @@ export const styles = StyleSheet.create({
     },
     container: {
         flex: 1,
-        backgroundColor: "#fff",
         justifyContent: "center",
         alignItems: "center",
+        backgroundColor: '#e6e9f0',
     },
     cross: {
         position: "absolute",
@@ -46,8 +46,8 @@ export const styles = StyleSheet.create({
     },
     verticalContainer: {
         position: "absolute",
-        top: 80,  // Reduced from 100 to give more room
-        bottom: 80, // Reduced from 100 to give more room
+        top: 80,
+        bottom: 80,
         width: 50,
         flexDirection: "column",
         justifyContent: "space-between",
@@ -55,8 +55,8 @@ export const styles = StyleSheet.create({
     },
     horizontalContainer: {
         position: "absolute",
-        left: 80,  // Reduced from 100
-        right: 80, // Reduced from 100
+        left: 80,
+        right: 80,
         height: 50,
         flexDirection: "row",
         justifyContent: "space-between",
@@ -65,18 +65,18 @@ export const styles = StyleSheet.create({
     verticalColumn: {
         width: "auto",
         padding: 3,
-        marginHorizontal: 15, // Added margin between columns
+        marginHorizontal: 15,
     },
     horizontalRow: {
         width: "auto",
         padding: 3,
-        marginVertical: 15, // Added margin between rows
+        marginVertical: 15,
         transform: [{ rotate: "-90deg" }],
     },
     verbBox: {
-        backgroundColor: "#eee",
+        backgroundColor: "#f0f4f8",
         borderWidth: 1,
-        borderColor: "#ccc",
+        borderColor: "#d1d9e6",
         padding: 6,
         margin: 2,
         width: 40,
@@ -89,13 +89,12 @@ export const styles = StyleSheet.create({
         textAlign: 'center',
         fontSize: 14,
     },
- 
     controls: {
         position: 'absolute',
         bottom: -60,
         flexDirection: 'row',
         gap: 20,
-        backgroundColor: '#fff',
+        backgroundColor: '#ffffff',
         padding: 10,
         borderRadius: 10,
         shadowColor: '#000',
@@ -108,15 +107,15 @@ export const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         padding: 10,
-        backgroundColor: '#f0f0f0',
+        backgroundColor: '#e8ecf4',
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: '#ccc',
+        borderColor: '#d1d9e6',
         gap: 8,
     },
     buttonText: {
         fontSize: 16,
-        color: '#333',
+        color: '#2a3f5f',
         fontWeight: '500',
     },
 });

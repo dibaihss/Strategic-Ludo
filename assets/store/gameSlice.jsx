@@ -220,7 +220,9 @@ export const {
     moveSoldier,
     enterNewSoldier,
     updateBlueCards,
-    updateRedCards
+    updateRedCards,
+    updateYellowCards,
+    updateGreenCards
 } = gameSlice.actions;
 
 export default gameSlice.reducer;

@@ -7,7 +7,10 @@ import {
     moveSoldier,
     enterNewSoldier,
     updateBlueCards,
-    updateRedCards
+    updateRedCards,
+    updateYellowCards,
+    updateGreenCards,
+
 } from '../assets/store/gameSlice.jsx';
 
 
@@ -52,48 +55,40 @@ export default function Bases() {
         dispatch(setCurrentPlayer({ ...currentPlayer, position: newPosition })); // Clear current player after moving
 
 
-
-        // Redudances
-        if (currentPlayer.color === 'blue') {
-            const checkIfGotEnemy = redSoldiers.filter(soldier => soldier.position === newPosition);
-            //    console.log("checkIfGotEnemy", checkIfGotEnemy , currentPlayer.position);
-            if (checkIfGotEnemy.length === 1) {
-                dispatch(moveSoldier({
-                    color: 'red',
-                    position: checkIfGotEnemy[0].initialPosition,
-                    soldierID: checkIfGotEnemy[0].id,
-                    steps: 0
-                    , returenToBase: true
-                }));
-            }
-        }
-
-        if (currentPlayer.color === 'red') {
-            const checkIfGotEnemy = blueSoldiers.filter(soldier => soldier.position === newPosition);
-            //    console.log("checkIfGotEnemy", checkIfGotEnemy , currentPlayer.position);
-            if (checkIfGotEnemy.length === 1) {
-                dispatch(moveSoldier({
-                    color: 'blue',
-                    position: checkIfGotEnemy[0].initialPosition,
-                    soldierID: checkIfGotEnemy[0].id,
-                    steps: 0,
-                    returenToBase: true
-                }));
-            }
-        }
+ checkIfGotEnemy(color, newPosition); // Check if the player got an enemy soldier
+    
     };
     checkIfGotEnemy = (color, position) => {
-        if (color === "red") {
-            const enemySoldiers = [...blueSoldiers];
+        let checkIfGotEnemy = [];
+        if (!position) return;
+        switch (color) {
+            case 'blue':
+            const enemySoldiers = [...redSoldiers, ...yellowSoldiers, ...greenSoldiers];
+            checkIfGotEnemy = enemySoldiers.filter(soldier => soldier.position === position);
+            break;
+            case 'red':
+            const redEnemySoldiers = [...blueSoldiers, ...yellowSoldiers, ...greenSoldiers];
+            checkIfGotEnemy = redEnemySoldiers.filter(soldier => soldier.position === position);
+            break;
+            case 'yellow':
+            const yellowEnemySoldiers = [...redSoldiers, ...blueSoldiers, ...greenSoldiers];
+            checkIfGotEnemy = yellowEnemySoldiers.filter(soldier => soldier.position === position);
+            break;
+            case 'green':
+            const greenEnemySoldiers = [...redSoldiers, ...yellowSoldiers, ...blueSoldiers];
+            checkIfGotEnemy = greenEnemySoldiers.filter(soldier => soldier.position === position);
+            break;
         }
-        if (color === 'blue') {
-            const checkIfGotEnemy = redSoldiers.filter(soldier => soldier.position === position);
-            return checkIfGotEnemy.length === 1;
-        } else if (color === 'red') {
-            const checkIfGotEnemy = blueSoldiers.filter(soldier => soldier.position === position);
-            return checkIfGotEnemy.length === 1;
+        if (checkIfGotEnemy.length === 1) {
+            dispatch(moveSoldier({
+                color: checkIfGotEnemy[0].color,
+                position: checkIfGotEnemy[0].initialPosition,
+                soldierID: checkIfGotEnemy[0].id,
+                steps: 0
+                , returenToBase: true
+            }));
         }
-        return false;
+       
     }
 
     calculateNewPosition = (player, steps) => {
@@ -199,6 +194,41 @@ export default function Bases() {
             return false;
 
         }
+        if (color === 'yellow') {
+            const checkIfareUsed = yellowCards.filter(card => card.used === false);
+
+
+            if (checkIfareUsed.length === 1) {
+                dispatch(updateYellowCards({ used: false, value: 0, updateAll: true }));
+                return false;
+            }
+            const card = yellowCards.find(card => card.value === steps);
+
+            if (card && card.used) {
+                return true;
+            }
+            dispatch(updateYellowCards({ used: true, value: steps }));
+            return false;
+
+        }
+        if (color === 'green') {
+            const checkIfareUsed = greenCards.filter(card => card.used === false);
+
+
+            if (checkIfareUsed.length === 1) {
+                dispatch(updateGreenCards({ used: false, value: 0, updateAll: true }));
+                return false;
+            }
+            const card = greenCards.find(card => card.value === steps);
+
+            if (card && card.used) {
+                return true;
+            }
+            dispatch(updateGreenCards({ used: true, value: steps }));
+            return false;
+
+        }
+
     }
 
     const getCorrectArrow = (color) => {
