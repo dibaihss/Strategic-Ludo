@@ -12,6 +12,7 @@ import {
     updateGreenCards,
 
 } from '../assets/store/gameSlice.jsx';
+import { setBoxesPosition, setShowClone } from '../assets/store/animationSlice.jsx'
 
 
 import { categories, directions, playerType } from "../assets/shared/hardCodedData.js";
@@ -31,22 +32,13 @@ export default function Bases() {
     const redCards = useSelector(state => state.game.redCards);
     const yellowCards = useSelector(state => state.game.yellowCards);
     const greenCards = useSelector(state => state.game.greenCards);
-    const boxesPosition = useSelector(state => state.animation.boxesPosition)
+    // const boxesPosition = useSelector(state => state.animation.boxesPosition)
 
     const dispatch = useDispatch();
     const [animationTarget, setAnimationTarget] = useState(null);
     const [initialPos, setInitialPos] = useState();
 
 
-
-    const startNewAnimation = (pos) => {
-       
-        // Set new target coordinates
-        setAnimationTarget({
-            x: pos.x,
-            y: pos.y
-        });
-    };
 
     const handleEnterNewSoldier = (color) => {
         checkIfGotEnemy(color, currentPlayer.position)
@@ -56,47 +48,43 @@ export default function Bases() {
     const movePlayer = (color, steps) => {
         if (!currentPlayer || currentPlayer.isOut) return;
         if (currentPlayer.color !== color) return; // Check if the current player is the one who is trying to move
-
-        console.log(boxesPosition)
+         
+        
 
         if (checkIfCardUsed(color, steps)) return; // Check if the card is already used
 
         const newPosition = calculateNewPosition(currentPlayer, steps);
 
-        console.log(newPosition)
-        if(boxesPosition.length > 1){
-            const findTargetBox = boxesPosition.find(box => {
-                return box.number ===  newPosition
-            })
-            const findSourceBox = boxesPosition.find(box => {
-                return box.number ===  currentPlayer.position
-            })
+        dispatch(setShowClone(false))
+        dispatch(setBoxesPosition({xSteps: 1, ySteps: steps, newPosition}))
 
-            if(findTargetBox && findSourceBox){
-                console.log(findSourceBox, findTargetBox)
-                setInitialPos({ x: findSourceBox.x + 50, y: findSourceBox.y - 350})
+        // if(boxesPosition.length > 1){
+        //     const findTargetBox = boxesPosition.find(box => {
+        //         return box.number ===  newPosition
+        //     })
+        //     const findSourceBox = boxesPosition.find(box => {
+        //         return box.number ===  currentPlayer.position
+        //     })
+
+        //     if(findTargetBox && findSourceBox){
+        //         console.log(findSourceBox, findTargetBox)
+        //         setInitialPos({ x: findSourceBox.x + 50, y: findSourceBox.y - 350})
 
             
-                setAnimationTarget({ x: 200, y: 300 });
+        //         setAnimationTarget({ x: 200, y: 300 });
               
-            }
-        }
+        //     }
+        // }
 
-       
-      
+        // dispatch(moveSoldier({
+        //     color: currentPlayer.color,
+        //     position: newPosition,
+        //     soldierID: currentPlayer.id,
+        //     steps
+        // }));
+        // Clear current player after moving
 
-
-        dispatch(moveSoldier({
-            color: currentPlayer.color,
-            position: newPosition,
-            soldierID: currentPlayer.id,
-            steps
-        }));
-        dispatch(setCurrentPlayer({ ...currentPlayer, position: newPosition })); // Clear current player after moving
-
-
-        checkIfGotEnemy(color, newPosition); // Check if the player got an enemy soldier
-
+        // checkIfGotEnemy(color, newPosition); // Check if the player got an enemy soldier
 
     };
     checkIfGotEnemy = (color, position) => {
@@ -133,12 +121,10 @@ export default function Bases() {
     }
 
     calculateNewPosition = (player, steps) => {
-        console.log("Calculating new position for player: ", player);
         if (!player.position || player.isOut) return;
         let numbers = parseInt(player.position.match(/\d+/)[0]);
         let categorie = player.position.match(/[a-zA-Z]+/)[0];
 
-        console.log("Current Player: ", player);
 
         if (steps === 1) {
             numbers = numbers === 12 ? 1 : numbers + 1;

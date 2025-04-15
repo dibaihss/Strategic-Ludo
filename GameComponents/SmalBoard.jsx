@@ -1,8 +1,7 @@
 import {
     View,
     Text,
-    Pressable,
-    TouchableWithoutFeedback
+    Pressable
 } from 'react-native';
 import React from 'react';
 import Player from './Player';
@@ -15,12 +14,13 @@ import {
     setCurrentPlayer
 } from '../assets/store/gameSlice.jsx';
 
-import { setBoxesPosition } from '../assets/store/animationSlice.jsx'
+
 import Goals from "./Goals.jsx";
 import Bases from "./Bases.jsx";
 
 
 export default function SmalBoard() {
+
 
 
     let elementPositions = []
@@ -41,19 +41,14 @@ export default function SmalBoard() {
         elementPositions.push([y, x, number][1])
 
         if (elementPositions.length === 48) {
-            dispatch(setBoxesPosition(elementPositions))
+            // dispatch(setBoxesPosition(elementPositions))
         }
     }
 
-    const getClickPosition = (event) => {
-        const { pageX, pageY } = event.nativeEvent;
-        console.log('Click position:', { x: pageX, y: pageY });
-        return { x: pageX, y: pageY };
-    };
+
 
 
     const renderBox = (number, i) => (
-        <TouchableWithoutFeedback onPress={(event) => getClickPosition(event)}>
         <View
             key={`box-${i}-${number}`}
             style={[styles.verbBox, { position: 'relative' }]}
@@ -104,7 +99,6 @@ export default function SmalBoard() {
                 )
             )}
         </View>
-        </TouchableWithoutFeedback>
     );
 
 
@@ -113,6 +107,7 @@ export default function SmalBoard() {
             <View style={styles.controls}>
                 <Pressable
                     style={styles.button}
+                
                 >
                     <MaterialIcons name="casino" size={24} color="black" />
                     <Text style={styles.buttonText}>Roll</Text>
