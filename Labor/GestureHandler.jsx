@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import { StyleSheet, Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -8,59 +8,57 @@ import Animated, {
 } from 'react-native-reanimated';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 
-export default function GesturePlayer({ color, isSelected }) {
+export default function GesturePlayer({ color, isSelected, initialPosition, startMovinAnim }) {
     const isPressed = useSharedValue(false);
+    const isAnimating = useSharedValue(true);
     // Set initial position coordinates
-    const initialPosition = { x: 5, y: 200 }; // Adjust these values as needed
+    // const initialPosition = { x: 5, y: 200 }; // Adjust these values as needed
+
     const offset = useSharedValue(initialPosition);
     const start = useSharedValue(initialPosition);
 
-//   const moveToPosition = (targetX, targetY) => {
-//     offset.value = withSpring({
-//       x: targetX,
-//       y: targetY
-//     }, {
-//       damping: 20,
-//       stiffness: 90
-//     });
-//     // Update start value to maintain the new position
-//     start.value = {
-//       x: targetX,
-//       y: targetY
-//     };
-//   };
+ React.useEffect(() => {
+        if (startMovinAnim) {
+            moveToPosition(startMovinAnim.x, startMovinAnim.y);
+        }
+    }, [startMovinAnim]);
 
- // Add function to trigger movement
-
- const moveToPosition = (targetX, targetY) => {
-    // First move in X direction
-    offset.value = withSpring({
-      x: targetX,
-      y: offset.value.y
-    }, {
-      damping: 20,
-      stiffness: 90,
-      duration: 600,
-    }, (finished) => {
-      if (finished) {
-        // Then move in Y direction after X movement is complete
+    const moveToPosition = (targetX, targetY) => {
+        isAnimating.value = true;
         offset.value = withSpring({
-          x: targetX,
-          y: targetY
+            x: offset.value.x,
+            y: targetY
         }, {
-          damping: 20,
-          stiffness: 90,
-          duration: 600,
+            damping: 20,
+            stiffness: 90,
+            duration: 600,
+        }, (finished) => {
+            if (finished) {
+                offset.value = withSpring({
+                    x: targetX,
+                    y: targetY
+                }, {
+                    damping: 20,
+                    stiffness: 90,
+                    duration: 600,
+                }, () => {
+                    // Return to original position after animation
+                    offset.value = withSpring({
+                        x: initialPosition.x,
+                        y: initialPosition.y
+                    }, {
+                        damping: 20,
+                        stiffness: 90,
+                        duration: 600,
+                    }, () => {
+                        isAnimating.value = false;
+                        start.value = initialPosition;
+                    });
+                });
+            }
         });
-      }
-    });
-  
-    // Update final position
-    start.value = {
-      x: targetX,
-      y: targetY
+        
     };
-  };
 
 
   const gesture = Gesture.Pan()
@@ -83,46 +81,49 @@ export default function GesturePlayer({ color, isSelected }) {
       isPressed.value = false;
     });
 
-  const animatedStyles = useAnimatedStyle(() => {
-    return {
-      transform: [
-        { translateX: offset.value.x },
-        { translateY: offset.value.y },
-        { scale: withSpring(isPressed.value ? 1.2 : 1) },
-      ],
-    };
-  });
+    const animatedStyles = useAnimatedStyle(() => {
+        return {
+            transform: [
+                { translateX: offset.value.x },
+                { translateY: offset.value.y },
+                { scale: withSpring(isPressed.value ? 1.2 : 1) },
+            ],
+            opacity: withSpring(isAnimating.value ? 1 : 0), // Fade out when animation ends
+            display: isAnimating.value ? 'flex' : 'none',
+        };
+    });
 
   return (
-    <>
-      <Pressable
-        onPress={() => moveToPosition(200, 300)} // Move to x: 200 when pressed
-        style={styles.button}
-      >
+  
         <GestureDetector gesture={gesture}>
-          <Animated.View
-            style={[
-              styles.player,
-              animatedStyles,
-              {
-                backgroundColor: color,
-                borderWidth: isSelected ? 5 : 2,
-                borderColor: isSelected ? "black" : 'white',
-              },
-            ]}
-          />
+            <Animated.View
+                style={[
+                    styles.player,
+                    animatedStyles,
+                    {
+                        backgroundColor: color,
+                        borderWidth: isSelected ? 5 : 2,
+                        borderColor: isSelected ? "black" : 'white',
+                    },
+                ]}
+            />
         </GestureDetector>
-      </Pressable>
-    </>
-  );
+    );
+ 
 }
 
 const styles = StyleSheet.create({
   player: {
-    width: 25,
-    height: 25,
+    width: 30,
+    height: 30,
     borderRadius: 12.5,
     position: 'absolute',
-    zIndex: 3,
+    zIndex: 10000,
+    padding: 15
+    // bottom: 0,
+    // top: 0,
+    // left: 0,
+    // right: 0
+    
   },
 });

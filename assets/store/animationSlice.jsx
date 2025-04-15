@@ -4,7 +4,8 @@ const initialState = {
     sourcePosition: null,
     targetPosition: null,
     showClone: false,
-    animatedValue: { x: 0, y: 0 }
+    animatedValue: { x: 0, y: 0 },
+    boxesPosition: null
 };
 
 const animationSlice = createSlice({
@@ -22,6 +23,9 @@ const animationSlice = createSlice({
         },
         setAnimatedValue: (state, action) => {
             state.animatedValue = action.payload;
+        },
+        setBoxesPosition: (state, action) => {
+            state.boxesPosition = action.payload
         }
     }
 });
@@ -30,7 +34,8 @@ export const {
     setSourcePosition, 
     setTargetPosition, 
     setShowClone, 
-    setAnimatedValue 
+    setAnimatedValue,
+    setBoxesPosition
 } = animationSlice.actions;
 
 export default animationSlice.reducer;

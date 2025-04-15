@@ -1,8 +1,9 @@
 import {
     View,
     Text,
-    Pressable
-  } from 'react-native';
+    Pressable,
+    TouchableWithoutFeedback
+} from 'react-native';
 import React from 'react';
 import Player from './Player';
 import { boxes } from "../assets/shared/hardCodedData.js"
@@ -13,14 +14,16 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
     setCurrentPlayer
 } from '../assets/store/gameSlice.jsx';
+
+import { setBoxesPosition } from '../assets/store/animationSlice.jsx'
 import Goals from "./Goals.jsx";
 import Bases from "./Bases.jsx";
 
 
 export default function SmalBoard() {
- 
 
-      let elementPositions = []
+
+    let elementPositions = []
 
     const dispatch = useDispatch();
     const currentPlayer = useSelector(state => state.game.currentPlayer);
@@ -29,23 +32,34 @@ export default function SmalBoard() {
     const yellowSoldiers = useSelector(state => state.game.yellowSoldiers);
     const greenSoldiers = useSelector(state => state.game.greenSoldiers);
 
+
     const currentSelectedPlayer = (selectedPlayer) => {
         dispatch(setCurrentPlayer(selectedPlayer));
     };
- 
-        const saveElementsPositions = (x, y, number) =>{
-          elementPositions.push([y, x, number][1])
-       
-        //   console.log(elementPositions)
+
+    const saveElementsPositions = (x, y, number) => {
+        elementPositions.push([y, x, number][1])
+
+        if (elementPositions.length === 48) {
+            dispatch(setBoxesPosition(elementPositions))
         }
+    }
+
+    const getClickPosition = (event) => {
+        const { pageX, pageY } = event.nativeEvent;
+        console.log('Click position:', { x: pageX, y: pageY });
+        return { x: pageX, y: pageY };
+    };
+
 
     const renderBox = (number, i) => (
+        <TouchableWithoutFeedback onPress={(event) => getClickPosition(event)}>
         <View
             key={`box-${i}-${number}`}
             style={[styles.verbBox, { position: 'relative' }]}
             onLayout={(event) => {
                 const { x, y } = event.nativeEvent.layout;
-                saveElementsPositions({ x, y,number });
+                saveElementsPositions({ x, y, number });
             }}
         >
             <Text style={styles.verbText}>{number}</Text>
@@ -90,6 +104,7 @@ export default function SmalBoard() {
                 )
             )}
         </View>
+        </TouchableWithoutFeedback>
     );
 
 
@@ -98,12 +113,6 @@ export default function SmalBoard() {
             <View style={styles.controls}>
                 <Pressable
                     style={styles.button}
-                    onPress={() => {
-                        // Example: Move current player to position "24"
-                        
-                            console.log("fdsfgfd")
-                        
-                    }}
                 >
                     <MaterialIcons name="casino" size={24} color="black" />
                     <Text style={styles.buttonText}>Roll</Text>

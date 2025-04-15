@@ -1,5 +1,5 @@
-import { View, Pressable, Text, StyleSheet } from "react-native";
-import React from 'react';
+import { View, Pressable, Text, StyleSheet,Button } from "react-native";
+import React, {useState} from 'react';
 import Player from './Player';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -17,6 +17,7 @@ import {
 import { categories, directions, playerType } from "../assets/shared/hardCodedData.js";
 import { MaterialIcons } from '@expo/vector-icons';
 import Feather from '@expo/vector-icons/Feather';
+import GesturePlayer from "../Labor/GestureHandler.jsx";
 
 export default function Bases() {
     // Get soldiers from Redux store
@@ -30,8 +31,22 @@ export default function Bases() {
     const redCards = useSelector(state => state.game.redCards);
     const yellowCards = useSelector(state => state.game.yellowCards);
     const greenCards = useSelector(state => state.game.greenCards);
+    const boxesPosition = useSelector(state => state.animation.boxesPosition)
 
     const dispatch = useDispatch();
+    const [animationTarget, setAnimationTarget] = useState(null);
+    const [initialPos, setInitialPos] = useState();
+
+
+
+    const startNewAnimation = (pos) => {
+       
+        // Set new target coordinates
+        setAnimationTarget({
+            x: pos.x,
+            y: pos.y
+        });
+    };
 
     const handleEnterNewSoldier = (color) => {
         checkIfGotEnemy(color, currentPlayer.position)
@@ -42,10 +57,34 @@ export default function Bases() {
         if (!currentPlayer || currentPlayer.isOut) return;
         if (currentPlayer.color !== color) return; // Check if the current player is the one who is trying to move
 
+        console.log(boxesPosition)
 
         if (checkIfCardUsed(color, steps)) return; // Check if the card is already used
 
         const newPosition = calculateNewPosition(currentPlayer, steps);
+
+        console.log(newPosition)
+        if(boxesPosition.length > 1){
+            const findTargetBox = boxesPosition.find(box => {
+                return box.number ===  newPosition
+            })
+            const findSourceBox = boxesPosition.find(box => {
+                return box.number ===  currentPlayer.position
+            })
+
+            if(findTargetBox && findSourceBox){
+                console.log(findSourceBox, findTargetBox)
+                setInitialPos({ x: findSourceBox.x + 50, y: findSourceBox.y - 350})
+
+            
+                setAnimationTarget({ x: 200, y: 300 });
+              
+            }
+        }
+
+       
+      
+
 
         dispatch(moveSoldier({
             color: currentPlayer.color,
@@ -57,6 +96,7 @@ export default function Bases() {
 
 
         checkIfGotEnemy(color, newPosition); // Check if the player got an enemy soldier
+
 
     };
     checkIfGotEnemy = (color, position) => {
@@ -268,6 +308,13 @@ export default function Bases() {
 
     return (
         <>
+{ initialPos && <GesturePlayer
+                color={currentPlayer.color}
+                isSelected={true}
+                initialPosition={initialPos}
+                startMovinAnim={animationTarget}
+            />}
+            {/* <Button title="Move Player" onPress={triggerMovement} /> */}
             {playerType.map((color, i) => (
                 <View key={color} style={[styles.circleContainer, styles[directions[i]]]}>
                     <View style={{ flexDirection: 'column' }}>

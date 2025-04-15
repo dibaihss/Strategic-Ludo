@@ -2,8 +2,6 @@ import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
     currentPlayer: null,
-    sourceElement: null,
-    TargetElement: null,
     blueSoldiers: [
         { id: 1, position: '1a', color: "blue", initialPosition: '1blue', onBoard: true, isOut: false },
         { id: 2, position: '2blue', color: "blue", initialPosition: '2blue', onBoard: false, isOut: false },
@@ -67,26 +65,10 @@ const initialState = {
 export const gameSlice = createSlice({
     name: 'game',
     initialState,
-    reducers: {
-        //   moveElement:  async (state, action) => {
-        //     const {}
-        //         if (sourcePosition && targetPosition) {
-        //             animatedValue.setValue({ x: sourcePosition.x, y: sourcePosition.y });
-        //             setShowClone(true);
-        
-        //             Animated.timing(animatedValue, {
-        //                 toValue: { x: targetPosition.x, y: targetPosition.y }, // Animate both X and Y directions
-        //                 duration: 600,
-        //                 useNativeDriver: false,
-        //             }).start(() => {
-        //                 setShowClone(false);
-        //             });
-        //         }
-           
+    reducers: {   
         setCurrentPlayer: (state, action) => {
             state.currentPlayer = action.payload;
         },
-        // set
         updateBlueCards: (state, action) => {
             const { used, value, updateAll } = action.payload;
             if (updateAll) {
