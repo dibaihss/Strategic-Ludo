@@ -1,23 +1,16 @@
 import {
     View,
     Text,
-    Pressable,
     StyleSheet
 } from 'react-native';
 import React from 'react';
 import Player from './Player';
 import { boxes } from "../assets/shared/hardCodedData.js"
-
-
-
 import { useDispatch, useSelector } from 'react-redux';
 import {
     setCurrentPlayer
 } from '../assets/store/gameSlice.jsx';
 
-
-import Goals from "./Goals.jsx";
-import Bases from "./Bases.jsx";
 
 
 export default function SmalBoard() {
@@ -35,7 +28,6 @@ export default function SmalBoard() {
 
 
     const currentSelectedPlayer = (selectedPlayer) => {
-        console.log("sssssss")
         dispatch(setCurrentPlayer(selectedPlayer));
     };
 
@@ -47,8 +39,6 @@ export default function SmalBoard() {
             // dispatch(setBoxesPosition(elementPositions))
         }
     }
-
-
 
 
     const renderBox = (number, i) => (
@@ -117,6 +107,8 @@ export default function SmalBoard() {
     // };
 
     return (
+
+
         <View style={styles.board}>
             {/* Columns container */}
             <View style={styles.columnsContainer}>
@@ -138,6 +130,7 @@ export default function SmalBoard() {
                 </View>
             </View>
         </View>
+
     );
 }
 
@@ -156,10 +149,10 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         width: 5, // Adjust based on your needs
-        left: "45%",
+        left: "50%",
         // bottom: "4%"
         display: "flex",
-        justifyContent: "flex-start"
+        justifyContent: "center"
     },
 
     rowsContainer: {
@@ -202,20 +195,5 @@ const styles = StyleSheet.create({
     verbText: {
         textAlign: 'center',
         fontSize: 14,
-    },
-    button: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 10,
-        backgroundColor: '#e8ecf4',
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#d1d9e6',
-        gap: 8,
-    },
-    buttonText: {
-        fontSize: 16,
-        color: '#2a3f5f',
-        fontWeight: '500',
     },
 });

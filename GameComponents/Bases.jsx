@@ -1,5 +1,5 @@
-import { View, Pressable, Text, StyleSheet,Button } from "react-native";
-import React, {useState} from 'react';
+import { View, Pressable, Text, StyleSheet, Button } from "react-native";
+import React, { useState } from 'react';
 import Player from './Player';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -15,7 +15,7 @@ import {
 import { setBoxesPosition, setShowClone } from '../assets/store/animationSlice.jsx'
 
 
-import { categories, directions, playerType } from "../assets/shared/hardCodedData.js";
+import { boxes, categories, directions, playerType } from "../assets/shared/hardCodedData.js";
 import { MaterialIcons } from '@expo/vector-icons';
 import Feather from '@expo/vector-icons/Feather';
 
@@ -45,15 +45,17 @@ export default function Bases() {
     const movePlayer = (color, steps) => {
         if (!currentPlayer || currentPlayer.isOut) return;
         if (currentPlayer.color !== color) return; // Check if the current player is the one who is trying to move
-         
-        
+
+
 
         if (checkIfCardUsed(color, steps)) return; // Check if the card is already used
 
         const newPosition = calculateNewPosition(currentPlayer, steps);
 
+        getXStepsYSteps(currentPlayer.position, newPosition)
+
         dispatch(setShowClone(false))
-        dispatch(setBoxesPosition({xSteps: 1, ySteps: steps, newPosition}))
+        dispatch(setBoxesPosition({ xSteps: 1, ySteps: steps, newPosition }))
 
         // if(boxesPosition.length > 1){
         //     const findTargetBox = boxesPosition.find(box => {
@@ -67,9 +69,9 @@ export default function Bases() {
         //         console.log(findSourceBox, findTargetBox)
         //         setInitialPos({ x: findSourceBox.x + 50, y: findSourceBox.y - 350})
 
-            
+
         //         setAnimationTarget({ x: 200, y: 300 });
-              
+
         //     }
         // }
 
@@ -84,6 +86,31 @@ export default function Bases() {
         // checkIfGotEnemy(color, newPosition); // Check if the player got an enemy soldier
 
     };
+    const getXStepsYSteps = (sourcePos, targetPos) => {
+
+        let categorieTar = targetPos.match(/[a-zA-Z]+/)[0];
+        let categorieSou = sourcePos.match(/[a-zA-Z]+/)[0];
+
+        console.log(categorieSou, categorieTar)
+        if (categorieSou === categorieTar) {
+
+
+        }
+        const row1 = boxes.row1.find(box => box === targetPos || box === sourcePos);
+        const row2 = boxes.row2.find(box => box === targetPos || box === sourcePos);
+
+
+        if (row2) console.log(row2)
+
+        if (row1 && row2) {
+
+        } else if (row1) {
+            console.log(row1)
+        } else if (row2) {
+            console.log(row2)
+        }
+
+    }
     checkIfGotEnemy = (color, position) => {
         let checkIfGotEnemy = [];
         if (!position) return;
@@ -183,7 +210,6 @@ export default function Bases() {
     }
 
     const checkIfCardUsed = (color, steps) => {
-
         if (color === 'blue') {
             const checkIfareUsed = blueCards.filter(card => card.used === false);
 
@@ -291,7 +317,6 @@ export default function Bases() {
 
     return (
         <>
-            {/* <Button title="Move Player" onPress={triggerMovement} /> */}
             {playerType.map((color, i) => (
                 <View key={color} style={[styles.circleContainer, styles[directions[i]]]}>
                     <View style={{ flexDirection: 'column' }}>

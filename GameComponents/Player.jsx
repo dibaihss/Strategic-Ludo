@@ -26,8 +26,10 @@ export default function Player({ color, isSelected, onPress }) {
     // const [showClone, setShowClone] = useState(false);
 
 
-    const [sourcePosition, setSourcePosition] = useState({ x: 5, y: -5 }); // State to store source position
+    const [sourcePosition, setSourcePosition] = useState({ x: 0, y: 0 }); // State to store source position
     const [targetPosition, setTargetPosition] = useState({ x: 0, y: -42 }); // State to store target position
+
+    const [targetPositionY, setTargetYPosition] = useState({ x: 45, y: 0 }); // State to store target position
 
     const currentPlayer = useSelector(state => state.game.currentPlayer);
     const boxesPosition = useSelector(state => state.animation.boxesPosition)
@@ -49,25 +51,41 @@ export default function Player({ color, isSelected, onPress }) {
         if (sourcePosition && targetPosition) {
             animatedValue.setValue({ x: sourcePosition.x, y: sourcePosition.y });
            
+            console.log(targetPosition)
+            // in x achse 1 step -> 3 * targetPositionY.x = go in x Achse 3 boxes
                 Animated.timing(animatedValue, {
-                    toValue: { x: targetPosition.x, y: targetPosition.y * boxesPosition.ySteps}, // Animate both X and Y directions
+                    toValue: { x: targetPositionY.x * -3, y: 0}, // Animate both X and Y directions
                     duration: 600,
                     useNativeDriver: false,
                 }).start(({finished}) => {
                     
-                    setTargetPosition({ x: targetPosition.x, y: targetPosition.y})
+                    setTargetPosition({ x: targetPositionY.x, y: targetPosition.y})
                     console.log("fertig")
                     if(finished){
-                        dispatch(moveSoldier({
-                            color: currentPlayer.color,
-                            position: boxesPosition.newPosition,
-                            soldierID: currentPlayer.id,
-                            steps: boxesPosition.ySteps
-                        }));
-        
-                        dispatch(setCurrentPlayer({ ...currentPlayer, position: boxesPosition.newPosition }));
+                        Animated.timing(animatedValue, {
+                            toValue: { x: targetPosition, y: targetPosition.y * -3}, // Animate both X and Y directions
+                            duration: 600,
+                            useNativeDriver: false,
+                        }).start(({finished}) => {
+                            
+                            setTargetPosition({ x: targetPosition.x, y: targetPosition.y})
+                            console.log("fertig")
+                            if(finished){
+                                dispatch(moveSoldier({
+                                    color: currentPlayer.color,
+                                    position: boxesPosition.newPosition,
+                                    soldierID: currentPlayer.id,
+                                    steps: boxesPosition.ySteps
+                                }));
+                
+                                dispatch(setCurrentPlayer({ ...currentPlayer, position: boxesPosition.newPosition }));
+                            }
+                        });
                     }
                 });
+                
+
+               
         }
     };
 
@@ -97,13 +115,9 @@ export default function Player({ color, isSelected, onPress }) {
     );
 }
 const styles = StyleSheet.create({
-    container: {
-        width: 30,
-        zIndex: 10000,
-    },
     clone: {
         position: 'absolute',
-        zIndex: 1000,
+        zIndex: 10000,
     },
     card: {
         backgroundColor: 'blue',

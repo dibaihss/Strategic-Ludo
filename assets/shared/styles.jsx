@@ -18,7 +18,7 @@ export const styles = StyleSheet.create({
         flexDirection: "column",
         justifyContent: "space-between",
         alignItems: "center",
-        zIndex: 100000
+        zIndex: 1000
     },
     horizontalContainer: {
         position: "absolute",

@@ -9,7 +9,7 @@ import GesturePlayer from './Labor/GestureHandler.jsx';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Goals from './GameComponents/Goals.jsx';
 import Bases from './GameComponents/Bases.jsx';
-import Grid from './Labor/grid.jsx';
+
 
 
 export default function App() {
