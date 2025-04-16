@@ -18,7 +18,7 @@ import { setBoxesPosition, setShowClone } from '../assets/store/animationSlice.j
 import { categories, directions, playerType } from "../assets/shared/hardCodedData.js";
 import { MaterialIcons } from '@expo/vector-icons';
 import Feather from '@expo/vector-icons/Feather';
-import GesturePlayer from "../Labor/GestureHandler.jsx";
+
 
 export default function Bases() {
     // Get soldiers from Redux store
@@ -35,9 +35,6 @@ export default function Bases() {
     // const boxesPosition = useSelector(state => state.animation.boxesPosition)
 
     const dispatch = useDispatch();
-    const [animationTarget, setAnimationTarget] = useState(null);
-    const [initialPos, setInitialPos] = useState();
-
 
 
     const handleEnterNewSoldier = (color) => {
@@ -294,12 +291,6 @@ export default function Bases() {
 
     return (
         <>
-{ initialPos && <GesturePlayer
-                color={currentPlayer.color}
-                isSelected={true}
-                initialPosition={initialPos}
-                startMovinAnim={animationTarget}
-            />}
             {/* <Button title="Move Player" onPress={triggerMovement} /> */}
             {playerType.map((color, i) => (
                 <View key={color} style={[styles.circleContainer, styles[directions[i]]]}>

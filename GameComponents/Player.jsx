@@ -99,7 +99,7 @@ export default function Player({ color, isSelected, onPress }) {
 const styles = StyleSheet.create({
     container: {
         width: 30,
-
+        zIndex: 10000,
     },
     clone: {
         position: 'absolute',

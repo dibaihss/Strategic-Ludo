@@ -1,63 +1,29 @@
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
-    centerCircle: {
-        position: 'absolute',
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        backgroundColor: '#f8f8f8',
-        borderWidth: 2,
-        borderColor: '#000',
-        overflow: 'hidden',
-        zIndex: 1,
-        top: '50%',
-        left: '50%',
-        transform: [
-            { translateX: -36 },
-            { translateY: -35 }
-        ],
-    },
-    centerQuadrants: {
-        flex: 1,
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-    },
-    quadrant: {
-        width: '50%',
-        height: '50%',
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#000',
-    },
-    container: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: '#e6e9f0',
-    },
-    cross: {
+ 
+    board: {
         position: "absolute",
-        width: "90%",
-        height: "90%",
+        width: "80%",
+        height: "80%",
         justifyContent: "center",
         alignItems: "center",
+     
     },
     verticalContainer: {
         position: "absolute",
-        top: 80,
+        top: 64,
         bottom: 80,
         width: 50,
         flexDirection: "column",
         justifyContent: "space-between",
         alignItems: "center",
+        zIndex: 100000
     },
     horizontalContainer: {
         position: "absolute",
-        left: 80,
-        right: 80,
-        height: 50,
+        top: 0,
+        width: 50,
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
@@ -78,7 +44,7 @@ export const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: "rgb(81 81 116)",
         padding: 20,
-        margin: 0,
+        margin: 1,
         width: 40,
         height: 40,
         justifyContent: 'center',

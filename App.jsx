@@ -7,6 +7,8 @@ import { store } from './assets/store/store.jsx';
 import MoveAnimationExample from './Labor/Anoth.jsx';
 import GesturePlayer from './Labor/GestureHandler.jsx';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Goals from './GameComponents/Goals.jsx';
+import Bases from './GameComponents/Bases.jsx';
 
 
 export default function App() {
@@ -17,6 +19,8 @@ export default function App() {
         <View style={styles.container}>
           {/* <GesturePlayer color="blue" isSelected={true} /> */}
           <SmalBoard />
+          <Goals />
+          <Bases />
           {/* <MoveAnimationExample /> */}
           {/* <AnimatedCard /> */}
         </View>
@@ -31,5 +35,7 @@ const styles = StyleSheet.create({
     padding: 10,
     flex: 1,
     margin: 10,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

@@ -1,8 +1,7 @@
-import { View, Text } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import React from 'react';
 import Player from './Player';
 import { MaterialIcons } from '@expo/vector-icons';
-import { styles } from "../assets/shared/styles.jsx";
 import { useSelector } from 'react-redux';
 
 export default function Goals() {
@@ -16,15 +15,15 @@ export default function Goals() {
     return (
         <View style={styles.centerCircle}>
             <View style={styles.centerQuadrants}>
-              
-                                <View style={[styles.quadrant, { backgroundColor: '#ff8' }]}>
-                                    <MaterialIcons name="home" size={24} color="goldenrod" />
-                                    {yellowSoldiers.find(obj => obj.isOut === true) &&
-                                        <Player color={yellowSoldiers[0].color} />}
-                                    {yellowSoldiers.find(obj => obj.isOut === false) === undefined &&
-                                       <Text style={{ color: 'black', fontSize: 20 }}>Yellow won the Game</Text>}
-                                </View>
-                                {/* Green quadrant */}
+
+                <View style={[styles.quadrant, { backgroundColor: '#ff8' }]}>
+                    <MaterialIcons name="home" size={24} color="goldenrod" />
+                    {yellowSoldiers.find(obj => obj.isOut === true) &&
+                        <Player color={yellowSoldiers[0].color} />}
+                    {yellowSoldiers.find(obj => obj.isOut === false) === undefined &&
+                        <Text style={{ color: 'black', fontSize: 20 }}>Yellow won the Game</Text>}
+                </View>
+                {/* Green quadrant */}
                 <View style={[styles.quadrant, { backgroundColor: '#8f8' }]}>
                     <MaterialIcons name="home" size={24} color="darkgreen" />
                     {greenSoldiers.find(obj => obj.isOut === true) &&
@@ -46,3 +45,51 @@ export default function Goals() {
         </View>
     );
 }
+
+const styles = StyleSheet.create({
+    centerCircle: {
+        position: 'absolute',
+        width: 120,
+        height: 120,
+        borderRadius: 1,
+        backgroundColor: '#f8f8f8',
+        borderWidth: 2,
+        borderColor: '#000',
+        overflow: 'hidden',
+        zIndex: 1,
+        top: '50%',
+        left: '50%',
+        transform: [
+            { translateX: -36 },
+            { translateY: -35 }
+        ],
+    },
+    centerQuadrants: {
+        flex: 1,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+    },
+    quadrant: {
+        width: '50%',
+        height: '50%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#000',
+    },
+    button: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 10,
+        backgroundColor: '#e8ecf4',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#d1d9e6',
+        gap: 8,
+    },
+    buttonText: {
+        fontSize: 16,
+        color: '#2a3f5f',
+        fontWeight: '500',
+    },
+})
