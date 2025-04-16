@@ -127,7 +127,7 @@ export default function SmalBoard() {
                     {boxes.column2.map((number, i) => renderBox(number, i))}
                 </View>
             </View>
-    
+
             {/* Rows container */}
             <View style={styles.rowsContainer}>
                 <View style={styles.horizontalRow}>
@@ -142,7 +142,7 @@ export default function SmalBoard() {
 }
 
 const styles = StyleSheet.create({
- 
+
     board: {
         position: "absolute",
         width: "80%",
@@ -150,14 +150,16 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
     },
-    
+
     columnsContainer: {
         position: "fixed",
         flexDirection: "row",
         justifyContent: "space-between",
         width: 5, // Adjust based on your needs
         left: "45%",
-        bottom: "4%"
+        // bottom: "4%"
+        display: "flex",
+        justifyContent: "flex-start"
     },
 
     rowsContainer: {
@@ -166,6 +168,8 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         height: 5, // Adjust based on your needs
         top: "50%",
+        display: "flex",
+        justifyContent: "center"
     },
 
     verticalColumn: {
@@ -198,20 +202,6 @@ const styles = StyleSheet.create({
     verbText: {
         textAlign: 'center',
         fontSize: 14,
-    },
-    controls: {
-        position: 'absolute',
-        bottom: -60,
-        flexDirection: 'row',
-        gap: 20,
-        backgroundColor: '#ffffff',
-        padding: 10,
-        borderRadius: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        elevation: 5,
     },
     button: {
         flexDirection: 'row',

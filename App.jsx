@@ -9,6 +9,7 @@ import GesturePlayer from './Labor/GestureHandler.jsx';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Goals from './GameComponents/Goals.jsx';
 import Bases from './GameComponents/Bases.jsx';
+import Grid from './Labor/grid.jsx';
 
 
 export default function App() {
@@ -17,12 +18,12 @@ export default function App() {
     <Provider store={store}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View style={styles.container}>
-          {/* <GesturePlayer color="blue" isSelected={true} /> */}
+    
           <SmalBoard />
           <Goals />
           <Bases />
-          {/* <MoveAnimationExample /> */}
-          {/* <AnimatedCard /> */}
+       
+       {/* <Grid/> */}
         </View>
       </GestureHandlerRootView>
 

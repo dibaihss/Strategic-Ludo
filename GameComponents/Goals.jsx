@@ -60,9 +60,13 @@ const styles = StyleSheet.create({
         top: '50%',
         left: '50%',
         transform: [
-            { translateX: -36 },
-            { translateY: -35 }
+            { translateX: -60 },
+            { translateY: -60 }
         ],
+        // transform: [
+        //     { translateX: "-50%" },
+        //     { translateY: "-50%" }
+        // ],
     },
     centerQuadrants: {
         flex: 1,
