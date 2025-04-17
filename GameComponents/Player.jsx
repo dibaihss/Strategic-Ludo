@@ -25,11 +25,15 @@ export default function Player({ color, isSelected, onPress }) {
     const animatedValue = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
     // const [showClone, setShowClone] = useState(false);
 
+    const duration = 600;
 
     const [sourcePosition, setSourcePosition] = useState({ x: 0, y: 0 }); // State to store source position
-    const [targetPosition, setTargetPosition] = useState({ x: 0, y: -42 }); // State to store target position
+    const [targetPosition, setTargetPosition] = useState({ x: 0, y: 45 }); // State to store target position
 
-    const [targetPositionY, setTargetYPosition] = useState({ x: 45, y: 0 }); // State to store target position
+    const [targetPositionXX, setTargetPositionXX] = useState({ x: 45, y: 0 });
+
+    const targetPositionX = { x: 45, y: 0 }; // State to store target position
+    const targetPositionY = { x: 0, y: 45 }; // State to store target position
 
     const currentPlayer = useSelector(state => state.game.currentPlayer);
     const boxesPosition = useSelector(state => state.animation.boxesPosition)
@@ -40,82 +44,162 @@ export default function Player({ color, isSelected, onPress }) {
     React.useEffect(() => {
         if (!showClone) {
             if (currentPlayer && currentPlayer.color === color && isSelected === true && boxesPosition) {
-                const {xSteps, ySteps,maxRow, maxCol, newPosition} = boxesPosition
+                const { xSteps, ySteps, maxRow, maxCol, newPosition } = boxesPosition
+                // animation startet showclone is true
+                dispatch(setShowClone(true))
+
+                animatedValue.setValue({ x: sourcePosition.x, y: sourcePosition.y });
+
                 if (xSteps > 0 && ySteps > 0) {
-                    if (maxRow < maxCol){
+                    if (maxRow < maxCol) {
                         moveInXY()
-                    }else{
+                    } else {
                         moveInYX()
-                    }   
-                }else{
-                    xSteps > 0 ? moveInX() : 0
-                    ySteps > 0 ? moveInY() : 0
+                    }
+                } else {
+                    xSteps > 0 ? moveInX(true) : 0
+                    ySteps > 0 ? moveInY(true) : 0
                 }
-                moveElement();
+
             }
         }
     }, [boxesPosition]);
 
     const moveInXY = () => {
+        const { xSteps, ySteps } = boxesPosition
+
         console.log("XY")
+
+        let categorie = currentPlayer.position.match(/[a-zA-Z]+/)[0];
+        // if(categorie === "c") xSteps = -xSteps
+
+        console.log("sdadsad", targetPositionX.x * -xSteps)
+        Animated.timing(animatedValue, {
+            toValue: { x: targetPositionX.x * -xSteps, y: 0 }, // Animate both X and Y directions
+            duration: duration,
+            useNativeDriver: false,
+        }).start(({ finished }) => {
+            console.log("sdadsad", targetPosition)
+            setTargetPosition({ x: targetPositionX.x, y: targetPosition.y })
+            console.log("sdadsad", targetPosition)
+            if (finished) {
+                Animated.timing(animatedValue, {
+                    toValue: { x: targetPosition, y: targetPosition.y * ySteps }, // Animate both X and Y directions
+                    duration: duration,
+                    useNativeDriver: false,
+                }).start(({ finished }) => {
+                    console.log("sdadsad", targetPosition)
+                    setTargetPosition({ x: targetPosition.x, y: targetPosition.y })
+                    console.log("sdadsad", targetPosition)
+                    if (finished) {
+                        moveElement()
+                    }
+                });
+            }
+        });
+
     }
 
     const moveInYX = () => {
         console.log("YX")
+
+        let { xSteps, ySteps } = boxesPosition
+
+        let categorie = currentPlayer.position.match(/[a-zA-Z]+/)[0];
+        if (categorie === "c"){
+            xSteps = -xSteps
+            ySteps = -ySteps
+        } 
+
+        console.log("to Value: " , "x: " , 0, "y: ", targetPosition.y * -ySteps )
+        Animated.timing(animatedValue, {
+            toValue: { x: 0, y: targetPosition.y * -ySteps }, // Animate both X and Y directions
+            duration: duration,
+            useNativeDriver: false,
+        }).start(({ finished }) => {
+
+            if (finished) {
+                Animated.timing(animatedValue, {
+                    toValue: { x: targetPositionXX.x * -xSteps, y: targetPosition.y * -ySteps}, // Animate both X and Y directions
+                    duration: duration,
+                    useNativeDriver: false,
+                }).start(({ finished }) => {
+
+                    if (finished) {
+                        moveElement()
+                    }
+                });
+            }
+        });
     }
 
-    const moveInY = () => {
+    const moveInY = (done) => {
         console.log("Y")
+        let { ySteps } = boxesPosition
+
+        let categorie = currentPlayer.position.match(/[a-zA-Z]+/)[0];
+        if (categorie === "c" || categorie === "d") ySteps = -ySteps
+
+
+        Animated.timing(animatedValue, {
+            toValue: { x: 0, y: targetPositionY.y * -ySteps }, // Animate both X and Y directions
+            duration: duration,
+            useNativeDriver: false,
+        }).start(({ finished }) => {
+
+            setTargetPosition({ x: targetPosition.x, y: targetPositionY.y })
+
+            if (finished && done) {
+                moveElement()
+            }
+            if (finished && !done) moveInX(true)
+
+        });
+
     }
-    const moveInX = () => {
+    const moveInX = (done) => {
         console.log("X")
+        let { xSteps } = boxesPosition
+
+        let categorie = currentPlayer.position.match(/[a-zA-Z]+/)[0];
+        if (categorie === "b" || categorie === "c") xSteps = -xSteps
+
+        Animated.timing(animatedValue, {
+            toValue: { x: targetPositionX.x * -xSteps, y: 0 }, // Animate both X and Y directions
+            duration: duration,
+            useNativeDriver: false,
+        }).start(({ finished }) => {
+
+            // setTargetPosition({ x: 0, y: targetPosition.y })
+            console.log(targetPosition)
+
+            if (finished && done) {
+                moveElement()
+            } else {
+                moveInY(true)
+            }
+        });
+
     }
+
+
     const moveElement = () => {
-        dispatch(setShowClone(true))
-        if (sourcePosition && targetPosition) {
-            animatedValue.setValue({ x: sourcePosition.x, y: sourcePosition.y });
+        dispatch(moveSoldier({
+            color: currentPlayer.color,
+            position: boxesPosition.newPosition,
+            soldierID: currentPlayer.id,
+            steps: boxesPosition.ySteps
+        }));
 
-            // in x achse 1 step -> 3 * targetPositionY.x = go in x Achse 3 boxes
-            Animated.timing(animatedValue, {
-                toValue: { x: targetPositionY.x * -3, y: 0 }, // Animate both X and Y directions
-                duration: 600,
-                useNativeDriver: false,
-            }).start(({ finished }) => {
+        dispatch(setCurrentPlayer({ ...currentPlayer, position: boxesPosition.newPosition }));
 
-                setTargetPosition({ x: targetPositionY.x, y: targetPosition.y })
-                if (finished) {
-                    Animated.timing(animatedValue, {
-                        toValue: { x: targetPosition, y: targetPosition.y * -3 }, // Animate both X and Y directions
-                        duration: 600,
-                        useNativeDriver: false,
-                    }).start(({ finished }) => {
-
-                        setTargetPosition({ x: targetPosition.x, y: targetPosition.y })
-    
-                        if (finished) {
-                            dispatch(moveSoldier({
-                                color: currentPlayer.color,
-                                position: boxesPosition.newPosition,
-                                soldierID: currentPlayer.id,
-                                steps: boxesPosition.ySteps
-                            }));
-
-                            dispatch(setCurrentPlayer({ ...currentPlayer, position: boxesPosition.newPosition }));
-                        }
-                    });
-                }
-            });
-
-
-
-        }
     };
 
     return (
         <Animated.View style={[styles.card, styles.clone,
         {
-            left: animatedValue.x,
             top: animatedValue.y,
+            left: animatedValue.x,
         }]} >
             <Pressable
                 onPress={() => {
