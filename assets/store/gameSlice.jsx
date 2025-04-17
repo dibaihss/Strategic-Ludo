@@ -21,7 +21,7 @@ const initialState = {
         { id: 12, position: '4yellow', color: "yellow", initialPosition: '4yellow', onBoard: false, isOut: false }
     ],
     greenSoldiers: [
-        { id: 13, position: '3d', color: "green", initialPosition: '1green', onBoard: true, isOut: false },
+        { id: 13, position: '1d', color: "green", initialPosition: '1green', onBoard: true, isOut: false },
         { id: 14, position: '2green', color: "green", initialPosition: '2green', onBoard: false, isOut: false },
         { id: 15, position: '3green', color: "green", initialPosition: '3green', onBoard: false, isOut: false },
         { id: 16, position: '4green', color: "green", initialPosition: '4green', onBoard: false, isOut: false }

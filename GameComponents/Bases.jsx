@@ -18,6 +18,7 @@ import { setBoxesPosition, setShowClone } from '../assets/store/animationSlice.j
 import { boxes, categories, directions, playerType } from "../assets/shared/hardCodedData.js";
 import { MaterialIcons } from '@expo/vector-icons';
 import Feather from '@expo/vector-icons/Feather';
+import { current } from "@reduxjs/toolkit";
 
 
 export default function Bases() {
@@ -54,62 +55,59 @@ export default function Bases() {
 
         getXStepsYSteps(currentPlayer.position, newPosition)
 
-        dispatch(setShowClone(false))
-        dispatch(setBoxesPosition({ xSteps: 1, ySteps: steps, newPosition }))
-
-        // if(boxesPosition.length > 1){
-        //     const findTargetBox = boxesPosition.find(box => {
-        //         return box.number ===  newPosition
-        //     })
-        //     const findSourceBox = boxesPosition.find(box => {
-        //         return box.number ===  currentPlayer.position
-        //     })
-
-        //     if(findTargetBox && findSourceBox){
-        //         console.log(findSourceBox, findTargetBox)
-        //         setInitialPos({ x: findSourceBox.x + 50, y: findSourceBox.y - 350})
-
-
-        //         setAnimationTarget({ x: 200, y: 300 });
-
-        //     }
-        // }
-
-        // dispatch(moveSoldier({
-        //     color: currentPlayer.color,
-        //     position: newPosition,
-        //     soldierID: currentPlayer.id,
-        //     steps
-        // }));
         // Clear current player after moving
-
         // checkIfGotEnemy(color, newPosition); // Check if the player got an enemy soldier
 
     };
     const getXStepsYSteps = (sourcePos, targetPos) => {
+        let xSteps = 0;
+        let ySteps = 0;
+        let maxRow = 0;
+        let maxCol = 0;
 
+        const row2 = getInVolvedSteps(boxes.row2, sourcePos, targetPos)
+        const row1 = getInVolvedSteps(boxes.row1, sourcePos, targetPos)
+
+        const column2 = getInVolvedSteps(boxes.column2, sourcePos, targetPos)
+        const column1 = getInVolvedSteps(boxes.column1, sourcePos, targetPos)
+
+        xSteps += row1.length > 0 ? row1.length : 0
+        xSteps += row2.length > 0 ? row2.length : 0
+
+        ySteps += column2.length > 0 ? column2.length : 0
+        ySteps += column1.length > 0 ? column1.length : 0
+
+        maxRow = Math.max(
+            row1.length > 0 ? Math.max(...row1.map(x => parseInt(x))) : 0,
+            row2.length > 0 ? Math.max(...row2.map(x => parseInt(x))) : 0
+        );
+
+        maxCol = Math.max(
+            column1.length > 0 ? Math.max(...column1.map(x => parseInt(x))) : 0,
+            column2.length > 0 ? Math.max(...column2.map(x => parseInt(x))) : 0
+        );
+
+        console.log("Max row value:", maxRow, "x Steps: ", xSteps);
+        console.log("Max column value:", maxCol, "y Steps: ", ySteps);
+
+        dispatch(setShowClone(false))
+        dispatch(setBoxesPosition({ xSteps, ySteps,maxRow, maxCol, newPosition: targetPos }))
+
+    }
+
+    getInVolvedSteps = (band, sourcePos, targetPos) => {
         let categorieTar = targetPos.match(/[a-zA-Z]+/)[0];
         let categorieSou = sourcePos.match(/[a-zA-Z]+/)[0];
 
-        console.log(categorieSou, categorieTar)
-        if (categorieSou === categorieTar) {
-
-
+        const elements = band.filter(box => {
+            let cateBox = box.match(/[a-zA-Z]+/)[0];
+            if (cateBox === categorieSou || cateBox === categorieTar) {
+                return parseInt(box) <= parseInt(targetPos) && parseInt(box) > parseInt(sourcePos)
+            }
         }
-        const row1 = boxes.row1.find(box => box === targetPos || box === sourcePos);
-        const row2 = boxes.row2.find(box => box === targetPos || box === sourcePos);
+        );
 
-
-        if (row2) console.log(row2)
-
-        if (row1 && row2) {
-
-        } else if (row1) {
-            console.log(row1)
-        } else if (row2) {
-            console.log(row2)
-        }
-
+        return elements
     }
     checkIfGotEnemy = (color, position) => {
         let checkIfGotEnemy = [];

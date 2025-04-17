@@ -37,55 +37,77 @@ export default function Player({ color, isSelected, onPress }) {
     const dispatch = useDispatch();
 
 
-     React.useEffect(() => {
-        if(!showClone){
-            if (currentPlayer && currentPlayer.color === color && isSelected === true) {
-                
+    React.useEffect(() => {
+        if (!showClone) {
+            if (currentPlayer && currentPlayer.color === color && isSelected === true && boxesPosition) {
+                const {xSteps, ySteps,maxRow, maxCol, newPosition} = boxesPosition
+                if (xSteps > 0 && ySteps > 0) {
+                    if (maxRow < maxCol){
+                        moveInXY()
+                    }else{
+                        moveInYX()
+                    }   
+                }else{
+                    xSteps > 0 ? moveInX() : 0
+                    ySteps > 0 ? moveInY() : 0
+                }
                 moveElement();
-           }
-        }}, [boxesPosition]);
+            }
+        }
+    }, [boxesPosition]);
 
-     
+    const moveInXY = () => {
+        console.log("XY")
+    }
+
+    const moveInYX = () => {
+        console.log("YX")
+    }
+
+    const moveInY = () => {
+        console.log("Y")
+    }
+    const moveInX = () => {
+        console.log("X")
+    }
     const moveElement = () => {
         dispatch(setShowClone(true))
         if (sourcePosition && targetPosition) {
             animatedValue.setValue({ x: sourcePosition.x, y: sourcePosition.y });
-           
-            console.log(targetPosition)
-            // in x achse 1 step -> 3 * targetPositionY.x = go in x Achse 3 boxes
-                Animated.timing(animatedValue, {
-                    toValue: { x: targetPositionY.x * -3, y: 0}, // Animate both X and Y directions
-                    duration: 600,
-                    useNativeDriver: false,
-                }).start(({finished}) => {
-                    
-                    setTargetPosition({ x: targetPositionY.x, y: targetPosition.y})
-                    console.log("fertig")
-                    if(finished){
-                        Animated.timing(animatedValue, {
-                            toValue: { x: targetPosition, y: targetPosition.y * -3}, // Animate both X and Y directions
-                            duration: 600,
-                            useNativeDriver: false,
-                        }).start(({finished}) => {
-                            
-                            setTargetPosition({ x: targetPosition.x, y: targetPosition.y})
-                            console.log("fertig")
-                            if(finished){
-                                dispatch(moveSoldier({
-                                    color: currentPlayer.color,
-                                    position: boxesPosition.newPosition,
-                                    soldierID: currentPlayer.id,
-                                    steps: boxesPosition.ySteps
-                                }));
-                
-                                dispatch(setCurrentPlayer({ ...currentPlayer, position: boxesPosition.newPosition }));
-                            }
-                        });
-                    }
-                });
-                
 
-               
+            // in x achse 1 step -> 3 * targetPositionY.x = go in x Achse 3 boxes
+            Animated.timing(animatedValue, {
+                toValue: { x: targetPositionY.x * -3, y: 0 }, // Animate both X and Y directions
+                duration: 600,
+                useNativeDriver: false,
+            }).start(({ finished }) => {
+
+                setTargetPosition({ x: targetPositionY.x, y: targetPosition.y })
+                if (finished) {
+                    Animated.timing(animatedValue, {
+                        toValue: { x: targetPosition, y: targetPosition.y * -3 }, // Animate both X and Y directions
+                        duration: 600,
+                        useNativeDriver: false,
+                    }).start(({ finished }) => {
+
+                        setTargetPosition({ x: targetPosition.x, y: targetPosition.y })
+    
+                        if (finished) {
+                            dispatch(moveSoldier({
+                                color: currentPlayer.color,
+                                position: boxesPosition.newPosition,
+                                soldierID: currentPlayer.id,
+                                steps: boxesPosition.ySteps
+                            }));
+
+                            dispatch(setCurrentPlayer({ ...currentPlayer, position: boxesPosition.newPosition }));
+                        }
+                    });
+                }
+            });
+
+
+
         }
     };
 
