@@ -66,74 +66,18 @@ export default function Player({ color, isSelected, onPress }) {
     }, [boxesPosition]);
 
     const moveInXY = () => {
-        const { xSteps, ySteps } = boxesPosition
-
         console.log("XY")
-
-        let categorie = currentPlayer.position.match(/[a-zA-Z]+/)[0];
-        // if(categorie === "c") xSteps = -xSteps
-
-        console.log("sdadsad", targetPositionX.x * -xSteps)
-        Animated.timing(animatedValue, {
-            toValue: { x: targetPositionX.x * -xSteps, y: 0 }, // Animate both X and Y directions
-            duration: duration,
-            useNativeDriver: false,
-        }).start(({ finished }) => {
-            console.log("sdadsad", targetPosition)
-            setTargetPosition({ x: targetPositionX.x, y: targetPosition.y })
-            console.log("sdadsad", targetPosition)
-            if (finished) {
-                Animated.timing(animatedValue, {
-                    toValue: { x: targetPosition, y: targetPosition.y * ySteps }, // Animate both X and Y directions
-                    duration: duration,
-                    useNativeDriver: false,
-                }).start(({ finished }) => {
-                    console.log("sdadsad", targetPosition)
-                    setTargetPosition({ x: targetPosition.x, y: targetPosition.y })
-                    console.log("sdadsad", targetPosition)
-                    if (finished) {
-                        moveElement()
-                    }
-                });
-            }
-        });
+        moveInX(false)
 
     }
 
     const moveInYX = () => {
         console.log("YX")
+        moveInY(false)
 
-        let { xSteps, ySteps } = boxesPosition
-
-        let categorie = currentPlayer.position.match(/[a-zA-Z]+/)[0];
-        if (categorie === "c"){
-            xSteps = -xSteps
-            ySteps = -ySteps
-        } 
-
-        console.log("to Value: " , "x: " , 0, "y: ", targetPosition.y * -ySteps )
-        Animated.timing(animatedValue, {
-            toValue: { x: 0, y: targetPosition.y * -ySteps }, // Animate both X and Y directions
-            duration: duration,
-            useNativeDriver: false,
-        }).start(({ finished }) => {
-
-            if (finished) {
-                Animated.timing(animatedValue, {
-                    toValue: { x: targetPositionXX.x * -xSteps, y: targetPosition.y * -ySteps}, // Animate both X and Y directions
-                    duration: duration,
-                    useNativeDriver: false,
-                }).start(({ finished }) => {
-
-                    if (finished) {
-                        moveElement()
-                    }
-                });
-            }
-        });
     }
 
-    const moveInY = (done) => {
+    const moveInY = (done, reachedPos) => {
         console.log("Y")
         let { ySteps } = boxesPosition
 
@@ -142,22 +86,22 @@ export default function Player({ color, isSelected, onPress }) {
 
 
         Animated.timing(animatedValue, {
-            toValue: { x: 0, y: targetPositionY.y * -ySteps }, // Animate both X and Y directions
+            toValue: { x: reachedPos ? reachedPos : 0, y: targetPositionY.y * -ySteps }, // Animate both X and Y directions
             duration: duration,
             useNativeDriver: false,
         }).start(({ finished }) => {
 
-            setTargetPosition({ x: targetPosition.x, y: targetPositionY.y })
+            
 
             if (finished && done) {
                 moveElement()
             }
-            if (finished && !done) moveInX(true)
+            if (finished && !done) moveInX(true,targetPositionY.y * -ySteps  )
 
         });
 
     }
-    const moveInX = (done) => {
+    const moveInX = (done, reachedPos) => {
         console.log("X")
         let { xSteps } = boxesPosition
 
@@ -165,7 +109,7 @@ export default function Player({ color, isSelected, onPress }) {
         if (categorie === "b" || categorie === "c") xSteps = -xSteps
 
         Animated.timing(animatedValue, {
-            toValue: { x: targetPositionX.x * -xSteps, y: 0 }, // Animate both X and Y directions
+            toValue: { x: targetPositionX.x * -xSteps, y: reachedPos ? reachedPos : 0 }, // Animate both X and Y directions
             duration: duration,
             useNativeDriver: false,
         }).start(({ finished }) => {
@@ -176,7 +120,7 @@ export default function Player({ color, isSelected, onPress }) {
             if (finished && done) {
                 moveElement()
             } else {
-                moveInY(true)
+                moveInY(true, targetPositionX.x * -xSteps)
             }
         });
 
