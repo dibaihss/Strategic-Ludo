@@ -149,7 +149,7 @@ export default function Player({ color, isSelected, onPress }) {
 
     }
     const moveInYXY = () => {
-        let { ySteps, xSteps, ySteps2 } = boxesPosition
+        let { ySteps, ySteps2 } = boxesPosition
 
         let colOffset = 55
         let categorie = currentPlayer.position.match(/[a-zA-Z]+/)[0];
@@ -158,14 +158,19 @@ export default function Player({ color, isSelected, onPress }) {
             colOffset = -colOffset
             ySteps2 = -ySteps2
         } 
-
-
-        movingValues.push({ x: 0, y: boxSize * -ySteps })
-        movingValues.push({ x: -colOffset, y: boxSize * -ySteps })
-        let reachedPos = boxSize * -ySteps
-        movingValues.push({ x: -colOffset, y: reachedPos + boxSize * -ySteps2 })
-
+        
+        if(ySteps === -1 || ySteps2 === 0){
+            movingValues.push({ x: -colOffset, y: 0 })
+         
+        }else{
+            movingValues.push({ x: 0, y: boxSize * -ySteps })
+            movingValues.push({ x: -colOffset, y: boxSize * -ySteps })
+            let reachedPos = boxSize * -ySteps
+            movingValues.push({ x: -colOffset, y: reachedPos + boxSize * -ySteps2 })
+            
+        }
         console.log(movingValues)
+       
 
         moveEleWithAnimation()
 

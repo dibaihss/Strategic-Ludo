@@ -39,7 +39,16 @@ export default function Bases() {
 
 
     const handleEnterNewSoldier = (color) => {
-        checkIfGotEnemy(color, currentPlayer.position)
+        
+        if(color === "red"){
+            checkIfGotEnemy(color, "1b")
+        }else if(color === "yellow"){
+            checkIfGotEnemy(color, "1c")
+        }else if(color === "blue"){
+            checkIfGotEnemy(color, "1a")
+        }else if(color === "green"){
+            checkIfGotEnemy(color, "1d")
+        }
         dispatch(enterNewSoldier({ color }));
     };
 
@@ -53,10 +62,22 @@ export default function Bases() {
 
         const newPosition = calculateNewPosition(currentPlayer, steps);
 
-        getXStepsYSteps(currentPlayer.position, newPosition)
+        if(newPosition === ""){
+                    dispatch(moveSoldier({
+                            color: currentPlayer.color,
+                            position: newPosition,
+                            soldierID: currentPlayer.id,
+                            steps: 0
+                        }));
+                
+                        dispatch(setCurrentPlayer( null ));
+        }else{
+            getXStepsYSteps(currentPlayer.position, newPosition)
+        }
+       
 
         // Clear current player after moving
-        // checkIfGotEnemy(color, newPosition); // Check if the player got an enemy soldier
+        checkIfGotEnemy(color, newPosition); // Check if the player got an enemy soldier
 
     };
     const getXStepsYSteps = (sourcePos, targetPos) => {
