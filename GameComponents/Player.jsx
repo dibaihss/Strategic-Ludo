@@ -27,13 +27,12 @@ export default function Player({ color, isSelected, onPress }) {
 
     const duration = 600;
 
+    let iterations = 0;
+    let movingValues = []
+    let boxSize = 45
+
     const [sourcePosition, setSourcePosition] = useState({ x: 0, y: 0 }); // State to store source position
-    const [targetPosition, setTargetPosition] = useState({ x: 0, y: 45 }); // State to store target position
 
-    const [targetPositionXX, setTargetPositionXX] = useState({ x: 45, y: 0 });
-
-    const targetPositionX = { x: 45, y: 0 }; // State to store target position
-    const targetPositionY = { x: 0, y: 45 }; // State to store target position
 
     const currentPlayer = useSelector(state => state.game.currentPlayer);
     const boxesPosition = useSelector(state => state.animation.boxesPosition)
@@ -44,7 +43,7 @@ export default function Player({ color, isSelected, onPress }) {
     React.useEffect(() => {
         if (!showClone) {
             if (currentPlayer && currentPlayer.color === color && isSelected === true && boxesPosition) {
-                const { xSteps, ySteps, maxRow, maxCol, newPosition } = boxesPosition
+                const { xSteps, ySteps, maxRow, maxCol, maxRow1, maxRow2, maxCol1, maxCol2 } = boxesPosition
                 // animation startet showclone is true
                 dispatch(setShowClone(true))
 
@@ -56,9 +55,15 @@ export default function Player({ color, isSelected, onPress }) {
                     } else {
                         moveInYX()
                     }
-                } else {
-                    xSteps > 0 ? moveInX(true) : 0
-                    ySteps > 0 ? moveInY(true) : 0
+                } else if (maxRow2 > 0 && maxRow1 > 0) {
+                    moveInXYX()
+                }
+                else if (maxCol2 > 0 && maxCol1 > 0) {
+                    moveInYXY()
+                }
+                else {
+                    xSteps > 0 ? moveInX() : 0
+                    ySteps > 0 ? moveInY() : 0
                 }
 
             }
@@ -66,66 +71,123 @@ export default function Player({ color, isSelected, onPress }) {
     }, [boxesPosition]);
 
     const moveInXY = () => {
-        console.log("XY")
-        moveInX(false)
+        let { ySteps, xSteps } = boxesPosition
+
+        let categorie = currentPlayer.position.match(/[a-zA-Z]+/)[0];
+        if (categorie === "c" || categorie === "d") ySteps = -ySteps
+        if (categorie === "b") xSteps = -xSteps
+
+
+        movingValues.push({ x: boxSize * -xSteps, y: 0 })
+        movingValues.push({ x: boxSize * -xSteps, y: boxSize * -ySteps })
+
+        moveEleWithAnimation()
 
     }
 
     const moveInYX = () => {
-        console.log("YX")
-        moveInY(false)
 
+
+        let { ySteps, xSteps } = boxesPosition
+        let categorie = currentPlayer.position.match(/[a-zA-Z]+/)[0];
+        if (categorie === "c" || categorie === "d") ySteps = -ySteps
+        if (categorie === "c") xSteps = -xSteps
+
+        movingValues.push({ x: 0, y: boxSize * -ySteps })
+        movingValues.push({ x: boxSize * -xSteps, y: boxSize * -ySteps })
+
+
+        moveEleWithAnimation()
     }
 
-    const moveInY = (done, reachedPos) => {
-        console.log("Y")
-        let { ySteps } = boxesPosition
+    const moveInX = () => {
+        let { ySteps, xSteps } = boxesPosition
 
         let categorie = currentPlayer.position.match(/[a-zA-Z]+/)[0];
         if (categorie === "c" || categorie === "d") ySteps = -ySteps
+        if (categorie === "c" || categorie === "b") xSteps = -xSteps
 
-
-        Animated.timing(animatedValue, {
-            toValue: { x: reachedPos ? reachedPos : 0, y: targetPositionY.y * -ySteps }, // Animate both X and Y directions
-            duration: duration,
-            useNativeDriver: false,
-        }).start(({ finished }) => {
-
-            
-
-            if (finished && done) {
-                moveElement()
-            }
-            if (finished && !done) moveInX(true,targetPositionY.y * -ySteps  )
-
-        });
-
+        movingValues.push({ x: boxSize * -xSteps, y: 0 })
+        moveEleWithAnimation()
     }
-    const moveInX = (done, reachedPos) => {
-        console.log("X")
-        let { xSteps } = boxesPosition
+
+    const moveInY = () => {
+        let { ySteps, xSteps } = boxesPosition
 
         let categorie = currentPlayer.position.match(/[a-zA-Z]+/)[0];
-        if (categorie === "b" || categorie === "c") xSteps = -xSteps
+        if (categorie === "c" || categorie === "d") ySteps = -ySteps
+        if (categorie === "c") xSteps = -xSteps
+
+        movingValues.push({ x: 0, y: boxSize * -ySteps })
+        moveEleWithAnimation()
+    }
+
+    const moveInXYX = () => {
+        let { ySteps, xSteps, xSteps2 } = boxesPosition
+
+        let rowOffset = 55
+        let categorie = currentPlayer.position.match(/[a-zA-Z]+/)[0];
+        if (categorie === "c") {
+            ySteps = -ySteps
+            xSteps = -xSteps
+            rowOffset = -rowOffset
+        }
+        if (categorie === "a") {
+            xSteps2 = -xSteps2
+        }
+
+
+
+        movingValues.push({ x: boxSize * -xSteps, y: 0 })
+        movingValues.push({ x: boxSize * -xSteps, y: -rowOffset })
+        let reachedPos = boxSize * -xSteps
+        movingValues.push({ x: reachedPos + boxSize * -xSteps2, y: -rowOffset })
+
+        console.log(movingValues)
+
+        moveEleWithAnimation()
+
+    }
+    const moveInYXY = () => {
+        let { ySteps, xSteps, ySteps2 } = boxesPosition
+
+        let colOffset = 55
+        let categorie = currentPlayer.position.match(/[a-zA-Z]+/)[0];
+        if (categorie === "d") ySteps = -ySteps
+        if (categorie === "b"){
+            colOffset = -colOffset
+            ySteps2 = -ySteps2
+        } 
+
+
+        movingValues.push({ x: 0, y: boxSize * -ySteps })
+        movingValues.push({ x: -colOffset, y: boxSize * -ySteps })
+        let reachedPos = boxSize * -ySteps
+        movingValues.push({ x: -colOffset, y: reachedPos + boxSize * -ySteps2 })
+
+        console.log(movingValues)
+
+        moveEleWithAnimation()
+
+    }
+
+    const moveEleWithAnimation = () => {
 
         Animated.timing(animatedValue, {
-            toValue: { x: targetPositionX.x * -xSteps, y: reachedPos ? reachedPos : 0 }, // Animate both X and Y directions
+            toValue: movingValues[iterations], // Animate both X and Y directions
             duration: duration,
             useNativeDriver: false,
         }).start(({ finished }) => {
-
-            // setTargetPosition({ x: 0, y: targetPosition.y })
-            console.log(targetPosition)
-
-            if (finished && done) {
+            if (finished && iterations === movingValues.length - 1) {
                 moveElement()
-            } else {
-                moveInY(true, targetPositionX.x * -xSteps)
+            }
+            else if (finished) {
+                iterations++
+                moveEleWithAnimation()
             }
         });
 
     }
-
 
     const moveElement = () => {
         dispatch(moveSoldier({

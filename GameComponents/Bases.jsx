@@ -62,8 +62,17 @@ export default function Bases() {
     const getXStepsYSteps = (sourcePos, targetPos) => {
         let xSteps = 0;
         let ySteps = 0;
+        let xSteps2 = 0;
+        let ySteps2 = 0;
+
         let maxRow = 0;
         let maxCol = 0;
+
+        let maxRow1 = 0
+        let maxRow2 = 0
+
+        let maxCol1 = 0
+        let maxCol2 = 0
 
         const row2 = getInVolvedSteps(boxes.row2, sourcePos, targetPos)
         const row1 = getInVolvedSteps(boxes.row1, sourcePos, targetPos)
@@ -71,27 +80,60 @@ export default function Bases() {
         const column2 = getInVolvedSteps(boxes.column2, sourcePos, targetPos)
         const column1 = getInVolvedSteps(boxes.column1, sourcePos, targetPos)
 
-        xSteps += row1.length > 0 ? row1.length : 0
-        xSteps += row2.length > 0 ? row2.length : 0
+        if(row1.length > 0 && row2.length > 0){
+            
+            maxRow1 = Math.max(...row1.map(x => parseInt(x.match(/\d+/)[0])))
+            maxRow2 = Math.max(...row2.map(x => parseInt(x.match(/\d+/)[0])))
 
-        ySteps += column2.length > 0 ? column2.length : 0
-        ySteps += column1.length > 0 ? column1.length : 0
+            if(maxRow1 > maxRow2){
+                xSteps += row1.length > 0 ? row1.length : 0
+                xSteps2 += row2.length > 0 ? row2.length : 0
+                xSteps2--
+            }else{
+                xSteps += row2.length > 0 ? row2.length : 0
+                xSteps2 += row1.length > 0 ? row1.length : 0
+                xSteps2--
+            }
+           
+        }else if(column1.length > 0 && column2.length > 0){
+            console.log(column1, column2)
+            maxCol1 = Math.max(...column1.map(x => parseInt(x.match(/\d+/)[0])))
+            maxCol2 = Math.max(...column2.map(x => parseInt(x.match(/\d+/)[0])))
 
-        maxRow = Math.max(
-            row1.length > 0 ? Math.max(...row1.map(x => parseInt(x))) : 0,
-            row2.length > 0 ? Math.max(...row2.map(x => parseInt(x))) : 0
-        );
-
-        maxCol = Math.max(
-            column1.length > 0 ? Math.max(...column1.map(x => parseInt(x))) : 0,
-            column2.length > 0 ? Math.max(...column2.map(x => parseInt(x))) : 0
-        );
+            if(maxCol1 > maxCol2){
+                ySteps += column1.length > 0 ? column1.length : 0
+                ySteps2 += column2.length > 0 ? column2.length : 0
+                ySteps2--
+            }else{
+                ySteps += column2.length > 0 ? column2.length : 0
+                ySteps2 += column1.length > 0 ? column1.length : 0
+                ySteps2--
+            }
+        }
+        else{
+            xSteps += row1.length > 0 ? row1.length : 0
+            xSteps += row2.length > 0 ? row2.length : 0
+    
+            ySteps += column2.length > 0 ? column2.length : 0
+            ySteps += column1.length > 0 ? column1.length : 0
+    
+            maxRow = Math.max(
+                row1.length > 0 ? Math.max(...row1.map(x => parseInt(x))) : 0,
+                row2.length > 0 ? Math.max(...row2.map(x => parseInt(x))) : 0
+            );
+    
+            maxCol = Math.max(
+                column1.length > 0 ? Math.max(...column1.map(x => parseInt(x))) : 0,
+                column2.length > 0 ? Math.max(...column2.map(x => parseInt(x))) : 0
+            );
+        }
+       
 
         console.log("Max row value:", maxRow, "x Steps: ", xSteps);
         console.log("Max column value:", maxCol, "y Steps: ", ySteps);
 
         dispatch(setShowClone(false))
-        dispatch(setBoxesPosition({ xSteps, ySteps,maxRow, maxCol, newPosition: targetPos }))
+        dispatch(setBoxesPosition({ xSteps, xSteps2, ySteps,maxRow, maxCol, newPosition: targetPos, maxRow1, maxRow2, maxCol1, maxCol2, ySteps2}))
 
     }
 
@@ -99,16 +141,29 @@ export default function Bases() {
         let categorieTar = targetPos.match(/[a-zA-Z]+/)[0];
         let categorieSou = sourcePos.match(/[a-zA-Z]+/)[0];
 
-        const elements = band.filter(box => {
-            let cateBox = box.match(/[a-zA-Z]+/)[0];
-            if (cateBox === categorieSou || cateBox === categorieTar) {
-                return parseInt(box) <= parseInt(targetPos) && parseInt(box) > parseInt(sourcePos)
+        let elements
+        if(categorieTar === getNextCatergory(categorieSou)){
+            elements = band.filter(box => {
+                let cateBox = box.match(/[a-zA-Z]+/)[0];
+                if (cateBox === categorieTar) {
+                return parseInt(box) <= parseInt(targetPos)
+            }else if(cateBox === categorieSou){
+                return parseInt(box) <= Math.max(...band.map(x => parseInt(x.match(/\d+/)[0]))) && parseInt(box) > parseInt(sourcePos)
             }
         }
-        );
-
+            );
+        }else{
+            elements = band.filter(box => {
+                let cateBox = box.match(/[a-zA-Z]+/)[0];
+                if (cateBox === categorieSou || cateBox === categorieTar) {
+                    return parseInt(box) <= parseInt(targetPos) && parseInt(box) > parseInt(sourcePos)
+                }
+            }
+            );
+        }
         return elements
     }
+
     checkIfGotEnemy = (color, position) => {
         let checkIfGotEnemy = [];
         if (!position) return;
