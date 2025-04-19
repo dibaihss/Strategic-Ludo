@@ -36,7 +36,7 @@ const themes = {
         colors: {
             blue: '#4466cc',
             red: '#cc4444',
-            yellow: '#cccc44',
+            yellow: 'rgb(220 87 250)',
             green: '#44cc44',
             background: '#2d2d2d',
             border: '#ffffff',
@@ -135,7 +135,7 @@ const themes = {
 const themeSlice = createSlice({
     name: 'theme',
     initialState: {
-        current: themes.classic,
+        current: themes.dark,
         themes
     },
     reducers: {

@@ -45,6 +45,14 @@ export default function Bases() {
             alignItems: "center",
             padding: 10,
             borderWidth: 2,
+            shadowColor: "#fff",
+            shadowOffset: {
+                width: 0,
+                height: 0,
+            },
+            shadowOpacity: 0.5,
+            shadowRadius: 40,
+            elevation: 5,
         },
         circle: {
             width: 30,
@@ -484,8 +492,8 @@ export default function Bases() {
                     <Pressable style={[styles.button, { marginVertical: 5 }]} onPress={() => handleEnterNewSoldier(color)}>
                         {
                             color === "yellow" ?
-                                <Feather name="arrow-right" size={24} color="black" /> :
-                                <MaterialIcons name={getCorrectArrow(color)} size={24} color="black" />
+                                <Feather name="arrow-right" size={24} color={theme.colors.button} /> :
+                                <MaterialIcons name={getCorrectArrow(color)} size={24} color={theme.colors.button} />
                         }
                     </Pressable>
                 </View>

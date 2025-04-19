@@ -11,42 +11,7 @@ export default function Goals() {
     const yellowSoldiers = useSelector(state => state.game.yellowSoldiers);
     const greenSoldiers = useSelector(state => state.game.greenSoldiers);
  const theme = useSelector(state => state.theme.current);
-
-    return (
-        <View style={styles.centerCircle}>
-            <View style={styles.centerQuadrants}>
-
-                <View style={[styles.quadrant, { backgroundColor: 'rgb(236 236 90)' }]}>
-                    <MaterialIcons name="home" size={24} color="goldenrod" />
-                    {yellowSoldiers.find(obj => obj.isOut === true) &&
-                        <Player color={yellowSoldiers[0].color} />}
-                    {yellowSoldiers.find(obj => obj.isOut === false) === undefined &&
-                        <Text style={{ color: 'black', fontSize: 20 }}>Yellow won the Game</Text>}
-                </View>
-                {/* Green quadrant */}
-                <View style={[styles.quadrant, { backgroundColor: '#8f8' }]}>
-                    <MaterialIcons name="home" size={24} color="darkgreen" />
-                    {greenSoldiers.find(obj => obj.isOut === true) &&
-                        <Player color={greenSoldiers[0].color} />}
-                </View>
-                {/* Red quadrant */}
-                <View style={[styles.quadrant, { backgroundColor: '#f88' }]}>
-                    <MaterialIcons name="home" size={24} color="darkred" />
-                    {redSoldiers.find(obj => obj.isOut === true) &&
-                        <Player color={redSoldiers[0].color} />}
-                </View>
-                {/* Blue quadrant */}
-                <View style={[styles.quadrant, { backgroundColor: theme.colors.blue }]}>
-                    <MaterialIcons name="home" size={24} color="darkblue" />
-                    {blueSoldiers.find(obj => obj.isOut === true) &&
-                        <Player color={blueSoldiers[0].color} />}
-                </View>
-            </View>
-        </View>
-    );
-}
-
-const styles = StyleSheet.create({
+ const styles = StyleSheet.create({
     centerCircle: {
         position: 'absolute',
         width: 120,
@@ -67,6 +32,18 @@ const styles = StyleSheet.create({
         //     { translateX: "-50%" },
         //     { translateY: "-50%" }
         // ],
+    },
+    yellow: {
+        backgroundColor: theme.colors.yellow
+    },
+    green: {
+        backgroundColor: theme.colors.green
+    },
+    red: {
+        backgroundColor: theme.colors.red
+    },
+    blue: {
+        backgroundColor: theme.colors.blue
     },
     centerQuadrants: {
         flex: 1,
@@ -97,3 +74,38 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
 })
+
+    return (
+        <View style={styles.centerCircle}>
+            <View style={styles.centerQuadrants}>
+
+                <View style={[styles.quadrant,styles.yellow]}>
+                    <MaterialIcons name="home" size={24} color="goldenrod" />
+                    {yellowSoldiers.find(obj => obj.isOut === true) &&
+                        <Player color={yellowSoldiers[0].color} />}
+                    {yellowSoldiers.find(obj => obj.isOut === false) === undefined &&
+                        <Text style={{ color: 'black', fontSize: 20 }}>Yellow won the Game</Text>}
+                </View>
+                {/* Green quadrant */}
+                <View style={[styles.quadrant,styles.green]}>
+                    <MaterialIcons name="home" size={24} color="darkgreen" />
+                    {greenSoldiers.find(obj => obj.isOut === true) &&
+                        <Player color={greenSoldiers[0].color} />}
+                </View>
+                {/* Red quadrant */}
+                <View style={[styles.quadrant, styles.red]}>
+                    <MaterialIcons name="home" size={24} color="darkred" />
+                    {redSoldiers.find(obj => obj.isOut === true) &&
+                        <Player color={redSoldiers[0].color} />}
+                </View>
+                {/* Blue quadrant */}
+                <View style={[styles.quadrant, styles.blue]}>
+                    <MaterialIcons name="home" size={24} color="darkblue" />
+                    {blueSoldiers.find(obj => obj.isOut === true) &&
+                        <Player color={blueSoldiers[0].color} />}
+                </View>
+            </View>
+        </View>
+    );
+}
+
