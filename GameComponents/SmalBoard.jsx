@@ -14,11 +14,7 @@ import {
 
 
 export default function SmalBoard() {
-
-
-
     let elementPositions = []
-
     const dispatch = useDispatch();
     const currentPlayer = useSelector(state => state.game.currentPlayer);
     const blueSoldiers = useSelector(state => state.game.blueSoldiers);
@@ -31,7 +27,8 @@ export default function SmalBoard() {
         dispatch(setCurrentPlayer(selectedPlayer));
     };
 
-    const saveElementsPositions = (x, y, number) => {
+    const saveElementsPositions = (x,y, number) => {
+        
         elementPositions.push([y, x, number][1])
 
         if (elementPositions.length === 48) {
@@ -45,19 +42,13 @@ export default function SmalBoard() {
         <View
             key={`box-${i}-${number}`}
             style={[styles.verbBox, number === "home1" || number === "hom2" || number === "home3" ? { visibility: "hidden" } : {}, { position: 'relative' }]}
-
+            onLayout={(event) => {
+                const { x, y } = event.nativeEvent.layout;
+                saveElementsPositions({ x, y,number });
+            }}
         >
-            <Text>{number}</Text>
-            {blueSoldiers.map((soldier) =>
-                soldier.position === number && (
-                    <Player
-                        key={`blue-${soldier.id}`}
-                        isSelected={currentPlayer?.id === soldier.id}
-                        onPress={() => currentSelectedPlayer(soldier)}
-                        color={soldier.color}
-                    />
-                )
-            )}
+            
+            <View style={{zIndex: 47365283758263562573725793}} >
             {redSoldiers.map((soldier) =>
                 soldier.position === number && (
                     <Player
@@ -68,6 +59,17 @@ export default function SmalBoard() {
                     />
                 )
             )}
+            {blueSoldiers.map((soldier) =>
+                soldier.position === number && (
+                    <Player
+                        key={`blue-${soldier.id}`}
+                        isSelected={currentPlayer?.id === soldier.id}
+                        onPress={() => currentSelectedPlayer(soldier)}
+                        color={soldier.color}
+                    />
+                )
+            )}
+         
             {yellowSoldiers.map((soldier) =>
                 soldier.position === number && (
                     <Player
@@ -88,6 +90,7 @@ export default function SmalBoard() {
                     />
                 )
             )}
+            </View>
         </View>
     );
 
@@ -180,9 +183,9 @@ const styles = StyleSheet.create({
     },
 
     verbBox: {
-        backgroundColor: "#f0f4f8",
+        backgroundColor: 'rgba(240, 244, 248, 0.5)', // Add transparency
         borderWidth: 2,
-        borderColor: "rgb(81 81 116)",
+        borderColor: 'rgba(81, 81, 116, 0.7)', // Make border slightly transparent
         padding: 20,
         margin: 1,
         width: 40,
@@ -190,7 +193,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         position: 'relative',
-        zIndex: 1,
+        zIndex: 0,
     },
     verbText: {
         textAlign: 'center',

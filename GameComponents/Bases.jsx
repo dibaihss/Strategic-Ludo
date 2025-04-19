@@ -35,6 +35,7 @@ export default function Bases() {
     const greenCards = useSelector(state => state.game.greenCards);
     // const boxesPosition = useSelector(state => state.animation.boxesPosition)
 
+     const showClone = useSelector(state => state.animation.showClone)
     const dispatch = useDispatch();
 
 
@@ -169,7 +170,7 @@ export default function Bases() {
                 if (cateBox === categorieTar) {
                 return parseInt(box) <= parseInt(targetPos)
             }else if(cateBox === categorieSou){
-                return parseInt(box) <= Math.max(...band.map(x => parseInt(x.match(/\d+/)[0]))) && parseInt(box) > parseInt(sourcePos)
+                return parseInt(box) <= Math.max(...band.map(x => parseInt(x.match(/\d+/)[0]))) && parseInt(box) >= parseInt(sourcePos)
             }
         }
             );

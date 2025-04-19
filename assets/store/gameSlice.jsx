@@ -3,25 +3,25 @@ import { createSlice } from '@reduxjs/toolkit';
 const initialState = {
     currentPlayer: null,
     blueSoldiers: [
-        { id: 1, position: '1a', color: "blue", initialPosition: '1blue', onBoard: true, isOut: false },
+        { id: 1, position: '10a', color: "blue", initialPosition: '1blue', onBoard: true, isOut: false },
         { id: 2, position: '2blue', color: "blue", initialPosition: '2blue', onBoard: false, isOut: false },
         { id: 3, position: '3blue', color: "blue", initialPosition: '3blue', onBoard: false, isOut: false },
         { id: 4, position: '4blue', color: "blue", initialPosition: '4blue', onBoard: false, isOut: false }
     ],
     redSoldiers: [
-        { id: 5, position: '1b', color: "red", initialPosition: '1red', onBoard: true, isOut: false },
+        { id: 5, position: '8b', color: "red", initialPosition: '1red', onBoard: true, isOut: false },
         { id: 6, position: '2red', color: "red", initialPosition: '2red', onBoard: false, isOut: false },
         { id: 7, position: '3red', color: "red", initialPosition: '3red', onBoard: false, isOut: false },
         { id: 8, position: '4red', color: "red", initialPosition: '4red', onBoard: false, isOut: false }
     ],
     yellowSoldiers: [
-        { id: 9, position: '1c', color: "yellow", initialPosition: '1yellow', onBoard: true, isOut: false },
+        { id: 9, position: '7c', color: "yellow", initialPosition: '1yellow', onBoard: true, isOut: false },
         { id: 10, position: '2yellow', color: "yellow", initialPosition: '2yellow', onBoard: false, isOut: false },
         { id: 11, position: '3yellow', color: "yellow", initialPosition: '3yellow', onBoard: false, isOut: false },
         { id: 12, position: '4yellow', color: "yellow", initialPosition: '4yellow', onBoard: false, isOut: false }
     ],
     greenSoldiers: [
-        { id: 13, position: '1d', color: "green", initialPosition: '1green', onBoard: true, isOut: false },
+        { id: 13, position: '10d', color: "green", initialPosition: '1green', onBoard: true, isOut: false },
         { id: 14, position: '2green', color: "green", initialPosition: '2green', onBoard: false, isOut: false },
         { id: 15, position: '3green', color: "green", initialPosition: '3green', onBoard: false, isOut: false },
         { id: 16, position: '4green', color: "green", initialPosition: '4green', onBoard: false, isOut: false }
