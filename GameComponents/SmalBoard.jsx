@@ -19,14 +19,77 @@ export default function SmalBoard() {
     const redSoldiers = useSelector(state => state.game.redSoldiers);
     const yellowSoldiers = useSelector(state => state.game.yellowSoldiers);
     const greenSoldiers = useSelector(state => state.game.greenSoldiers);
-
-    const boxSize = useSelector(state => state.animation.boxSize)
+    const boxSize = useSelector(state => state.animation.boxSize);
+    const theme = useSelector(state => state.theme.current);
 
     const currentSelectedPlayer = (selectedPlayer) => {
         dispatch(setCurrentPlayer(selectedPlayer));
     };
 
+    const styles = StyleSheet.create({
 
+        board: {
+            position: "absolute",
+            width: "80%",
+            height: "80%",
+            justifyContent: "center",
+            alignItems: "center",
+        },
+    
+        columnsContainer: {
+            position: "fixed",
+            flexDirection: "row",
+            justifyContent: "space-between",
+            width: 5, // Adjust based on your needs
+            left: "50%",
+            display: "flex",
+            justifyContent: "center"
+        },
+    
+        rowsContainer: {
+            position: "fixed",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            height: 5, // Adjust based on your needs
+            top: "50%",
+            display: "flex",
+            justifyContent: "center"
+        },
+    
+        verticalColumn: {
+            width: "auto",
+            padding: 3,
+            marginHorizontal: 5,
+            flexDirection: "column",
+        },
+    
+        horizontalRow: {
+            width: "auto",
+            padding: 3,
+            marginVertical: 5,
+            flexDirection: "row",
+        },
+    
+        verbBox: {
+            backgroundColor: "rgba(240, 244, 248, 0.5)",
+            borderWidth: 2,
+            borderColor: theme.colors.border.transparent ? theme.colors.border.transparent : theme.colors.border,
+            padding: 20,
+            margin: 1,
+            width: 40,
+            height: 40,
+            justifyContent: 'center',
+            alignItems: 'center',
+            position: 'relative',
+            zIndex: 1,
+            elevation: 1,
+        },
+        verbText: {
+            textAlign: 'center',
+            fontSize: 14,
+        },
+    
+    });
     const renderBox = (number, i) => (
         <View
             key={`box-${i}-${number}`}
@@ -109,64 +172,3 @@ export default function SmalBoard() {
     );
 }
 
-const styles = StyleSheet.create({
-
-    board: {
-        position: "absolute",
-        width: "80%",
-        height: "80%",
-        justifyContent: "center",
-        alignItems: "center",
-    },
-
-    columnsContainer: {
-        position: "fixed",
-        flexDirection: "row",
-        justifyContent: "space-between",
-        width: 5, // Adjust based on your needs
-        left: "50%",
-        display: "flex",
-        justifyContent: "center"
-    },
-
-    rowsContainer: {
-        position: "fixed",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        height: 5, // Adjust based on your needs
-        top: "50%",
-        display: "flex",
-        justifyContent: "center"
-    },
-
-    verticalColumn: {
-        width: "auto",
-        padding: 3,
-        marginHorizontal: 5,
-        flexDirection: "column",
-    },
-
-    horizontalRow: {
-        width: "auto",
-        padding: 3,
-        marginVertical: 5,
-        flexDirection: "row",
-    },
-
-    verbBox: {
-        backgroundColor: 'rgba(240, 244, 248, 0.5)', // Add transparency
-        borderWidth: 2,
-        borderColor: 'rgba(81, 81, 116, 0.7)', // Make border slightly transparent
-        padding: 20,
-        margin: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        position: 'relative',
-        zIndex: 0,
-    },
-    verbText: {
-        textAlign: 'center',
-        fontSize: 14,
-    },
-
-});

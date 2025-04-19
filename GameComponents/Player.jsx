@@ -26,6 +26,7 @@ export default function Player({ color, isSelected, onPress }) {
     const boxesPosition = useSelector(state => state.animation.boxesPosition)
     const showClone = useSelector(state => state.animation.showClone)
     const boxSize = useSelector(state => state.animation.boxSize)
+    const theme = useSelector(state => state.theme.current);
 
     const dispatch = useDispatch();
 
@@ -210,9 +211,9 @@ export default function Player({ color, isSelected, onPress }) {
                     width: isSelected ? 30 : 25,
                     height: isSelected ? 30 : 25,
                     borderRadius: 12.5,
-                    backgroundColor: color,
+                    backgroundColor: theme.colors[color],
                     borderWidth: isSelected ? 5 : 2,
-                    borderColor: isSelected ? "black" : 'white',
+                    borderColor: isSelected ? theme.colors.selected : '#ffffff',
                     padding: 15
                 }}
             />

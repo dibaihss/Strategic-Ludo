@@ -10,13 +10,13 @@ export default function Goals() {
     const redSoldiers = useSelector(state => state.game.redSoldiers);
     const yellowSoldiers = useSelector(state => state.game.yellowSoldiers);
     const greenSoldiers = useSelector(state => state.game.greenSoldiers);
-
+ const theme = useSelector(state => state.theme.current);
 
     return (
         <View style={styles.centerCircle}>
             <View style={styles.centerQuadrants}>
 
-                <View style={[styles.quadrant, { backgroundColor: '#ff8' }]}>
+                <View style={[styles.quadrant, { backgroundColor: 'rgb(236 236 90)' }]}>
                     <MaterialIcons name="home" size={24} color="goldenrod" />
                     {yellowSoldiers.find(obj => obj.isOut === true) &&
                         <Player color={yellowSoldiers[0].color} />}
@@ -36,7 +36,7 @@ export default function Goals() {
                         <Player color={redSoldiers[0].color} />}
                 </View>
                 {/* Blue quadrant */}
-                <View style={[styles.quadrant, { backgroundColor: '#88f' }]}>
+                <View style={[styles.quadrant, { backgroundColor: theme.colors.blue }]}>
                     <MaterialIcons name="home" size={24} color="darkblue" />
                     {blueSoldiers.find(obj => obj.isOut === true) &&
                         <Player color={blueSoldiers[0].color} />}

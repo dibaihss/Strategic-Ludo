@@ -14,23 +14,110 @@ import { boxes, categories, directions, playerType } from "../assets/shared/hard
 import { MaterialIcons } from '@expo/vector-icons';
 import Feather from '@expo/vector-icons/Feather';
 
-
 export default function Bases() {
 
+    const dispatch = useDispatch();
+    const currentPlayer = useSelector(state => state.game.currentPlayer);
     const blueSoldiers = useSelector(state => state.game.blueSoldiers);
     const redSoldiers = useSelector(state => state.game.redSoldiers);
-    const currentPlayer = useSelector(state => state.game.currentPlayer);
     const yellowSoldiers = useSelector(state => state.game.yellowSoldiers);
     const greenSoldiers = useSelector(state => state.game.greenSoldiers);
-
     const blueCards = useSelector(state => state.game.blueCards);
     const redCards = useSelector(state => state.game.redCards);
     const yellowCards = useSelector(state => state.game.yellowCards);
     const greenCards = useSelector(state => state.game.greenCards);
+    const theme = useSelector(state => state.theme.current);
 
-
-    const dispatch = useDispatch();
-
+    const styles = StyleSheet.create({
+        circleContainer: {
+            position: "absolute",
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 40,
+        },
+        corner: {
+            width: 120,
+            height: 120,
+            borderRadius: 10,
+            flexWrap: "wrap",
+            flexDirection: "row",
+            justifyContent: "space-around",
+            alignItems: "center",
+            padding: 10,
+            borderWidth: 2,
+        },
+        circle: {
+            width: 30,
+            height: 30,
+            borderRadius: 15,
+            backgroundColor: "white",
+            margin: 5,
+            borderWidth: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            position: 'relative',
+            overflow: 'hidden',
+        },
+        cornerPlayer: {
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: [
+                { translateX: -10 },
+                { translateY: -10 }
+            ],
+        },
+        red: {
+            backgroundColor: theme.colors.red,
+            borderColor: theme.colors.border,
+        },
+        yellow: {
+            backgroundColor: theme.colors.yellow,
+            borderColor: theme.colors.border,
+        },
+        blue: {
+            backgroundColor: theme.colors.blue,
+            borderColor: theme.colors.border,
+        },
+        green: {
+            backgroundColor: theme.colors.green,
+            borderColor: theme.colors.border,
+        },
+        left: {
+            top: 20,
+            left: 20,
+        },
+        top: {
+            top: 20,
+            right: 20,
+            transform: [{ rotate: '180deg' }]
+        },
+        bottom: {
+            bottom: 20,
+            left: 20,
+        },
+        right: {
+            bottom: 20,
+            right: 20,
+            transform: [{ rotate: '180deg' }]
+        },
+        button: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            padding: 10,
+            paddingHorizontal: 15,
+            backgroundColor: theme.colors.button,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: theme.colors.buttonBorder,
+            gap: 8
+        },
+        buttonText: {
+            fontSize: 14,
+            color: theme.colors.buttonText,
+            fontWeight: '1000',
+        },
+    });
 
     const handleEnterNewSoldier = (color) => {
         
@@ -206,7 +293,6 @@ export default function Bases() {
     calculateNewPosition = (player, steps) => {
         if (!player.position || player.isOut) return;
 
-
         let numbers = parseInt(player.position.match(/\d+/)[0]);
         let categorie = player.position.match(/[a-zA-Z]+/)[0];
 
@@ -214,7 +300,6 @@ export default function Bases() {
         if (steps === 1) {
             numbers = numbers === 12 ? 1 : numbers + 1;
             categorie = numbers === 1 ? getNextCatergory(categorie) : categorie;
-            console.log(numbers + categorie)
             if (CheckOutOfBoardCondition(numbers + categorie)) {
                 return "";
             }
@@ -237,21 +322,6 @@ export default function Bases() {
         const nextIndex = (currentIndex + 1) % categories.length;
         return categories[nextIndex];
     };
-
-    // const getInvolvedPositions = (sourcePos,targetPos) => {
-    //     let categorieTar = targetPos.match(/[a-zA-Z]+/)[0];
-    //     let categorieSou = sourcePos.match(/[a-zA-Z]+/)[0];
-
-    //     elements = [...boxes.row1, ...boxes.row2,...boxes.column1,...boxes.column2].filter(box => {
-    //         let cateBox = box.match(/[a-zA-Z]+/)[0];
-    //         if (cateBox === categorieSou || cateBox === categorieTar) {
-    //             return parseInt(box) <= parseInt(targetPos) && parseInt(box) > parseInt(sourcePos)
-    //         }
-    //     });
-
-    //     console.log(elements)
-
-    // }
 
     const CheckOutOfBoardCondition = (position) => {
 
@@ -423,95 +493,5 @@ export default function Bases() {
         </>
     );
 }
-
-const styles = StyleSheet.create({
-    circleContainer: {
-        position: "absolute",
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 40,
-    },
-    corner: {
-        width: 120,
-        height: 120,
-        borderRadius: 10,
-        flexWrap: "wrap",
-        flexDirection: "row",
-        justifyContent: "space-around",
-        alignItems: "center",
-        padding: 10,
-        borderWidth: 2,
-        borderColor: '#000',
-    },
-    circle: {
-        width: 30,
-        height: 30,
-        borderRadius: 15,
-        backgroundColor: "white",
-        margin: 5,
-        borderWidth: 1,
-        borderColor: "#000",
-        justifyContent: 'center',
-        alignItems: 'center',
-        position: 'relative',
-        overflow: 'hidden', // Add this to keep player within circle
-    },
-    cornerPlayer: {
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: [
-            { translateX: -10 },
-            { translateY: -10 }
-        ],
-    },
-    red: {
-        backgroundColor: "#f88",
-    },
-    yellow: {
-        backgroundColor: "#ff8",
-    },
-    blue: {
-        backgroundColor: "#88f",
-    },
-    green: {
-        backgroundColor: "#8f8",
-    },
-    left: {
-        top: 20,
-        left: 20,
-    },
-    top: {
-        top: 20,
-        right: 20,
-        transform: [{ rotate: '180deg' }]
-    },
-    bottom: {
-        bottom: 20,
-        left: 20,
-    },
-    right: {
-        bottom: 20,
-        right: 20,
-        transform: [{ rotate: '180deg' }]
-    },
-    button: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 10,
-        paddingHorizontal: 15,
-        backgroundColor: '#f0f0f0',
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#ccc',
-        gap: 8
-    },
-    buttonText: {
-        fontSize: 14,
-        color: '#333',
-        fontWeight: '1000',
-    },
-
-});
 
 
