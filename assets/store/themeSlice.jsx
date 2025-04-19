@@ -14,7 +14,8 @@ const themes = {
             },
             button: '#f0f0f0',
             buttonText: '#2a3f5f',
-            buttonBorder: '#ccc'
+            buttonBorder: '#ccc',
+            shadowColor: "#fff"
         }
     },
     classic: {
@@ -28,7 +29,8 @@ const themes = {
             border: '#000000',
             button: '#e8ecf4',
             buttonText: '#2a3f5f',
-            buttonBorder: '#d1d9e6'
+            buttonBorder: '#d1d9e6',
+            shadowColor: "#fff"
         }
     },
     dark: {
@@ -43,7 +45,8 @@ const themes = {
             selected: 'black',
             button: '#3d3d3d',
             buttonText: '#ffffff',
-            buttonBorder: '#555555'
+            buttonBorder: '#555555',
+            shadowColor: "#fff"
         }
     },
     // pastel: {

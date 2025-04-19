@@ -1,7 +1,11 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { playerType } from "../shared/hardCodedData.js";
 
 const initialState = {
     currentPlayer: null,
+    activePlayer: "blue",
+    timeRemaining: 35,
+    isTimerRunning: false,
     blueSoldiers: [
         { id: 1, position: '1a', color: "blue", initialPosition: '1blue', onBoard: true, isOut: false },
         { id: 2, position: '2blue', color: "blue", initialPosition: '2blue', onBoard: false, isOut: false },
@@ -59,6 +63,11 @@ const initialState = {
         { id: 24, used: false, value: 6 }
     ]
 };
+const getNextPlayerType = (currentPlayerType) => {
+    const currentIndex = playerType.indexOf(currentPlayerType);
+    const nextIndex = (currentIndex + 1) % playerType.length;
+    return playerType[nextIndex];
+};
 
 export const checkIfCardUsed = ({ color, steps }) => (dispatch, getState) => {
     const state = getState().game;
@@ -95,6 +104,9 @@ export const gameSlice = createSlice({
     reducers: {   
         setCurrentPlayer: (state, action) => {
             state.currentPlayer = action.payload;
+        },
+        setActivePlayer: (state, action) => {
+            state.activePlayer = getNextPlayerType(state.activePlayer)  
         },
         updateBlueCards: (state, action) => {
             const { used, value, updateAll } = action.payload;
@@ -237,18 +249,31 @@ export const gameSlice = createSlice({
                     );
                 }
             }
+        },
+        updateTimer: (state, action) => {
+            state.timeRemaining = action.payload;
+        },
+        setTimerRunning: (state, action) => {
+            state.isTimerRunning = action.payload;
+        },
+        resetTimer: (state) => {
+            state.timeRemaining = 35;
         }
     }
 });
 
 export const {
     setCurrentPlayer,
+    setActivePlayer,
     moveSoldier,
     enterNewSoldier,
     updateBlueCards,
     updateRedCards,
     updateYellowCards,
-    updateGreenCards
+    updateGreenCards,
+    updateTimer,
+    setTimerRunning,
+    resetTimer
 } = gameSlice.actions;
 
 export default gameSlice.reducer;

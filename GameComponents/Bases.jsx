@@ -1,4 +1,4 @@
-import { View, Pressable, Text, StyleSheet } from "react-native";
+import { View, Pressable, Text, StyleSheet, Alert } from "react-native";
 import React from 'react';
 import Player from './Player';
 import { useDispatch, useSelector } from 'react-redux';
@@ -6,7 +6,9 @@ import {
     setCurrentPlayer,
     moveSoldier,
     enterNewSoldier,
-    checkIfCardUsed
+    checkIfCardUsed,
+    setActivePlayer,
+    resetTimer,
 } from '../assets/store/gameSlice.jsx';
 import { setBoxesPosition, setShowClone } from '../assets/store/animationSlice.jsx'
 
@@ -18,6 +20,7 @@ export default function Bases() {
 
     const dispatch = useDispatch();
     const currentPlayer = useSelector(state => state.game.currentPlayer);
+    const activePlayer = useSelector(state => state.game.activePlayer);
     const blueSoldiers = useSelector(state => state.game.blueSoldiers);
     const redSoldiers = useSelector(state => state.game.redSoldiers);
     const yellowSoldiers = useSelector(state => state.game.yellowSoldiers);
@@ -28,6 +31,7 @@ export default function Bases() {
     const greenCards = useSelector(state => state.game.greenCards);
     const theme = useSelector(state => state.theme.current);
 
+    
     const styles = StyleSheet.create({
         circleContainer: {
             position: "absolute",
@@ -45,13 +49,7 @@ export default function Bases() {
             alignItems: "center",
             padding: 10,
             borderWidth: 2,
-            shadowColor: "#fff",
-            shadowOffset: {
-                width: 0,
-                height: 0,
-            },
-            shadowOpacity: 0.5,
-            shadowRadius: 40,
+         
             elevation: 5,
         },
         circle: {
@@ -78,18 +76,46 @@ export default function Bases() {
         red: {
             backgroundColor: theme.colors.red,
             borderColor: theme.colors.border,
+            shadowColor: activePlayer === "red" ? theme.colors.shadowColor : "",
+            shadowOffset: {
+                width: 0,
+                height: 0,
+            },
+            shadowOpacity: 0.7,
+            shadowRadius: 50,
         },
         yellow: {
             backgroundColor: theme.colors.yellow,
             borderColor: theme.colors.border,
+            shadowColor: activePlayer === "yellow" ? theme.colors.shadowColor : "",
+            shadowOffset: {
+                width: 0,
+                height: 0,
+            },
+            shadowOpacity: 0.7,
+            shadowRadius: 50,
         },
         blue: {
             backgroundColor: theme.colors.blue,
             borderColor: theme.colors.border,
+            shadowColor: activePlayer === "blue" ? theme.colors.shadowColor : "",
+            shadowOffset: {
+                width: 0,
+                height: 0,
+            },
+            shadowOpacity: 0.7,
+            shadowRadius: 50,
         },
         green: {
             backgroundColor: theme.colors.green,
             borderColor: theme.colors.border,
+            shadowColor: activePlayer === "green" ? theme.colors.shadowColor : "",
+            shadowOffset: {
+                width: 0,
+                height: 0,
+            },
+            shadowOpacity: 0.7,
+            shadowRadius: 50,
         },
         left: {
             top: 20,
@@ -128,7 +154,14 @@ export default function Bases() {
     });
 
     const handleEnterNewSoldier = (color) => {
-        
+        if (activePlayer !== color) {
+            Alert.alert(
+                'Wrong Turn',
+                `It's ${activePlayer}'s turn to play`
+            );
+            return;
+        }
+
         if(color === "red"){
             checkIfGotEnemy(color, "1b")
         }else if(color === "yellow"){
@@ -139,17 +172,32 @@ export default function Bases() {
             checkIfGotEnemy(color, "1d")
         }
         dispatch(enterNewSoldier({ color }));
+        dispatch(setActivePlayer())
+        dispatch(resetTimer());
     };
 
     const movePlayer = (color, steps) => {
+        console.log(activePlayer)
         if (!currentPlayer || currentPlayer.isOut) return;
-        if (currentPlayer.color !== color) return;
+        if (currentPlayer.color !== color) {
+            Alert.alert(
+                'Wrong Color',
+                `It's ${activePlayer}'s turn to play`
+            );
+            return;
+        }
+        if (activePlayer !== currentPlayer.color) {
+            Alert.alert(
+                'Wrong Turn',
+                `It's ${activePlayer}'s turn to play`
+            );
+            return;
+        } 
 
         dispatch(checkIfCardUsed({ color, steps }));
 
         const newPosition = calculateNewPosition(currentPlayer, steps);
 
-        console.log(newPosition)
         if(newPosition === ""){
             dispatch(setShowClone(false))
             if(currentPlayer.color === "red" || currentPlayer.color === "green"){
@@ -162,6 +210,8 @@ export default function Bases() {
         }
        
         checkIfGotEnemy(color, newPosition);
+        dispatch(setActivePlayer())
+        dispatch(resetTimer());
     };
 
     const getXStepsYSteps = (sourcePos, targetPos) => {
@@ -201,7 +251,6 @@ export default function Bases() {
             }
            
         }else if(column1.length > 0 && column2.length > 0){
-            console.log(column1, column2)
             maxCol1 = Math.max(...column1.map(x => parseInt(x.match(/\d+/)[0])))
             maxCol2 = Math.max(...column2.map(x => parseInt(x.match(/\d+/)[0])))
 
@@ -492,8 +541,8 @@ export default function Bases() {
                     <Pressable style={[styles.button, { marginVertical: 5 }]} onPress={() => handleEnterNewSoldier(color)}>
                         {
                             color === "yellow" ?
-                                <Feather name="arrow-right" size={24} color={theme.colors.button} /> :
-                                <MaterialIcons name={getCorrectArrow(color)} size={24} color={theme.colors.button} />
+                                <Feather name="arrow-right" size={24} color={theme.name === "dark" ? "white" : "black"} /> :
+                                <MaterialIcons name={getCorrectArrow(color)} size={24} color={theme.name === "dark" ? "white" : "black"} />
                         }
                     </Pressable>
                 </View>

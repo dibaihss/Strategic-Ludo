@@ -10,76 +10,76 @@ export default function Goals() {
     const redSoldiers = useSelector(state => state.game.redSoldiers);
     const yellowSoldiers = useSelector(state => state.game.yellowSoldiers);
     const greenSoldiers = useSelector(state => state.game.greenSoldiers);
- const theme = useSelector(state => state.theme.current);
- const styles = StyleSheet.create({
-    centerCircle: {
-        position: 'absolute',
-        width: 120,
-        height: 120,
-        borderRadius: 1,
-        backgroundColor: '#f8f8f8',
-        borderWidth: 2,
-        borderColor: '#000',
-        overflow: 'hidden',
-        zIndex: 1,
-        top: '50%',
-        left: '50%',
-        transform: [
-            { translateX: -60 },
-            { translateY: -60 }
-        ],
-        // transform: [
-        //     { translateX: "-50%" },
-        //     { translateY: "-50%" }
-        // ],
-    },
-    yellow: {
-        backgroundColor: theme.colors.yellow
-    },
-    green: {
-        backgroundColor: theme.colors.green
-    },
-    red: {
-        backgroundColor: theme.colors.red
-    },
-    blue: {
-        backgroundColor: theme.colors.blue
-    },
-    centerQuadrants: {
-        flex: 1,
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-    },
-    quadrant: {
-        width: '50%',
-        height: '50%',
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#000',
-    },
-    button: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 10,
-        backgroundColor: '#e8ecf4',
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#d1d9e6',
-        gap: 8,
-    },
-    buttonText: {
-        fontSize: 16,
-        color: '#2a3f5f',
-        fontWeight: '500',
-    },
-})
+    const theme = useSelector(state => state.theme.current);
+    const styles = StyleSheet.create({
+        centerCircle: {
+            position: 'absolute',
+            width: 120,
+            height: 120,
+            borderRadius: 15,
+            backgroundColor: theme.colors.background,
+            borderWidth: 2,
+            borderColor: theme.colors.border,
+            overflow: 'hidden',
+            zIndex: 1,
+            top: '50%',
+            left: '50%',
+            transform: [
+                { translateX: -60 },
+                { translateY: -60 }
+            ],
+            // transform: [
+            //     { translateX: "-50%" },
+            //     { translateY: "-50%" }
+            // ],
+        },
+        yellow: {
+            backgroundColor: theme.colors.yellow
+        },
+        green: {
+            backgroundColor: theme.colors.green
+        },
+        red: {
+            backgroundColor: theme.colors.red
+        },
+        blue: {
+            backgroundColor: theme.colors.blue
+        },
+        centerQuadrants: {
+            flex: 1,
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+        },
+        quadrant: {
+            width: '50%',
+            height: '50%',
+            justifyContent: 'center',
+            alignItems: 'center',
+            borderWidth: 1,
+            borderColor: '#000',
+        },
+        button: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            padding: 10,
+            backgroundColor: '#e8ecf4',
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: '#d1d9e6',
+            gap: 8,
+        },
+        buttonText: {
+            fontSize: 16,
+            color: '#2a3f5f',
+            fontWeight: '500',
+        },
+    })
 
     return (
         <View style={styles.centerCircle}>
             <View style={styles.centerQuadrants}>
 
-                <View style={[styles.quadrant,styles.yellow]}>
+                <View style={[styles.quadrant, styles.yellow]}>
                     <MaterialIcons name="home" size={24} color="goldenrod" />
                     {yellowSoldiers.find(obj => obj.isOut === true) &&
                         <Player color={yellowSoldiers[0].color} />}
@@ -87,7 +87,7 @@ export default function Goals() {
                         <Text style={{ color: 'black', fontSize: 20 }}>Yellow won the Game</Text>}
                 </View>
                 {/* Green quadrant */}
-                <View style={[styles.quadrant,styles.green]}>
+                <View style={[styles.quadrant, styles.green]}>
                     <MaterialIcons name="home" size={24} color="darkgreen" />
                     {greenSoldiers.find(obj => obj.isOut === true) &&
                         <Player color={greenSoldiers[0].color} />}

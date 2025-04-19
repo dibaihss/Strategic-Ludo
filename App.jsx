@@ -6,6 +6,7 @@ import { store } from './assets/store/store.jsx';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Goals from './GameComponents/Goals.jsx';
 import Bases from './GameComponents/Bases.jsx';
+import Timer from './GameComponents/Timer.jsx';
 import { MaterialIcons } from '@expo/vector-icons';
 import { setTheme } from './assets/store/themeSlice.jsx';
 
@@ -24,6 +25,7 @@ function AppContent() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <Timer />
         <SmalBoard />
         <Goals />
         <Bases />
