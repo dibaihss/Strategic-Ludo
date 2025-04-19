@@ -1,7 +1,5 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import {
-    View,
-    Text,
     StyleSheet,
     Pressable,
     Animated,
@@ -18,20 +16,17 @@ import { useDispatch, useSelector } from 'react-redux';
 
 export default function Player({ color, isSelected, onPress }) {
     const animatedValue = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
-    // const [showClone, setShowClone] = useState(false);
-
-    const duration = 1000;
 
     let iterations = 0;
     let movingValues = []
-    let boxSize = 45
-
-    const [sourcePosition, setSourcePosition] = useState({ x: 0, y: 0 }); // State to store source position
-
+   
 
     const currentPlayer = useSelector(state => state.game.currentPlayer);
+
     const boxesPosition = useSelector(state => state.animation.boxesPosition)
     const showClone = useSelector(state => state.animation.showClone)
+    const boxSize = useSelector(state => state.animation.boxSize)
+
     const dispatch = useDispatch();
 
 
@@ -39,10 +34,9 @@ export default function Player({ color, isSelected, onPress }) {
         if (!showClone) {
             if (currentPlayer && currentPlayer.color === color && isSelected === true && boxesPosition) {
                 const { xSteps, ySteps, maxRow, maxCol, maxRow1, maxRow2, maxCol1, maxCol2 } = boxesPosition
-                // animation startet showclone is true
-                // dispatch(setShowClone(true))
+         
+                animatedValue.setValue({ x: 0, y: 0 });
 
-                animatedValue.setValue({ x: sourcePosition.x, y: sourcePosition.y });
                 if (xSteps > 0 && ySteps > 0) {
                     if (maxRow < maxCol) {
                         moveInXY()
@@ -59,7 +53,6 @@ export default function Player({ color, isSelected, onPress }) {
                     xSteps > 0 ? moveInX() : 0
                     ySteps > 0 ? moveInY() : 0
                 }
-
             }
         }
     }, [boxesPosition]);
@@ -95,10 +88,10 @@ export default function Player({ color, isSelected, onPress }) {
     }
 
     const moveInX = () => {
-        let { ySteps, xSteps } = boxesPosition
+        let { xSteps, newPosition } = boxesPosition
 
+        // if(newPosition === "") xSteps--
         let categorie = currentPlayer.position.match(/[a-zA-Z]+/)[0];
-        if (categorie === "c" || categorie === "d") ySteps = -ySteps
         if (categorie === "c" || categorie === "b") xSteps = -xSteps
 
         movingValues.push({ x: boxSize * -xSteps, y: 0 })
@@ -106,11 +99,10 @@ export default function Player({ color, isSelected, onPress }) {
     }
 
     const moveInY = () => {
-        let { ySteps, xSteps } = boxesPosition
+        let { ySteps } = boxesPosition
 
         let categorie = currentPlayer.position.match(/[a-zA-Z]+/)[0];
         if (categorie === "c" || categorie === "d") ySteps = -ySteps
-        if (categorie === "c") xSteps = -xSteps
 
         movingValues.push({ x: 0, y: boxSize * -ySteps })
         moveEleWithAnimation()
@@ -119,7 +111,7 @@ export default function Player({ color, isSelected, onPress }) {
     const moveInXYX = () => {
         let { xSteps, xSteps2 } = boxesPosition
          
-        let rowOffset = 59
+        let rowOffset = boxSize + 5
         let categorie = currentPlayer.position.match(/[a-zA-Z]+/)[0];
         if (categorie === "c") rowOffset = -rowOffset
       
@@ -139,9 +131,6 @@ export default function Player({ color, isSelected, onPress }) {
             movingValues.push({ x: reachedPos + boxSize * -xSteps2, y: -rowOffset })
         }
        
-
-        console.log(movingValues)
-
         moveEleWithAnimation()
 
     }
@@ -149,12 +138,10 @@ export default function Player({ color, isSelected, onPress }) {
         let { ySteps, ySteps2 } = boxesPosition
 
 
-        let colOffset = 59
+        let colOffset = boxSize +5
         let categorie = currentPlayer.position.match(/[a-zA-Z]+/)[0];
         if (categorie === "b") colOffset = -colOffset
        
-        console.log(ySteps, ySteps2)
-
         if (ySteps === 1 && ySteps2 === 0) {
             movingValues.push({ x: -colOffset, y: 0 })
 
@@ -170,8 +157,6 @@ export default function Player({ color, isSelected, onPress }) {
             movingValues.push({ x: -colOffset, y: reachedPos + boxSize * -ySteps2 })
 
         }
-        console.log(movingValues)
-
 
         moveEleWithAnimation()
 
@@ -181,7 +166,7 @@ export default function Player({ color, isSelected, onPress }) {
         dispatch(setShowClone(true))
         Animated.timing(animatedValue, {
             toValue: movingValues[iterations], // Animate both X and Y directions
-            duration: duration,
+            duration: 550,
             useNativeDriver: false,
         }).start(({ finished }) => {
             if (finished && iterations === movingValues.length - 1) {
@@ -197,15 +182,18 @@ export default function Player({ color, isSelected, onPress }) {
     }
 
     const moveElement = () => {
+        const { newPosition } = boxesPosition
         dispatch(moveSoldier({
             color: currentPlayer.color,
-            position: boxesPosition.newPosition,
+            position: newPosition,
             soldierID: currentPlayer.id,
-            steps: boxesPosition.ySteps
+            steps: 0
         }));
-
-        dispatch(setCurrentPlayer({ ...currentPlayer, position: boxesPosition.newPosition }));
-
+        if(newPosition === ""){
+            dispatch(setCurrentPlayer(null));
+        }else{
+            dispatch(setCurrentPlayer({ ...currentPlayer, position: newPosition }));
+        }
     };
 
     return (

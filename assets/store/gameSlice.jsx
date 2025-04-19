@@ -1,27 +1,27 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 const initialState = {
     currentPlayer: null,
     blueSoldiers: [
-        { id: 1, position: '10a', color: "blue", initialPosition: '1blue', onBoard: true, isOut: false },
+        { id: 1, position: '1a', color: "blue", initialPosition: '1blue', onBoard: true, isOut: false },
         { id: 2, position: '2blue', color: "blue", initialPosition: '2blue', onBoard: false, isOut: false },
         { id: 3, position: '3blue', color: "blue", initialPosition: '3blue', onBoard: false, isOut: false },
         { id: 4, position: '4blue', color: "blue", initialPosition: '4blue', onBoard: false, isOut: false }
     ],
     redSoldiers: [
-        { id: 5, position: '8b', color: "red", initialPosition: '1red', onBoard: true, isOut: false },
+        { id: 5, position: '1b', color: "red", initialPosition: '1red', onBoard: true, isOut: false },
         { id: 6, position: '2red', color: "red", initialPosition: '2red', onBoard: false, isOut: false },
         { id: 7, position: '3red', color: "red", initialPosition: '3red', onBoard: false, isOut: false },
         { id: 8, position: '4red', color: "red", initialPosition: '4red', onBoard: false, isOut: false }
     ],
     yellowSoldiers: [
-        { id: 9, position: '7c', color: "yellow", initialPosition: '1yellow', onBoard: true, isOut: false },
+        { id: 9, position: '2b', color: "yellow", initialPosition: '1yellow', onBoard: true, isOut: false },
         { id: 10, position: '2yellow', color: "yellow", initialPosition: '2yellow', onBoard: false, isOut: false },
         { id: 11, position: '3yellow', color: "yellow", initialPosition: '3yellow', onBoard: false, isOut: false },
         { id: 12, position: '4yellow', color: "yellow", initialPosition: '4yellow', onBoard: false, isOut: false }
     ],
     greenSoldiers: [
-        { id: 13, position: '10d', color: "green", initialPosition: '1green', onBoard: true, isOut: false },
+        { id: 13, position: '1b', color: "green", initialPosition: '1green', onBoard: true, isOut: false },
         { id: 14, position: '2green', color: "green", initialPosition: '2green', onBoard: false, isOut: false },
         { id: 15, position: '3green', color: "green", initialPosition: '3green', onBoard: false, isOut: false },
         { id: 16, position: '4green', color: "green", initialPosition: '4green', onBoard: false, isOut: false }
@@ -60,7 +60,34 @@ const initialState = {
     ]
 };
 
+export const checkIfCardUsed = ({ color, steps }) => (dispatch, getState) => {
+    const state = getState().game;
+    const cardsByColor = {
+        blue: { cards: state.blueCards, updateAction: updateBlueCards },
+        red: { cards: state.redCards, updateAction: updateRedCards },
+        yellow: { cards: state.yellowCards, updateAction: updateYellowCards },
+        green: { cards: state.greenCards, updateAction: updateGreenCards }
+    };
 
+    const { cards, updateAction } = cardsByColor[color];
+    
+    // Check if only one card is unused
+    const unusedCards = cards.filter(card => !card.used);
+    if (unusedCards.length === 1) {
+        dispatch(updateAction({ used: false, value: 0, updateAll: true }));
+        return false;
+    }
+
+    // Check if card with given steps is already used
+    const card = cards.find(card => card.value === steps);
+    if (card?.used) {
+        return true;
+    }
+
+    // Mark card as used
+    dispatch(updateAction({ used: true, value: steps }));
+    return false;
+};
 
 export const gameSlice = createSlice({
     name: 'game',
@@ -132,7 +159,6 @@ export const gameSlice = createSlice({
 
             }}
              else {
-                console.log("moveSoldier", color, position, soldierID);
                 if (color === 'blue') {
                     if (!position) {
                         state.blueSoldiers = state.blueSoldiers.map(soldier =>

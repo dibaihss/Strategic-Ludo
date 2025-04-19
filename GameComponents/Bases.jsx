@@ -1,28 +1,22 @@
-import { View, Pressable, Text, StyleSheet, Button } from "react-native";
-import React, { useState } from 'react';
+import { View, Pressable, Text, StyleSheet } from "react-native";
+import React from 'react';
 import Player from './Player';
 import { useDispatch, useSelector } from 'react-redux';
 import {
     setCurrentPlayer,
     moveSoldier,
     enterNewSoldier,
-    updateBlueCards,
-    updateRedCards,
-    updateYellowCards,
-    updateGreenCards,
-
+    checkIfCardUsed
 } from '../assets/store/gameSlice.jsx';
 import { setBoxesPosition, setShowClone } from '../assets/store/animationSlice.jsx'
-
 
 import { boxes, categories, directions, playerType } from "../assets/shared/hardCodedData.js";
 import { MaterialIcons } from '@expo/vector-icons';
 import Feather from '@expo/vector-icons/Feather';
-import { current } from "@reduxjs/toolkit";
 
 
 export default function Bases() {
-    // Get soldiers from Redux store
+
     const blueSoldiers = useSelector(state => state.game.blueSoldiers);
     const redSoldiers = useSelector(state => state.game.redSoldiers);
     const currentPlayer = useSelector(state => state.game.currentPlayer);
@@ -33,9 +27,8 @@ export default function Bases() {
     const redCards = useSelector(state => state.game.redCards);
     const yellowCards = useSelector(state => state.game.yellowCards);
     const greenCards = useSelector(state => state.game.greenCards);
-    // const boxesPosition = useSelector(state => state.animation.boxesPosition)
 
-     const showClone = useSelector(state => state.animation.showClone)
+
     const dispatch = useDispatch();
 
 
@@ -55,32 +48,27 @@ export default function Bases() {
 
     const movePlayer = (color, steps) => {
         if (!currentPlayer || currentPlayer.isOut) return;
-        if (currentPlayer.color !== color) return; // Check if the current player is the one who is trying to move
+        if (currentPlayer.color !== color) return;
 
-
-
-        if (checkIfCardUsed(color, steps)) return; // Check if the card is already used
+        dispatch(checkIfCardUsed({ color, steps }));
 
         const newPosition = calculateNewPosition(currentPlayer, steps);
 
+        console.log(newPosition)
         if(newPosition === ""){
-                    dispatch(moveSoldier({
-                            color: currentPlayer.color,
-                            position: newPosition,
-                            soldierID: currentPlayer.id,
-                            steps: 0
-                        }));
-                
-                        dispatch(setCurrentPlayer( null ));
+            dispatch(setShowClone(false))
+            if(currentPlayer.color === "red" || currentPlayer.color === "green"){
+                dispatch(setBoxesPosition({ ySteps: steps, newPosition: newPosition}))
+            }else{
+                dispatch(setBoxesPosition({ xSteps: steps, newPosition: newPosition}))
+            }
         }else{
             getXStepsYSteps(currentPlayer.position, newPosition)
         }
        
-
-        // Clear current player after moving
-        checkIfGotEnemy(color, newPosition); // Check if the player got an enemy soldier
-
+        checkIfGotEnemy(color, newPosition);
     };
+
     const getXStepsYSteps = (sourcePos, targetPos) => {
         let xSteps = 0;
         let ySteps = 0;
@@ -151,9 +139,6 @@ export default function Bases() {
         }
        
 
-        console.log("Max row value:", maxRow, "x Steps: ", xSteps);
-        console.log("Max column value:", maxCol, "y Steps: ", ySteps);
-
         dispatch(setShowClone(false))
         dispatch(setBoxesPosition({ xSteps, xSteps2, ySteps,maxRow, maxCol, newPosition: targetPos, maxRow1, maxRow2, maxCol1, maxCol2, ySteps2}))
 
@@ -180,8 +165,7 @@ export default function Bases() {
                 if (cateBox === categorieSou || cateBox === categorieTar) {
                     return parseInt(box) <= parseInt(targetPos) && parseInt(box) > parseInt(sourcePos)
                 }
-            }
-            );
+            });
         }
         return elements
     }
@@ -207,7 +191,7 @@ export default function Bases() {
                 checkIfGotEnemy = greenEnemySoldiers.filter(soldier => soldier.position === position);
                 break;
         }
-        if (checkIfGotEnemy.length === 1) {
+        if (checkIfGotEnemy.length >= 1) {
             dispatch(moveSoldier({
                 color: checkIfGotEnemy[0].color,
                 position: checkIfGotEnemy[0].initialPosition,
@@ -221,6 +205,8 @@ export default function Bases() {
 
     calculateNewPosition = (player, steps) => {
         if (!player.position || player.isOut) return;
+
+
         let numbers = parseInt(player.position.match(/\d+/)[0]);
         let categorie = player.position.match(/[a-zA-Z]+/)[0];
 
@@ -228,6 +214,7 @@ export default function Bases() {
         if (steps === 1) {
             numbers = numbers === 12 ? 1 : numbers + 1;
             categorie = numbers === 1 ? getNextCatergory(categorie) : categorie;
+            console.log(numbers + categorie)
             if (CheckOutOfBoardCondition(numbers + categorie)) {
                 return "";
             }
@@ -251,107 +238,50 @@ export default function Bases() {
         return categories[nextIndex];
     };
 
+    // const getInvolvedPositions = (sourcePos,targetPos) => {
+    //     let categorieTar = targetPos.match(/[a-zA-Z]+/)[0];
+    //     let categorieSou = sourcePos.match(/[a-zA-Z]+/)[0];
+
+    //     elements = [...boxes.row1, ...boxes.row2,...boxes.column1,...boxes.column2].filter(box => {
+    //         let cateBox = box.match(/[a-zA-Z]+/)[0];
+    //         if (cateBox === categorieSou || cateBox === categorieTar) {
+    //             return parseInt(box) <= parseInt(targetPos) && parseInt(box) > parseInt(sourcePos)
+    //         }
+    //     });
+
+    //     console.log(elements)
+
+    // }
+
     const CheckOutOfBoardCondition = (position) => {
 
         switch (currentPlayer.color) {
             case 'blue':
-                if (position === '6d') {
+                if (position === '7d') {
                     setCurrentPlayer("")
                     return true;
                 }
                 break;
             case 'red':
-                if (position === '6a') {
+                if (position === '7a') {
                     setCurrentPlayer("")
                     return true;
                 }
                 break;
             case 'yellow':
-                if (position === '6b') {
+                if (position === '7b') {
                     setCurrentPlayer("")
                     return true;
                 }
                 break;
             case 'green':
-                if (position === '6c') {
+                if (position === '7c') {
                     setCurrentPlayer("")
                     return true;
                 }
                 break;
             default:
                 break;
-        }
-
-    }
-
-    const checkIfCardUsed = (color, steps) => {
-        if (color === 'blue') {
-            const checkIfareUsed = blueCards.filter(card => card.used === false);
-
-
-            if (checkIfareUsed.length === 1) {
-                dispatch(updateBlueCards({ used: false, value: 0, updateAll: true }));
-                return false;
-            }
-            const card = blueCards.find(card => card.value === steps);
-
-            if (card && card.used) {
-                return true;
-            }
-            dispatch(updateBlueCards({ used: true, value: steps }));
-            return false;
-
-        }
-        if (color === 'red') {
-            const checkIfareUsed = redCards.filter(card => card.used === false);
-
-
-            if (checkIfareUsed.length === 1) {
-                dispatch(updateRedCards({ used: false, value: 0, updateAll: true }));
-                return false;
-            }
-            const card = redCards.find(card => card.value === steps);
-
-            if (card && card.used) {
-                return true;
-            }
-            dispatch(updateRedCards({ used: true, value: steps }));
-            return false;
-
-        }
-        if (color === 'yellow') {
-            const checkIfareUsed = yellowCards.filter(card => card.used === false);
-
-
-            if (checkIfareUsed.length === 1) {
-                dispatch(updateYellowCards({ used: false, value: 0, updateAll: true }));
-                return false;
-            }
-            const card = yellowCards.find(card => card.value === steps);
-
-            if (card && card.used) {
-                return true;
-            }
-            dispatch(updateYellowCards({ used: true, value: steps }));
-            return false;
-
-        }
-        if (color === 'green') {
-            const checkIfareUsed = greenCards.filter(card => card.used === false);
-
-
-            if (checkIfareUsed.length === 1) {
-                dispatch(updateGreenCards({ used: false, value: 0, updateAll: true }));
-                return false;
-            }
-            const card = greenCards.find(card => card.value === steps);
-
-            if (card && card.used) {
-                return true;
-            }
-            dispatch(updateGreenCards({ used: true, value: steps }));
-            return false;
-
         }
 
     }

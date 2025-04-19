@@ -1,10 +1,8 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
-    sourcePosition: null,
-    targetPosition: null,
+    boxSize: 50,
     showClone: false,
-    animatedValue: { x: 0, y: 0 },
     boxesPosition: null
 };
 
