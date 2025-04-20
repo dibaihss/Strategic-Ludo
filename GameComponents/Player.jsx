@@ -204,9 +204,6 @@ export default function Player({ color, isSelected, onPress }) {
                 returenToBase: returenToBase ? returenToBase : false
             }));
         }else{
-            if(!newPosition){
-                return
-            }else{
                 dispatch(moveSoldier({
                     color: currentPlayer.color,
                     position: newPosition,
@@ -215,15 +212,12 @@ export default function Player({ color, isSelected, onPress }) {
                 }));
                     
                 dispatch(setCurrentPlayer(null));
-                    dispatch(checkIfGotEnemy({ color: currentPlayer.color, position: newPosition }));
-                    // if(newPosition === ""){
-                    // }else{
-                    //     dispatch(setCurrentPlayer({ ...currentPlayer, position: newPosition }));
-                    // }
+                dispatch(checkIfGotEnemy({ color: currentPlayer.color, position: newPosition }));
+
+                setTimeout(()=>{
                     dispatch(setActivePlayer());
                     dispatch(resetTimer());
-            }
-       
+                }, 100)
         }
        
        

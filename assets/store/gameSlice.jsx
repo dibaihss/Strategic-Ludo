@@ -8,13 +8,13 @@ const initialState = {
     timeRemaining: 35,
     isTimerRunning: false,
     blueSoldiers: [
-        { id: 1, position: '1b', color: "blue", initialPosition: '1blue', onBoard: true, isOut: false },
+        { id: 1, position: '1a', color: "blue", initialPosition: '1blue', onBoard: true, isOut: false },
         { id: 2, position: '2blue', color: "blue", initialPosition: '2blue', onBoard: false, isOut: false },
         { id: 3, position: '3blue', color: "blue", initialPosition: '3blue', onBoard: false, isOut: false },
         { id: 4, position: '4blue', color: "blue", initialPosition: '4blue', onBoard: false, isOut: false }
     ],
     redSoldiers: [
-        { id: 5, position: '4b', color: "red", initialPosition: '1red', onBoard: true, isOut: false },
+        { id: 5, position: '1b', color: "red", initialPosition: '1red', onBoard: true, isOut: false },
         { id: 6, position: '2red', color: "red", initialPosition: '2red', onBoard: false, isOut: false },
         { id: 7, position: '3red', color: "red", initialPosition: '3red', onBoard: false, isOut: false },
         { id: 8, position: '4red', color: "red", initialPosition: '4red', onBoard: false, isOut: false }
@@ -70,9 +70,10 @@ const getNextPlayerType = (currentPlayerType) => {
     return playerType[nextIndex];
 };
 
+
 export const checkIfGotEnemy = ({ color, position }) => (dispatch, getState) => {
     if (!position) return;
-    
+
     const state = getState().game;
     let enemyInPosition;
 
@@ -98,7 +99,7 @@ export const checkIfGotEnemy = ({ color, position }) => (dispatch, getState) => 
     if (enemyInPosition) {
         dispatch(setCurrentPlayer(enemyInPosition));
         dispatch(setShowClone(false))
-        dispatch(setBoxesPosition({ ySteps: 3,xSteps: 3, returenToBase: true, kickedPlayer: enemyInPosition}))
+        dispatch(setBoxesPosition({ ySteps: 3, xSteps: 3, returenToBase: true, kickedPlayer: enemyInPosition }))
     }
 };
 
@@ -113,7 +114,7 @@ export const checkIfCardUsed = ({ color, steps }) => (dispatch, getState) => {
     };
 
     const { cards, updateAction } = cardsByColor[color];
-    
+
     // Check if only one card is unused
     const unusedCards = cards.filter(card => !card.used);
     if (unusedCards.length === 1) {
@@ -126,7 +127,6 @@ export const checkIfCardUsed = ({ color, steps }) => (dispatch, getState) => {
     if (card?.used) {
         return true;
     }
-
     // Mark card as used
     dispatch(updateAction({ used: true, value: steps }));
     return false;
@@ -135,13 +135,26 @@ export const checkIfCardUsed = ({ color, steps }) => (dispatch, getState) => {
 export const gameSlice = createSlice({
     name: 'game',
     initialState,
-    reducers: {   
+    reducers: {
         setCurrentPlayer: (state, action) => {
-            console.log(action.payload)
             state.currentPlayer = action.payload;
         },
         setActivePlayer: (state, action) => {
-            state.activePlayer = getNextPlayerType(state.activePlayer)  
+            const newActivePlayer = getNextPlayerType(state.activePlayer);
+            state.activePlayer = newActivePlayer;
+
+            // Set currentPlayer to the first non-out soldier of the new active player
+            const soldiers = {
+                blue: state.blueSoldiers,
+                red: state.redSoldiers,
+                yellow: state.yellowSoldiers,
+                green: state.greenSoldiers
+            }[newActivePlayer];
+
+            const firstAvailableSoldier = soldiers.find(soldier => !soldier.isOut && soldier.onBoard);
+            if (firstAvailableSoldier) {
+                state.currentPlayer = firstAvailableSoldier;
+            }
         },
         updateBlueCards: (state, action) => {
             const { used, value, updateAll } = action.payload;
@@ -188,71 +201,37 @@ export const gameSlice = createSlice({
         },
         moveSoldier: (state, action) => {
             const { color, position, soldierID, returenToBase } = action.payload;
-            
-            if (returenToBase) {
-                if (color === 'blue') {
-                    state.blueSoldiers = state.blueSoldiers.map(soldier =>
-                        soldier.id === soldierID ? { ...soldier, position: soldier.initialPosition, onBoard: false, isOut: false } : soldier
-                    );
-                } else if (color === 'red') {
-                    state.redSoldiers = state.redSoldiers.map(soldier =>
-                        soldier.id === soldierID ? { ...soldier, position: soldier.initialPosition, onBoard: false, isOut: false } : soldier
-                    );
-                } else if (color === 'yellow') {
-                state.yellowSoldiers = state.yellowSoldiers.map(soldier =>
-                    soldier.id === soldierID ? { ...soldier, position: soldier.initialPosition, onBoard: false, isOut: false } : soldier
-                );
-            } else if (color === 'green') {
-                state.greenSoldiers = state.greenSoldiers.map(soldier =>
-                    soldier.id === soldierID ? { ...soldier, position: soldier.initialPosition, onBoard: false, isOut: false } : soldier
-                );
+            const soldiersByColor = {
+                blue: state.blueSoldiers,
+                red: state.redSoldiers,
+                yellow: state.yellowSoldiers,
+                green: state.greenSoldiers
+            };
 
-            }}
-             else {
-                if (color === 'blue') {
-                    if (!position) {
-                        state.blueSoldiers = state.blueSoldiers.map(soldier =>
-                            soldier.id === soldierID ? { ...soldier, position, onBoard: false, isOut: true } : soldier
-                        );
-                    } else {
-                        state.blueSoldiers = state.blueSoldiers.map(soldier =>
-                            soldier.id === soldierID ? { ...soldier, position } : soldier
-                        );
-                    }
+            console.log(position)
+            const updatedSoldiers = soldiersByColor[color].map(soldier =>
+                soldier.id === soldierID 
+                    ? returenToBase
+                        ? { ...soldier, position: soldier.initialPosition, onBoard: false, isOut: false }
+                        : !position
+                            ? { ...soldier, position, onBoard: false, isOut: true }
+                            : { ...soldier, position }
+                    : soldier
+            );
 
-                } else if (color === 'red') {
-                    if (!position) {
-                        state.redSoldiers = state.redSoldiers.map(soldier =>
-                            soldier.id === soldierID ? { ...soldier, position, onBoard: false, isOut: true } : soldier
-                        );
-                    } else {
-                        state.redSoldiers = state.redSoldiers.map(soldier =>
-                            soldier.id === soldierID ? { ...soldier, position } : soldier
-                        );
-                    }
-                }
-                else if (color === 'yellow') {
-                    if (!position) {
-                        state.yellowSoldiers = state.yellowSoldiers.map(soldier =>
-                            soldier.id === soldierID ? { ...soldier, position, onBoard: false, isOut: true } : soldier
-                        );
-                    } else {
-                        state.yellowSoldiers = state.yellowSoldiers.map(soldier =>
-                            soldier.id === soldierID ? { ...soldier, position } : soldier
-                        );
-                    }
-                }
-                else if (color === 'green') {
-                    if (!position) {
-                        state.greenSoldiers = state.greenSoldiers.map(soldier =>
-                            soldier.id === soldierID ? { ...soldier, position, onBoard: false, isOut: true } : soldier
-                        );
-                    } else {
-                        state.greenSoldiers = state.greenSoldiers.map(soldier =>
-                            soldier.id === soldierID ? { ...soldier, position } : soldier
-                        );
-                    }
-                }
+            switch (color) {
+                case 'blue':
+                    state.blueSoldiers = updatedSoldiers;
+                    break;
+                case 'red':
+                    state.redSoldiers = updatedSoldiers;
+                    break;
+                case 'yellow':
+                    state.yellowSoldiers = updatedSoldiers;
+                    break;
+                case 'green':
+                    state.greenSoldiers = updatedSoldiers;
+                    break;
             }
         },
         enterNewSoldier: (state, action) => {
