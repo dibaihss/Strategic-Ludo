@@ -1,7 +1,6 @@
 import {
     View,
     StyleSheet,
-    Text
 } from 'react-native';
 import React from 'react';
 import Player from './Player';
@@ -76,11 +75,12 @@ export default function SmalBoard() {
             borderColor: theme.colors.border.transparent ? theme.colors.border.transparent : theme.colors.border,
             padding: 20,
             margin: 1,
-            width: 40,
-            height: 40,
+            width: boxSize, 
+            height: boxSize,
             justifyContent: 'center',
             alignItems: 'center',
             position: 'relative',
+            borderRadius: 10,
             zIndex: 1,
             elevation: 1,
         },
@@ -93,8 +93,7 @@ export default function SmalBoard() {
     const renderBox = (number, i) => (
         <View
             key={`box-${i}-${number}`}
-            style={[styles.verbBox, number === "home1" || number === "hom2" || number === "home3" ? { visibility: "hidden" } : {}, 
-                { position: 'relative' , width: boxSize, height: boxSize}]}
+            style={[styles.verbBox, number === "home1" || number === "hom2" || number === "home3" ? { visibility: "hidden" } : {}]}
         >
             <View>
                 {redSoldiers.map((soldier) =>

@@ -4,11 +4,11 @@ import Player from './Player';
 import { useDispatch, useSelector } from 'react-redux';
 import {
     setCurrentPlayer,
-    moveSoldier,
     enterNewSoldier,
     checkIfCardUsed,
     setActivePlayer,
     resetTimer,
+    checkIfGotEnemy
 } from '../assets/store/gameSlice.jsx';
 import { setBoxesPosition, setShowClone } from '../assets/store/animationSlice.jsx'
 
@@ -162,17 +162,16 @@ export default function Bases() {
             return;
         }
 
-        if(color === "red"){
-            checkIfGotEnemy(color, "1b")
-        }else if(color === "yellow"){
-            checkIfGotEnemy(color, "1c")
-        }else if(color === "blue"){
-            checkIfGotEnemy(color, "1a")
-        }else if(color === "green"){
-            checkIfGotEnemy(color, "1d")
-        }
+        const startingPositions = {
+            red: "1b",
+            yellow: "1c",
+            blue: "1a",
+            green: "1d"
+        };
+
+        dispatch(checkIfGotEnemy({ color, position: startingPositions[color] }));
         dispatch(enterNewSoldier({ color }));
-        dispatch(setActivePlayer())
+        dispatch(setActivePlayer());
         dispatch(resetTimer());
     };
 
@@ -209,9 +208,6 @@ export default function Bases() {
             getXStepsYSteps(currentPlayer.position, newPosition)
         }
        
-        checkIfGotEnemy(color, newPosition);
-        dispatch(setActivePlayer())
-        dispatch(resetTimer());
     };
 
     const getXStepsYSteps = (sourcePos, targetPos) => {
@@ -282,7 +278,6 @@ export default function Bases() {
             );
         }
        
-
         dispatch(setShowClone(false))
         dispatch(setBoxesPosition({ xSteps, xSteps2, ySteps,maxRow, maxCol, newPosition: targetPos, maxRow1, maxRow2, maxCol1, maxCol2, ySteps2}))
 
@@ -312,39 +307,6 @@ export default function Bases() {
             });
         }
         return elements
-    }
-
-    checkIfGotEnemy = (color, position) => {
-        let checkIfGotEnemy = [];
-        if (!position) return;
-        switch (color) {
-            case 'blue':
-                const enemySoldiers = [...redSoldiers, ...yellowSoldiers, ...greenSoldiers];
-                checkIfGotEnemy = enemySoldiers.filter(soldier => soldier.position === position);
-                break;
-            case 'red':
-                const redEnemySoldiers = [...blueSoldiers, ...yellowSoldiers, ...greenSoldiers];
-                checkIfGotEnemy = redEnemySoldiers.filter(soldier => soldier.position === position);
-                break;
-            case 'yellow':
-                const yellowEnemySoldiers = [...redSoldiers, ...blueSoldiers, ...greenSoldiers];
-                checkIfGotEnemy = yellowEnemySoldiers.filter(soldier => soldier.position === position);
-                break;
-            case 'green':
-                const greenEnemySoldiers = [...redSoldiers, ...yellowSoldiers, ...blueSoldiers];
-                checkIfGotEnemy = greenEnemySoldiers.filter(soldier => soldier.position === position);
-                break;
-        }
-        if (checkIfGotEnemy.length >= 1) {
-            dispatch(moveSoldier({
-                color: checkIfGotEnemy[0].color,
-                position: checkIfGotEnemy[0].initialPosition,
-                soldierID: checkIfGotEnemy[0].id,
-                steps: 0
-                , returenToBase: true
-            }));
-        }
-
     }
 
     calculateNewPosition = (player, steps) => {

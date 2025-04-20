@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { playerType } from "../shared/hardCodedData.js";
+import { setBoxesPosition, setShowClone } from './animationSlice.jsx'
 
 const initialState = {
     currentPlayer: null,
@@ -7,25 +8,25 @@ const initialState = {
     timeRemaining: 35,
     isTimerRunning: false,
     blueSoldiers: [
-        { id: 1, position: '1a', color: "blue", initialPosition: '1blue', onBoard: true, isOut: false },
+        { id: 1, position: '1b', color: "blue", initialPosition: '1blue', onBoard: true, isOut: false },
         { id: 2, position: '2blue', color: "blue", initialPosition: '2blue', onBoard: false, isOut: false },
         { id: 3, position: '3blue', color: "blue", initialPosition: '3blue', onBoard: false, isOut: false },
         { id: 4, position: '4blue', color: "blue", initialPosition: '4blue', onBoard: false, isOut: false }
     ],
     redSoldiers: [
-        { id: 5, position: '1b', color: "red", initialPosition: '1red', onBoard: true, isOut: false },
+        { id: 5, position: '4b', color: "red", initialPosition: '1red', onBoard: true, isOut: false },
         { id: 6, position: '2red', color: "red", initialPosition: '2red', onBoard: false, isOut: false },
         { id: 7, position: '3red', color: "red", initialPosition: '3red', onBoard: false, isOut: false },
         { id: 8, position: '4red', color: "red", initialPosition: '4red', onBoard: false, isOut: false }
     ],
     yellowSoldiers: [
-        { id: 9, position: '2b', color: "yellow", initialPosition: '1yellow', onBoard: true, isOut: false },
+        { id: 9, position: '1c', color: "yellow", initialPosition: '1yellow', onBoard: true, isOut: false },
         { id: 10, position: '2yellow', color: "yellow", initialPosition: '2yellow', onBoard: false, isOut: false },
         { id: 11, position: '3yellow', color: "yellow", initialPosition: '3yellow', onBoard: false, isOut: false },
         { id: 12, position: '4yellow', color: "yellow", initialPosition: '4yellow', onBoard: false, isOut: false }
     ],
     greenSoldiers: [
-        { id: 13, position: '1b', color: "green", initialPosition: '1green', onBoard: true, isOut: false },
+        { id: 13, position: '1d', color: "green", initialPosition: '1green', onBoard: true, isOut: false },
         { id: 14, position: '2green', color: "green", initialPosition: '2green', onBoard: false, isOut: false },
         { id: 15, position: '3green', color: "green", initialPosition: '3green', onBoard: false, isOut: false },
         { id: 16, position: '4green', color: "green", initialPosition: '4green', onBoard: false, isOut: false }
@@ -69,6 +70,39 @@ const getNextPlayerType = (currentPlayerType) => {
     return playerType[nextIndex];
 };
 
+export const checkIfGotEnemy = ({ color, position }) => (dispatch, getState) => {
+    if (!position) return;
+    
+    const state = getState().game;
+    let enemyInPosition;
+
+    switch (color) {
+        case 'blue':
+            enemyInPosition = [...state.redSoldiers, ...state.yellowSoldiers, ...state.greenSoldiers]
+                .find(soldier => soldier.position === position);
+            break;
+        case 'red':
+            enemyInPosition = [...state.blueSoldiers, ...state.yellowSoldiers, ...state.greenSoldiers]
+                .find(soldier => soldier.position === position);
+            break;
+        case 'yellow':
+            enemyInPosition = [...state.redSoldiers, ...state.blueSoldiers, ...state.greenSoldiers]
+                .find(soldier => soldier.position === position);
+            break;
+        case 'green':
+            enemyInPosition = [...state.redSoldiers, ...state.yellowSoldiers, ...state.blueSoldiers]
+                .find(soldier => soldier.position === position);
+            break;
+    }
+
+    if (enemyInPosition) {
+        dispatch(setCurrentPlayer(enemyInPosition));
+        dispatch(setShowClone(false))
+        dispatch(setBoxesPosition({ ySteps: 3,xSteps: 3, returenToBase: true, kickedPlayer: enemyInPosition}))
+    }
+};
+
+
 export const checkIfCardUsed = ({ color, steps }) => (dispatch, getState) => {
     const state = getState().game;
     const cardsByColor = {
@@ -103,6 +137,7 @@ export const gameSlice = createSlice({
     initialState,
     reducers: {   
         setCurrentPlayer: (state, action) => {
+            console.log(action.payload)
             state.currentPlayer = action.payload;
         },
         setActivePlayer: (state, action) => {
@@ -129,6 +164,7 @@ export const gameSlice = createSlice({
                 );
             }
         },
+
         updateYellowCards: (state, action) => {
             const { used, value, updateAll } = action.payload;
             if (updateAll) {
@@ -139,6 +175,7 @@ export const gameSlice = createSlice({
                 );
             }
         },
+
         updateGreenCards: (state, action) => {
             const { used, value, updateAll } = action.payload;
             if (updateAll) {
@@ -151,6 +188,7 @@ export const gameSlice = createSlice({
         },
         moveSoldier: (state, action) => {
             const { color, position, soldierID, returenToBase } = action.payload;
+            
             if (returenToBase) {
                 if (color === 'blue') {
                     state.blueSoldiers = state.blueSoldiers.map(soldier =>
@@ -250,6 +288,7 @@ export const gameSlice = createSlice({
                 }
             }
         },
+
         updateTimer: (state, action) => {
             state.timeRemaining = action.payload;
         },

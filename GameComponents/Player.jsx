@@ -8,7 +8,9 @@ import {
 import {
     setCurrentPlayer,
     moveSoldier,
-
+    checkIfGotEnemy,
+    setActivePlayer,
+    resetTimer
 } from '../assets/store/gameSlice.jsx';
 import { setShowClone } from '../assets/store/animationSlice.jsx'
 
@@ -34,16 +36,22 @@ export default function Player({ color, isSelected, onPress }) {
     React.useEffect(() => {
         if (!showClone) {
             if (currentPlayer && currentPlayer.color === color && isSelected === true && boxesPosition) {
-                const { xSteps, ySteps, maxRow, maxCol, maxRow1, maxRow2, maxCol1, maxCol2 } = boxesPosition
-         
+                const { xSteps, ySteps, maxRow, maxCol, maxRow1, maxRow2, maxCol1, maxCol2, returenToBase } = boxesPosition
+                
+                if(returenToBase){
+                animatedValue.setValue({ x: 0, y: 0 });
+                    moveInXInY()
+                }else{
                 animatedValue.setValue({ x: 0, y: 0 });
 
                 if (xSteps > 0 && ySteps > 0) {
+                 
                     if (maxRow < maxCol) {
                         moveInXY()
                     } else {
                         moveInYX()
-                    }
+                    } 
+                  
                 } else if (maxRow2 > 0 && maxRow1 > 0) {
                     moveInXYX()
                 }
@@ -54,7 +62,7 @@ export default function Player({ color, isSelected, onPress }) {
                     xSteps > 0 ? moveInX() : 0
                     ySteps > 0 ? moveInY() : 0
                 }
-            }
+            }}
         }
     }, [boxesPosition]);
 
@@ -89,9 +97,8 @@ export default function Player({ color, isSelected, onPress }) {
     }
 
     const moveInX = () => {
-        let { xSteps, newPosition } = boxesPosition
+        let { xSteps } = boxesPosition
 
-        // if(newPosition === "") xSteps--
         let categorie = currentPlayer.position.match(/[a-zA-Z]+/)[0];
         if (categorie === "c" || categorie === "b") xSteps = -xSteps
 
@@ -162,6 +169,12 @@ export default function Player({ color, isSelected, onPress }) {
         moveEleWithAnimation()
 
     }
+    const moveInXInY = () =>{
+        let { ySteps, xSteps } = boxesPosition
+        movingValues.push({ x: boxSize * -xSteps, y: boxSize * -ySteps })
+        // console.log(movingValues)
+        moveEleWithAnimation()
+    }
 
     const moveEleWithAnimation = () => {
         dispatch(setShowClone(true))
@@ -172,7 +185,6 @@ export default function Player({ color, isSelected, onPress }) {
         }).start(({ finished }) => {
             if (finished && iterations === movingValues.length - 1) {
                 moveElement()
-                // dispatch(setShowClone(false))
             }
             else if (finished) {
                 iterations++
@@ -183,18 +195,38 @@ export default function Player({ color, isSelected, onPress }) {
     }
 
     const moveElement = () => {
-        const { newPosition } = boxesPosition
-        dispatch(moveSoldier({
-            color: currentPlayer.color,
-            position: newPosition,
-            soldierID: currentPlayer.id,
-            steps: 0
-        }));
-        if(newPosition === ""){
-            dispatch(setCurrentPlayer(null));
+        const { kickedPlayer, returenToBase, newPosition } = boxesPosition
+        if(returenToBase){
+            dispatch(moveSoldier({
+                color: kickedPlayer.color,
+                position: kickedPlayer.initialPosition,
+                soldierID: kickedPlayer.id,
+                returenToBase: returenToBase ? returenToBase : false
+            }));
         }else{
-            dispatch(setCurrentPlayer({ ...currentPlayer, position: newPosition }));
+            if(!newPosition){
+                return
+            }else{
+                dispatch(moveSoldier({
+                    color: currentPlayer.color,
+                    position: newPosition,
+                    soldierID: currentPlayer.id,
+                    steps: 0,
+                }));
+                    
+                dispatch(setCurrentPlayer(null));
+                    dispatch(checkIfGotEnemy({ color: currentPlayer.color, position: newPosition }));
+                    // if(newPosition === ""){
+                    // }else{
+                    //     dispatch(setCurrentPlayer({ ...currentPlayer, position: newPosition }));
+                    // }
+                    dispatch(setActivePlayer());
+                    dispatch(resetTimer());
+            }
+       
         }
+       
+       
     };
 
     return (
