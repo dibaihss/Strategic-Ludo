@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform, Dimensions } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateTimer, setTimerRunning, resetTimer, setActivePlayer } from '../assets/store/gameSlice';
 
@@ -8,7 +8,27 @@ export default function Timer() {
     const timeRemaining = useSelector(state => state.game.timeRemaining);
     const isTimerRunning = useSelector(state => state.game.isTimerRunning);
     const theme = useSelector(state => state.theme.current);
+    const windowWidth = Dimensions.get('window').width;
+    const windowHeight = Dimensions.get('window').height;
+    const isSmallScreen = windowWidth < 375 || windowHeight < 667;
 
+    const styles = StyleSheet.create({
+        container: {
+            // display: Platform.OS === 'android' ? "none" : "flex",
+            position: 'absolute',
+            top: isSmallScreen ? 10 : 20,
+            left: isSmallScreen ? "30%" : "",
+            paddingHorizontal: isSmallScreen ? 15 : 20,
+            paddingVertical: isSmallScreen ? 8 : 10,
+            borderRadius: 20,
+            zIndex: 1000,
+            elevation: isSmallScreen ? 4 : 0,
+        },
+        text: {
+            fontSize: isSmallScreen ? 16 : 18,
+            fontWeight: isSmallScreen ? 'bold' : 'bold',
+        }
+    });
 
     useEffect(() => {
         dispatch(setTimerRunning(true));
@@ -40,17 +60,3 @@ export default function Timer() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        position: 'absolute',
-        top: 20,
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 20,
-        zIndex: 1000,
-    },
-    text: {
-        fontSize: 18,
-        fontWeight: 'bold',
-    }
-});

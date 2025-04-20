@@ -1,7 +1,14 @@
 import { createSlice } from '@reduxjs/toolkit';
+import {
+    Dimensions
+} from 'react-native';
+
+const windowWidth = Dimensions.get('window').width;
+const windowHeight = Dimensions.get('window').height;
+const isSmallScreen = windowWidth < 375 || windowHeight < 667;
 
 const initialState = {
-    boxSize: 50,
+    boxSize: isSmallScreen ? 25 : 50,
     showClone: false,
     boxesPosition: null
 };

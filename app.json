@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "ludo",
-    "slug": "ludo",
+    "slug": "strategic",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -23,6 +23,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "6c26f375-258e-42b3-a044-fb4f831e68e7"
+      }
+    },
+    "owner": "idib63"
   }
 }

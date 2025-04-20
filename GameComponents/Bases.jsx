@@ -1,4 +1,4 @@
-import { View, Pressable, Text, StyleSheet, Alert } from "react-native";
+import { View, Pressable, Text, StyleSheet, Alert, Platform, Dimensions } from "react-native";
 import React from 'react';
 import Player from './Player';
 import { useDispatch, useSelector } from 'react-redux';
@@ -31,34 +31,36 @@ export default function Bases() {
     const greenCards = useSelector(state => state.game.greenCards);
     const theme = useSelector(state => state.theme.current);
 
-    
+    const windowWidth = Dimensions.get('window').width;
+    const windowHeight = Dimensions.get('window').height;
+    const isSmallScreen = windowWidth < 375 || windowHeight < 667;
+
     const styles = StyleSheet.create({
         circleContainer: {
             position: "absolute",
             flexDirection: 'row',
             alignItems: 'center',
-            gap: 40,
+            gap: isSmallScreen ? 5 : 40,
         },
         corner: {
-            width: 120,
-            height: 120,
+            width: isSmallScreen ? 50 : 120,
+            height: isSmallScreen ? 50 : 120,
             borderRadius: 10,
             flexWrap: "wrap",
             flexDirection: "row",
             justifyContent: "space-around",
             alignItems: "center",
-            padding: 10,
-            borderWidth: 2,
-         
-            elevation: 5,
+            padding: isSmallScreen ? 5 : 10,
+            borderWidth: isSmallScreen ? 1 : 2,
+            elevation: isSmallScreen ? 4 : 5,
         },
         circle: {
-            width: 30,
-            height: 30,
-            borderRadius: 15,
+            width: isSmallScreen ? 10 : 30,
+            height: isSmallScreen ? 10 : 30,
+            borderRadius: isSmallScreen ? 14 : 15,
             backgroundColor: "white",
-            margin: 5,
-            borderWidth: 1,
+            margin: isSmallScreen ? 4 : 5,
+            borderWidth: isSmallScreen ? 0.5 : 1,
             justifyContent: 'center',
             alignItems: 'center',
             position: 'relative',
@@ -69,9 +71,46 @@ export default function Bases() {
             top: '50%',
             left: '50%',
             transform: [
-                { translateX: -10 },
-                { translateY: -10 }
+                { translateX: isSmallScreen ? -9 : -10 },
+                { translateY: isSmallScreen ? -9 : -10 }
             ],
+        },
+        button: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            padding: isSmallScreen ? 0 : 10,
+            paddingHorizontal: isSmallScreen ? 12 : 15,
+            backgroundColor: theme.colors.button,
+            borderRadius: 8,
+            borderWidth: isSmallScreen ? 0.5 : 1,
+            borderColor: theme.colors.buttonBorder,
+            gap: 8,
+            elevation: isSmallScreen ? 2 : 0,
+            minWidth: isSmallScreen ? 5 : 'auto',
+        },
+        buttonText: {
+            fontSize: isSmallScreen ? 12 : 14,
+            color: theme.colors.buttonText,
+            fontWeight: isSmallScreen ? 'bold' : '1000',
+        },
+        // Update positioning for corners
+        left: {
+            top: isSmallScreen ? 3 : 20,
+            left: isSmallScreen ? 3 : 20,
+        },
+        top: {
+            top: isSmallScreen ? 3 : 20,
+            right: isSmallScreen ? 3 : 20,
+            transform: [{ rotate: '180deg' }]
+        },
+        bottom: {
+            bottom: isSmallScreen ? 3 : 20,
+            left: isSmallScreen ? 3 : 20,
+        },
+        right: {
+            bottom: isSmallScreen ? 3 : 20,
+            right: isSmallScreen ? 3 : 20,
+            transform: [{ rotate: '180deg' }]
         },
         red: {
             backgroundColor: theme.colors.red,
@@ -117,40 +156,6 @@ export default function Bases() {
             shadowOpacity: 0.7,
             shadowRadius: 50,
         },
-        left: {
-            top: 20,
-            left: 20,
-        },
-        top: {
-            top: 20,
-            right: 20,
-            transform: [{ rotate: '180deg' }]
-        },
-        bottom: {
-            bottom: 20,
-            left: 20,
-        },
-        right: {
-            bottom: 20,
-            right: 20,
-            transform: [{ rotate: '180deg' }]
-        },
-        button: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            padding: 10,
-            paddingHorizontal: 15,
-            backgroundColor: theme.colors.button,
-            borderRadius: 8,
-            borderWidth: 1,
-            borderColor: theme.colors.buttonBorder,
-            gap: 8
-        },
-        buttonText: {
-            fontSize: 14,
-            color: theme.colors.buttonText,
-            fontWeight: '1000',
-        },
     });
 
     const handleEnterNewSoldier = (color) => {
@@ -191,23 +196,23 @@ export default function Bases() {
                 `It's ${activePlayer}'s turn to play`
             );
             return;
-        } 
+        }
 
         dispatch(checkIfCardUsed({ color, steps }));
 
         const newPosition = calculateNewPosition(currentPlayer, steps);
 
-        if(newPosition === ""){
+        if (newPosition === "") {
             dispatch(setShowClone(false))
-            if(currentPlayer.color === "red" || currentPlayer.color === "green"){
-                dispatch(setBoxesPosition({ ySteps: steps, newPosition: newPosition}))
-            }else{
-                dispatch(setBoxesPosition({ xSteps: steps, newPosition: newPosition}))
+            if (currentPlayer.color === "red" || currentPlayer.color === "green") {
+                dispatch(setBoxesPosition({ ySteps: steps, newPosition: newPosition }))
+            } else {
+                dispatch(setBoxesPosition({ xSteps: steps, newPosition: newPosition }))
             }
-        }else{
+        } else {
             getXStepsYSteps(currentPlayer.position, newPosition)
         }
-       
+
     };
 
     const getXStepsYSteps = (sourcePos, targetPos) => {
@@ -231,55 +236,55 @@ export default function Bases() {
         const column2 = getInVolvedSteps(boxes.column2, sourcePos, targetPos)
         const column1 = getInVolvedSteps(boxes.column1, sourcePos, targetPos)
 
-        if(row1.length > 0 && row2.length > 0){
-            
+        if (row1.length > 0 && row2.length > 0) {
+
             maxRow1 = Math.max(...row1.map(x => parseInt(x.match(/\d+/)[0])))
             maxRow2 = Math.max(...row2.map(x => parseInt(x.match(/\d+/)[0])))
 
-            if(maxRow1 > maxRow2){
+            if (maxRow1 > maxRow2) {
                 xSteps += row1.length > 0 ? row1.length : 0
                 xSteps2 += row2.length > 0 ? row2.length : 0
                 xSteps2--
-            }else{
+            } else {
                 xSteps += row2.length > 0 ? row2.length : 0
                 xSteps2 += row1.length > 0 ? row1.length : 0
                 xSteps2--
             }
-           
-        }else if(column1.length > 0 && column2.length > 0){
+
+        } else if (column1.length > 0 && column2.length > 0) {
             maxCol1 = Math.max(...column1.map(x => parseInt(x.match(/\d+/)[0])))
             maxCol2 = Math.max(...column2.map(x => parseInt(x.match(/\d+/)[0])))
 
-            if(maxCol1 > maxCol2){
+            if (maxCol1 > maxCol2) {
                 ySteps += column1.length > 0 ? column1.length : 0
                 ySteps2 += column2.length > 0 ? column2.length : 0
                 ySteps2--
-            }else{
+            } else {
                 ySteps += column2.length > 0 ? column2.length : 0
                 ySteps2 += column1.length > 0 ? column1.length : 0
                 ySteps2--
             }
         }
-        else{
+        else {
             xSteps += row1.length > 0 ? row1.length : 0
             xSteps += row2.length > 0 ? row2.length : 0
-    
+
             ySteps += column2.length > 0 ? column2.length : 0
             ySteps += column1.length > 0 ? column1.length : 0
-    
+
             maxRow = Math.max(
                 row1.length > 0 ? Math.max(...row1.map(x => parseInt(x))) : 0,
                 row2.length > 0 ? Math.max(...row2.map(x => parseInt(x))) : 0
             );
-    
+
             maxCol = Math.max(
                 column1.length > 0 ? Math.max(...column1.map(x => parseInt(x))) : 0,
                 column2.length > 0 ? Math.max(...column2.map(x => parseInt(x))) : 0
             );
         }
-       
+
         dispatch(setShowClone(false))
-        dispatch(setBoxesPosition({ xSteps, xSteps2, ySteps,maxRow, maxCol, newPosition: targetPos, maxRow1, maxRow2, maxCol1, maxCol2, ySteps2}))
+        dispatch(setBoxesPosition({ xSteps, xSteps2, ySteps, maxRow, maxCol, newPosition: targetPos, maxRow1, maxRow2, maxCol1, maxCol2, ySteps2 }))
 
     }
 
@@ -288,17 +293,17 @@ export default function Bases() {
         let categorieSou = sourcePos.match(/[a-zA-Z]+/)[0];
 
         let elements
-        if(categorieTar === getNextCatergory(categorieSou)){
+        if (categorieTar === getNextCatergory(categorieSou)) {
             elements = band.filter(box => {
                 let cateBox = box.match(/[a-zA-Z]+/)[0];
                 if (cateBox === categorieTar) {
-                return parseInt(box) <= parseInt(targetPos)
-            }else if(cateBox === categorieSou){
-                return parseInt(box) <= Math.max(...band.map(x => parseInt(x.match(/\d+/)[0]))) && parseInt(box) >= parseInt(sourcePos)
+                    return parseInt(box) <= parseInt(targetPos)
+                } else if (cateBox === categorieSou) {
+                    return parseInt(box) <= Math.max(...band.map(x => parseInt(x.match(/\d+/)[0]))) && parseInt(box) >= parseInt(sourcePos)
+                }
             }
-        }
             );
-        }else{
+        } else {
             elements = band.filter(box => {
                 let cateBox = box.match(/[a-zA-Z]+/)[0];
                 if (cateBox === categorieSou || cateBox === categorieTar) {

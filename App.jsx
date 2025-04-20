@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Pressable } from 'react-native';
+import { StyleSheet, Text, View, Pressable, Platform, Dimensions } from 'react-native';
 import SmalBoard from './GameComponents/SmalBoard.jsx';
 import { Provider, useSelector, useDispatch } from 'react-redux';
 import { store } from './assets/store/store.jsx';
@@ -14,6 +14,59 @@ function AppContent() {
   const dispatch = useDispatch();
   const theme = useSelector(state => state.theme.current);
   const themeList = useSelector(state => state.theme.themes);
+  const windowWidth = Dimensions.get('window').width;
+  const windowHeight = Dimensions.get('window').height;
+  const isSmallScreen = windowWidth < 375 || windowHeight < 667;
+
+  const styles = StyleSheet.create({
+    container: {
+      padding: isSmallScreen ? 1 : 10,
+      flex: 1,
+      margin: isSmallScreen ? 1 : 10,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    controls: {
+      // display: isSmallScreen ? "none" : "flex",
+      position: 'absolute',
+      bottom: isSmallScreen ? 20 : -20,
+      left: isSmallScreen ? "25%" : "",
+      flexDirection: 'row',
+      gap: isSmallScreen ? 4 : 20,
+      backgroundColor: '#ffffff',
+      padding: isSmallScreen ? 2 : 10,
+      borderRadius: 10,
+      ...Platform.select({
+        ios: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.25,
+          shadowRadius: 3.84,
+        },
+        android: {
+          elevation: 6,
+        },
+      }),
+      zIndex: 999
+    },
+    button: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: isSmallScreen ? 2 : 10,
+      backgroundColor: '#e8ecf4',
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: '#d1d9e6',
+      gap: isSmallScreen ? 2 : 10,
+      elevation: isSmallScreen ? 3 : 0,
+    },
+    buttonText: {
+      fontSize: isSmallScreen ? 14 : 16,
+      color: '#2a3f5f',
+      fontWeight: isSmallScreen ? 'bold' : '500',
+    },
+  });
+  
 
   const cycleTheme = () => {
     const themeNames = Object.keys(themeList);
@@ -55,43 +108,3 @@ export default function App() {
     </Provider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    padding: 10,
-    flex: 1,
-    margin: 10,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  controls: {
-    position: 'absolute',
-    bottom: -20,
-    flexDirection: 'row',
-    gap: 20,
-    backgroundColor: '#ffffff',
-    padding: 10,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-    zIndex: 123324342
-  },
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    backgroundColor: '#e8ecf4',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#d1d9e6',
-    gap: 8,
-  },
-  buttonText: {
-    fontSize: 16,
-    color: '#2a3f5f',
-    fontWeight: '500',
-  },
-});

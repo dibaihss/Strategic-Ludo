@@ -1,8 +1,10 @@
 import {
     View,
     StyleSheet,
+    Platform,
+    Dimensions
 } from 'react-native';
-import React from 'react';
+import React, { useEffect } from 'react';
 import Player from './Player';
 import { boxes } from "../assets/shared/hardCodedData.js"
 import { useDispatch, useSelector } from 'react-redux';
@@ -21,16 +23,20 @@ export default function SmalBoard() {
     const boxSize = useSelector(state => state.animation.boxSize);
     const theme = useSelector(state => state.theme.current);
 
+    const windowWidth = Dimensions.get('window').width;
+    const windowHeight = Dimensions.get('window').height;
+    const isSmallScreen = windowWidth < 375 || windowHeight < 667;
+
     const currentSelectedPlayer = (selectedPlayer) => {
         dispatch(setCurrentPlayer(selectedPlayer));
     };
 
+  
     const styles = StyleSheet.create({
-
         board: {
             position: "absolute",
-            width: "80%",
-            height: "80%",
+            width: isSmallScreen ? "10%" : "80%",
+            height: isSmallScreen ? "10%" : "80%",
             justifyContent: "center",
             alignItems: "center",
         },
@@ -39,8 +45,8 @@ export default function SmalBoard() {
             position: "fixed",
             flexDirection: "row",
             justifyContent: "space-between",
-            width: 5, // Adjust based on your needs
-            left: "50%",
+            width: 5,
+            left: isSmallScreen ? "50%": "50%",
             display: "flex",
             justifyContent: "center"
         },
@@ -49,53 +55,58 @@ export default function SmalBoard() {
             position: "fixed",
             flexDirection: "column",
             justifyContent: "space-between",
-            height: 5, // Adjust based on your needs
-            top: "50%",
+            height: 5,
+            // width:isSmallScreen? 100: "",
+            top: isSmallScreen ? "50%": "50%",
             display: "flex",
             justifyContent: "center"
         },
     
         verticalColumn: {
             width: "auto",
-            padding: 3,
-            marginHorizontal: 5,
+            padding: isSmallScreen ? 1 : 3,
+            marginHorizontal: isSmallScreen ? 1 : 5,
             flexDirection: "column",
         },
     
         horizontalRow: {
             width: "auto",
-            padding: 3,
-            marginVertical: 5,
+            padding: isSmallScreen ? 1 : 3,
+            marginVertical: isSmallScreen ? 2 : 5,
             flexDirection: "row",
         },
+        getNumber: number =>({
+         visibility: number === "home1" || number === "hom2" || number === "home3" ? "hidden" : ""
+        }),
     
         verbBox: {
             backgroundColor: "rgba(240, 244, 248, 0.5)",
-            borderWidth: 2,
+            borderWidth: isSmallScreen ? 1 : 2,
             borderColor: theme.colors.border.transparent ? theme.colors.border.transparent : theme.colors.border,
-            padding: 20,
-            margin: 1,
-            width: boxSize, 
-            height: boxSize,
+            padding: isSmallScreen ? 9 : 20,
+            margin: isSmallScreen ? 1 : 1,
+            width: isSmallScreen ? 21 : boxSize,
+            height: isSmallScreen ? 21  : boxSize,
             justifyContent: 'center',
             alignItems: 'center',
             position: 'relative',
-            borderRadius: 10,
+            borderRadius: isSmallScreen ? 5 : 10,
             zIndex: 1,
             elevation: 1,
         },
         verbText: {
             textAlign: 'center',
-            fontSize: 14,
+            fontSize: isSmallScreen ? 5 : 14,
         },
-    
     });
     const renderBox = (number, i) => (
         <View
             key={`box-${i}-${number}`}
-            style={[styles.verbBox, number === "home1" || number === "hom2" || number === "home3" ? { visibility: "hidden" } : {}]}
+            style={[styles.verbBox, styles.getNumber(number),
+            ]}
+            onLayout={()=> console.log(number)}
         >
-            <View>
+           
                 {redSoldiers.map((soldier) =>
                     soldier.position === number && (
                         <Player
@@ -138,11 +149,7 @@ export default function SmalBoard() {
                     )
                 )}
             </View>
-        </View>
     );
-
-
-    
 
     return (
         <View style={styles.board}>
@@ -166,8 +173,6 @@ export default function SmalBoard() {
                 </View>
             </View>
         </View>
-       
-      
     );
 }
 

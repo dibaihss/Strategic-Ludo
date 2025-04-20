@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Platform, Dimensions } from "react-native";
 import React from 'react';
 import Player from './Player';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -11,27 +11,29 @@ export default function Goals() {
     const yellowSoldiers = useSelector(state => state.game.yellowSoldiers);
     const greenSoldiers = useSelector(state => state.game.greenSoldiers);
     const theme = useSelector(state => state.theme.current);
+    const windowWidth = Dimensions.get('window').width;
+    const windowHeight = Dimensions.get('window').height;
+    const isSmallScreen = windowWidth < 375 || windowHeight < 667;
+
+
     const styles = StyleSheet.create({
         centerCircle: {
             position: 'absolute',
-            width: 120,
-            height: 120,
+            width: isSmallScreen ? 50 : 120,
+            height: isSmallScreen ? 50 : 120,
             borderRadius: 15,
             backgroundColor: theme.colors.background,
-            borderWidth: 2,
+            borderWidth: isSmallScreen ? 1 : 2,
             borderColor: theme.colors.border,
             overflow: 'hidden',
             zIndex: 1,
+            elevation: isSmallScreen ? 4 : 0,
             top: '50%',
             left: '50%',
             transform: [
-                { translateX: -60 },
-                { translateY: -60 }
+                { translateX: isSmallScreen ? -25 : -60 },
+                { translateY: isSmallScreen ? -25 : -60 }
             ],
-            // transform: [
-            //     { translateX: "-50%" },
-            //     { translateY: "-50%" }
-            // ],
         },
         yellow: {
             backgroundColor: theme.colors.yellow
@@ -55,8 +57,9 @@ export default function Goals() {
             height: '50%',
             justifyContent: 'center',
             alignItems: 'center',
-            borderWidth: 1,
-            borderColor: '#000',
+            borderWidth: isSmallScreen ? 0.5 : 1,
+            borderColor: isSmallScreen ? 'rgba(0,0,0,0.2)' : '#000',
+            elevation: isSmallScreen ? 2 : 0,
         },
         button: {
             flexDirection: 'row',
