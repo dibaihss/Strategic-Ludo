@@ -12,7 +12,7 @@ const initialState = {
     showClone: false,
     boxesPosition: null
 };
-// new game
+
 const animationSlice = createSlice({
     name: 'animation',
     initialState,
