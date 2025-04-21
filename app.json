@@ -27,7 +27,7 @@
       "package": "com.idib63.strategic"
     },
     "web": {
-      "favicon": "./assets/favicon.png",
+      "favicon": "./assets/iconPWA.png",
       "name": "Ludo Game",
       "shortName": "Ludo",
       "lang": "en",
