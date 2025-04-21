@@ -30,7 +30,7 @@ const initialState = {
         { id: 12, position: '4yellow', color: "yellow", initialPosition: '4yellow', onBoard: false, isOut: false }
     ],
     greenSoldiers: [
-        { id: 13, position: '1d', color: "green", initialPosition: '1green', onBoard: true, isOut: false },
+        { id: 13, position: '1c', color: "green", initialPosition: '1green', onBoard: true, isOut: false },
         { id: 14, position: '2green', color: "green", initialPosition: '2green', onBoard: false, isOut: false },
         { id: 15, position: '3green', color: "green", initialPosition: '3green', onBoard: false, isOut: false },
         { id: 16, position: '4green', color: "green", initialPosition: '4green', onBoard: false, isOut: false }
@@ -76,7 +76,6 @@ const getNextPlayerType = (currentPlayerType) => {
 
 
 export const checkIfGotEnemy = ({ color, position }) => (dispatch, getState) => {
-    // if (!position) return;
 
     const state = getState().game;
     let enemyInPosition;
@@ -100,7 +99,7 @@ export const checkIfGotEnemy = ({ color, position }) => (dispatch, getState) => 
             break;
     }
 
-    if (enemyInPosition) {
+    if (enemyInPosition && position) {
         dispatch(setCurrentPlayer(enemyInPosition));
         console.log(enemyInPosition)
         dispatch(setBoxesPosition({ ySteps: 3, xSteps: 3, returenToBase: true, kickedPlayer: enemyInPosition }))
