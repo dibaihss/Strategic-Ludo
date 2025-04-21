@@ -9,7 +9,7 @@ import { setBoxesPosition, setShowClone } from './animationSlice.jsx'
 const initialState = {
     currentPlayer: null,
     activePlayer: "blue",
-    timeRemaining: 35,
+    timeRemaining: 100,
     isTimerRunning: false,
     blueSoldiers: [
         { id: 1, position: '1a', color: "blue", initialPosition: '1blue', onBoard: true, isOut: false },
@@ -281,7 +281,7 @@ export const gameSlice = createSlice({
             state.isTimerRunning = action.payload;
         },
         resetTimer: (state) => {
-            state.timeRemaining = 35;
+            state.timeRemaining = 100;
         }
     }
 });
