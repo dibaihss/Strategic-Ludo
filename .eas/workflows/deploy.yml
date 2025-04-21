@@ -1,0 +1,16 @@
+# https://docs.expo.dev/eas/hosting/workflows/
+name: Deploy
+
+on:
+  push:
+    branches: ['main']
+
+jobs:
+  deploy:
+    type: deploy
+    name: Deploy
+    environment: production
+    params:
+      prod: true
+
+
