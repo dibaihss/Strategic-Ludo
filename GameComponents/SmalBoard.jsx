@@ -40,7 +40,6 @@ export default function SmalBoard() {
             justifyContent: "center",
             alignItems: "center",
         },
-    
         columnsContainer: {
             position: "fixed",
             flexDirection: "row",
@@ -56,7 +55,6 @@ export default function SmalBoard() {
             flexDirection: "column",
             justifyContent: "space-between",
             height: 5,
-            // width:isSmallScreen? 100: "",
             top: isSmallScreen ? "50%": "50%",
             display: "flex",
             justifyContent: "center"
@@ -104,7 +102,6 @@ export default function SmalBoard() {
             key={`box-${i}-${number}`}
             style={[styles.verbBox, styles.getNumber(number),
             ]}
-            onLayout={()=> console.log(number)}
         >
            
                 {redSoldiers.map((soldier) =>

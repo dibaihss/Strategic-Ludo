@@ -10,7 +10,7 @@ import {
     resetTimer,
     checkIfGotEnemy
 } from '../assets/store/gameSlice.jsx';
-import { setBoxesPosition, setShowClone } from '../assets/store/animationSlice.jsx'
+import { setBoxesPosition } from '../assets/store/animationSlice.jsx'
 
 import { boxes, categories, directions, playerType } from "../assets/shared/hardCodedData.js";
 import { MaterialIcons } from '@expo/vector-icons';
@@ -30,6 +30,7 @@ export default function Bases() {
     const yellowCards = useSelector(state => state.game.yellowCards);
     const greenCards = useSelector(state => state.game.greenCards);
     const theme = useSelector(state => state.theme.current);
+    const showClone = useSelector(state => state.animation.showClone)
 
     const windowWidth = Dimensions.get('window').width;
     const windowHeight = Dimensions.get('window').height;
@@ -156,6 +157,42 @@ export default function Bases() {
             shadowOpacity: 0.7,
             shadowRadius: 50,
         },
+        blue2: {
+            shadowColor: activePlayer === "blue" ? theme.colors.shadowColor : "",
+            shadowOffset: {
+                width: 0,
+                height: 0,
+            },
+            shadowOpacity:activePlayer === "blue" ? 0.7: "",
+            shadowRadius:activePlayer === "blue" ? 50: "",
+        },
+        red0: {
+            shadowColor: activePlayer === "red" ? theme.colors.shadowColor : "",
+            shadowOffset: {
+                width: 0,
+                height: 0,
+            },
+            shadowOpacity:activePlayer === "red" ? 0.7: "",
+            shadowRadius:activePlayer === "red" ? 50: "",
+        },
+        yellow1: {
+            shadowColor: activePlayer === "yellow" ? theme.colors.shadowColor : "",
+            shadowOffset: {
+                width: 0,
+                height: 0,
+            },
+            shadowOpacity:activePlayer === "yellow" ? 0.7: "",
+            shadowRadius:activePlayer === "yellow" ? 50: "",
+        },
+        green3: {
+            shadowColor: activePlayer === "green" ? theme.colors.shadowColor : "",
+            shadowOffset: {
+                width: 0,
+                height: 0,
+            },
+            shadowOpacity:activePlayer === "green" ? 0.7: "",
+            shadowRadius:activePlayer === "green" ? 50: "",
+        },
     });
 
     const handleEnterNewSoldier = (color) => {
@@ -176,13 +213,13 @@ export default function Bases() {
 
         dispatch(checkIfGotEnemy({ color, position: startingPositions[color] }));
         dispatch(enterNewSoldier({ color }));
-        dispatch(setActivePlayer());
-        dispatch(resetTimer());
+    
     };
 
     const movePlayer = (color, steps) => {
         console.log(activePlayer)
         if (!currentPlayer || currentPlayer.isOut) return;
+        if (showClone) return
         if (currentPlayer.color !== color) {
             Alert.alert(
                 'Wrong Color',
@@ -203,7 +240,6 @@ export default function Bases() {
         const newPosition = calculateNewPosition(currentPlayer, steps);
 
         if (newPosition === "") {
-            dispatch(setShowClone(false))
             if (currentPlayer.color === "red" || currentPlayer.color === "green") {
                 dispatch(setBoxesPosition({ ySteps: steps, newPosition: newPosition }))
             } else {
@@ -283,7 +319,6 @@ export default function Bases() {
             );
         }
 
-        dispatch(setShowClone(false))
         dispatch(setBoxesPosition({ xSteps, xSteps2, ySteps, maxRow, maxCol, newPosition: targetPos, maxRow1, maxRow2, maxCol1, maxCol2, ySteps2 }))
 
     }
@@ -352,25 +387,21 @@ export default function Bases() {
         switch (currentPlayer.color) {
             case 'blue':
                 if (position === '7d') {
-                    setCurrentPlayer("")
                     return true;
                 }
                 break;
             case 'red':
                 if (position === '7a') {
-                    setCurrentPlayer("")
                     return true;
                 }
                 break;
             case 'yellow':
                 if (position === '7b') {
-                    setCurrentPlayer("")
                     return true;
                 }
                 break;
             case 'green':
                 if (position === '7c') {
-                    setCurrentPlayer("")
                     return true;
                 }
                 break;
@@ -428,7 +459,9 @@ export default function Bases() {
                                         style={[
                                             styles.button,
                                             { marginVertical: 5 },
-                                            card.used && { backgroundColor: '#ddd', opacity: 0.7 }
+                                            card.used && { backgroundColor: '#ddd', opacity: 0.7 },
+                                            styles[color+i]
+                                            
                                         ]}
                                         onPress={() => movePlayer(color, card.value)}
                                     >
@@ -447,7 +480,8 @@ export default function Bases() {
                                         style={[
                                             styles.button,
                                             { marginVertical: 5 },
-                                            card.used && { backgroundColor: '#ddd', opacity: 0.7 }
+                                            card.used && { backgroundColor: '#ddd', opacity: 0.7 },
+                                            styles[color+i]
                                         ]}
                                         onPress={() => movePlayer(color, card.value)}
                                     >
@@ -466,7 +500,8 @@ export default function Bases() {
                                         style={[
                                             styles.button,
                                             { marginVertical: 5 },
-                                            card.used && { backgroundColor: '#ddd', opacity: 0.7 }
+                                            card.used && { backgroundColor: '#ddd', opacity: 0.7 },
+                                            styles[color+i]
                                         ]}
                                         onPress={() => movePlayer(color, card.value)}
                                     >
@@ -485,7 +520,8 @@ export default function Bases() {
                                         style={[
                                             styles.button,
                                             { marginVertical: 5 },
-                                            card.used && { backgroundColor: '#ddd', opacity: 0.7 }
+                                            card.used && { backgroundColor: '#ddd', opacity: 0.7 },
+                                            styles[color+i]
                                         ]}
                                         onPress={() => movePlayer(color, card.value)}
                                     >
@@ -505,7 +541,7 @@ export default function Bases() {
                             </View>
                         ))}
                     </View>
-                    <Pressable style={[styles.button, { marginVertical: 5 }]} onPress={() => handleEnterNewSoldier(color)}>
+                    <Pressable style={[styles.button,styles[color+i], { marginVertical: 5 }]} onPress={() => handleEnterNewSoldier(color)}>
                         {
                             color === "yellow" ?
                                 <Feather name="arrow-right" size={24} color={theme.name === "dark" ? "white" : "black"} /> :

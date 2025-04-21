@@ -13,22 +13,39 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.idib63.strategic",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.idib63.strategic"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "name": "Ludo Game",
+      "shortName": "Ludo",
+      "lang": "en",
+      "display": "standalone",
+      "orientation": "portrait",
+      "backgroundColor": "#ffffff"
     },
     "extra": {
       "eas": {
         "projectId": "6c26f375-258e-42b3-a044-fb4f831e68e7"
       }
     },
-    "owner": "idib63"
+    "owner": "idib63",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/6c26f375-258e-42b3-a044-fb4f831e68e7"
+    }
   }
 }

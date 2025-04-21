@@ -1,6 +1,10 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { playerType } from "../shared/hardCodedData.js";
+// import { useDispatch, useSelector } from 'react-redux';
+
 import { setBoxesPosition, setShowClone } from './animationSlice.jsx'
+
+// const showClone = useSelector(state => state.animation.showClone)
 
 const initialState = {
     currentPlayer: null,
@@ -8,13 +12,13 @@ const initialState = {
     timeRemaining: 35,
     isTimerRunning: false,
     blueSoldiers: [
-        { id: 1, position: '1a', color: "blue", initialPosition: '1blue', onBoard: true, isOut: false },
+        { id: 1, position: '1d', color: "blue", initialPosition: '1blue', onBoard: true, isOut: false },
         { id: 2, position: '2blue', color: "blue", initialPosition: '2blue', onBoard: false, isOut: false },
         { id: 3, position: '3blue', color: "blue", initialPosition: '3blue', onBoard: false, isOut: false },
         { id: 4, position: '4blue', color: "blue", initialPosition: '4blue', onBoard: false, isOut: false }
     ],
     redSoldiers: [
-        { id: 5, position: '1b', color: "red", initialPosition: '1red', onBoard: true, isOut: false },
+        { id: 5, position: '1a', color: "red", initialPosition: '1red', onBoard: true, isOut: false },
         { id: 6, position: '2red', color: "red", initialPosition: '2red', onBoard: false, isOut: false },
         { id: 7, position: '3red', color: "red", initialPosition: '3red', onBoard: false, isOut: false },
         { id: 8, position: '4red', color: "red", initialPosition: '4red', onBoard: false, isOut: false }
@@ -72,7 +76,7 @@ const getNextPlayerType = (currentPlayerType) => {
 
 
 export const checkIfGotEnemy = ({ color, position }) => (dispatch, getState) => {
-    if (!position) return;
+    // if (!position) return;
 
     const state = getState().game;
     let enemyInPosition;
@@ -98,8 +102,11 @@ export const checkIfGotEnemy = ({ color, position }) => (dispatch, getState) => 
 
     if (enemyInPosition) {
         dispatch(setCurrentPlayer(enemyInPosition));
-        dispatch(setShowClone(false))
+        console.log(enemyInPosition)
         dispatch(setBoxesPosition({ ySteps: 3, xSteps: 3, returenToBase: true, kickedPlayer: enemyInPosition }))
+    } else {
+        dispatch(setActivePlayer());
+        dispatch(resetTimer());
     }
 };
 
@@ -210,7 +217,7 @@ export const gameSlice = createSlice({
 
             console.log(position)
             const updatedSoldiers = soldiersByColor[color].map(soldier =>
-                soldier.id === soldierID 
+                soldier.id === soldierID
                     ? returenToBase
                         ? { ...soldier, position: soldier.initialPosition, onBoard: false, isOut: false }
                         : !position

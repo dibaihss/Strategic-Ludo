@@ -36,11 +36,11 @@ export default function Player({ color, isSelected, onPress }) {
     const isSmallScreen = windowWidth < 375 || windowHeight < 667;
 
     const dispatch = useDispatch();
-    
+
     const styles = StyleSheet.create({
         clone: {
-            width: isSmallScreen ? 20 : 30,
-            height: isSmallScreen ? 20 : 30,
+            width: isSmallScreen ? 20 : "",
+            height: isSmallScreen ? 20 : "",
             zIndex: 999,
             elevation: isSmallScreen ? 999 : 0,
         }
@@ -199,6 +199,7 @@ export default function Player({ color, isSelected, onPress }) {
         }).start(({ finished }) => {
             if (finished && iterations === movingValues.length - 1) {
                 moveElement()
+                dispatch(setShowClone(false))
             }
             else if (finished) {
                 iterations++
@@ -217,6 +218,8 @@ export default function Player({ color, isSelected, onPress }) {
                 soldierID: kickedPlayer.id,
                 returenToBase: returenToBase ? returenToBase : false
             }));
+            dispatch(setActivePlayer());
+            dispatch(resetTimer());
         } else {
             dispatch(moveSoldier({
                 color: currentPlayer.color,
@@ -227,13 +230,7 @@ export default function Player({ color, isSelected, onPress }) {
 
             dispatch(setCurrentPlayer(null));
             dispatch(checkIfGotEnemy({ color: currentPlayer.color, position: newPosition }));
-
-            setTimeout(() => {
-                dispatch(setActivePlayer());
-                dispatch(resetTimer());
-            }, 100)
         }
-
 
     };
 
@@ -251,10 +248,17 @@ export default function Player({ color, isSelected, onPress }) {
                     height: isSelected ? (isSmallScreen ? 10 : 30) : (isSmallScreen ? 3 : 25),
                     borderRadius: isSmallScreen ? 12 : 12.5,
                     backgroundColor: theme.colors[color],
-                    borderWidth: isSelected ? (isSmallScreen ? 1 : 5) : (isSmallScreen ? 1 : 2),
+                    borderWidth: isSelected ? (isSmallScreen ? 3 : 5) : (isSmallScreen ? 3 : 2),
                     borderColor: isSelected ? theme.colors.selected : '#ffffff',
-                    padding: isSmallScreen ? 8 : 15,
+                    padding: isSmallScreen ? 6.5 : 15,
                     elevation: isSmallScreen ? (isSelected ? 4 : 2) : 0,
+                    shadowColor: isSelected ? (theme.colors.shadowColor ? theme.colors.shadowColor : "") : "",
+                    shadowOffset: {
+                        width: 0,
+                        height: 0,
+                    },
+                    shadowOpacity: isSelected ? 0.7 : 0,
+                    shadowRadius: isSelected ? 50 : 0,
                 }}
             />
         </Animated.View>
