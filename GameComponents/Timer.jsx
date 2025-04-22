@@ -2,31 +2,47 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Platform, Dimensions } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateTimer, setTimerRunning, resetTimer, setActivePlayer } from '../assets/store/gameSlice';
+import { uiStrings } from "../assets/shared/hardCodedData.js";
+import ActivePlayerIndicator from './ActivePlayerIndicator.jsx';
 
 export default function Timer() {
     const dispatch = useDispatch();
     const timeRemaining = useSelector(state => state.game.timeRemaining);
     const isTimerRunning = useSelector(state => state.game.isTimerRunning);
     const theme = useSelector(state => state.theme.current);
+    const systemLang = useSelector(state => state.language.systemLang);
     const windowWidth = Dimensions.get('window').width;
     const windowHeight = Dimensions.get('window').height;
     const isSmallScreen = windowWidth < 375 || windowHeight < 667;
 
     const styles = StyleSheet.create({
         container: {
-            // display: Platform.OS === 'android' ? "none" : "flex",
             position: 'absolute',
             top: isSmallScreen ? 10 : 20,
-            left: isSmallScreen ? "30%" : "",
+            left: "22%",
+            right: "22%",
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            paddingHorizontal: isSmallScreen ? 6 : 20,
+            zIndex: 1000,
+        },
+        timerBox: {
+            backgroundColor: theme.colors.button,
             paddingHorizontal: isSmallScreen ? 15 : 20,
             paddingVertical: isSmallScreen ? 8 : 10,
             borderRadius: 20,
-            zIndex: 1000,
             elevation: isSmallScreen ? 4 : 0,
+            shadowColor: "#000",
+            shadowOffset: {
+                width: 0,
+                height: 2,
+            },
+            shadowOpacity: 0.25,
+            shadowRadius: 3.84,
         },
         text: {
             fontSize: isSmallScreen ? 16 : 18,
-            fontWeight: isSmallScreen ? 'bold' : 'bold',
+            fontWeight: 'bold',
         }
     });
 
@@ -52,10 +68,13 @@ export default function Timer() {
     }, [timeRemaining, isTimerRunning]);
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.colors.button }]}>
-            <Text style={[styles.text, { color: theme.colors.buttonText }]}>
-                Time: {timeRemaining}s
-            </Text>
+        <View style={styles.container}>
+            <View style={styles.timerBox}>
+                <Text style={[styles.text, { color: theme.colors.buttonText }]}>
+                    {uiStrings[systemLang].timer.replace('{time}', timeRemaining)}
+                </Text>
+            </View>
+            <ActivePlayerIndicator />
         </View>
     );
 }

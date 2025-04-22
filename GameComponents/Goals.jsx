@@ -1,8 +1,10 @@
-import { View, Text, StyleSheet, Platform, Dimensions } from "react-native";
-import React from 'react';
+import { View, StyleSheet, Platform, Dimensions } from "react-native";
+import React, { useEffect, useState } from 'react';
 import Player from './Player';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
+import { uiStrings, getLocalizedColor } from "../assets/shared/hardCodedData.js";
+import Toast from 'react-native-toast-message';
 
 export default function Goals() {
     // Get soldiers from Redux store
@@ -11,10 +13,44 @@ export default function Goals() {
     const yellowSoldiers = useSelector(state => state.game.yellowSoldiers);
     const greenSoldiers = useSelector(state => state.game.greenSoldiers);
     const theme = useSelector(state => state.theme.current);
+    const systemLang = useSelector(state => state.language.systemLang);
     const windowWidth = Dimensions.get('window').width;
     const windowHeight = Dimensions.get('window').height;
     const isSmallScreen = windowWidth < 375 || windowHeight < 667;
 
+    // Track winners to avoid multiple toasts
+    const [winners, setWinners] = useState({
+        yellow: false,
+        green: false,
+        red: false,
+        blue: false
+    });
+
+    // Check for winners and show toasts
+    useEffect(() => {
+        const checkAndShowToast = (soldiers, color) => {
+            if (soldiers.find(obj => obj.isOut === false) === undefined && !winners[color.toLowerCase()]) {
+                // Use getLocalizedColor to translate the color name
+                const localizedColor = getLocalizedColor(color.toLowerCase(), systemLang);
+                Toast.show({
+                    type: 'success',
+                    text1: uiStrings[systemLang].wonGame.replace('{color}', localizedColor),
+                    position: 'top',
+                    visibilityTime: 5000,
+                    autoHide: true,
+                    topOffset: 60,
+                    bottomOffset: 40,
+                    props: { backgroundColor: theme.colors[color.toLowerCase()] }
+                });
+                setWinners(prev => ({ ...prev, [color.toLowerCase()]: true }));
+            }
+        };
+
+        checkAndShowToast(yellowSoldiers, 'Yellow');
+        checkAndShowToast(greenSoldiers, 'Green');
+        checkAndShowToast(redSoldiers, 'Red');
+        checkAndShowToast(blueSoldiers, 'Blue');
+    }, [yellowSoldiers, greenSoldiers, redSoldiers, blueSoldiers, systemLang]);
 
     const styles = StyleSheet.create({
         centerCircle: {
@@ -76,32 +112,29 @@ export default function Goals() {
             color: '#2a3f5f',
             fontWeight: '500',
         },
-    })
+    });
 
     return (
         <View style={styles.centerCircle}>
             <View style={styles.centerQuadrants}>
-
                 <View style={[styles.quadrant, styles.yellow]}>
                     <MaterialIcons name="home" size={24} color="goldenrod" />
                     {yellowSoldiers.find(obj => obj.isOut === true) &&
                         <Player color={yellowSoldiers[0].color} />}
-                    {yellowSoldiers.find(obj => obj.isOut === false) === undefined &&
-                        <Text style={{ color: 'black', fontSize: 20 }}>Yellow won the Game</Text>}
                 </View>
-                {/* Green quadrant */}
+
                 <View style={[styles.quadrant, styles.green]}>
                     <MaterialIcons name="home" size={24} color="darkgreen" />
                     {greenSoldiers.find(obj => obj.isOut === true) &&
                         <Player color={greenSoldiers[0].color} />}
                 </View>
-                {/* Red quadrant */}
+
                 <View style={[styles.quadrant, styles.red]}>
                     <MaterialIcons name="home" size={24} color="darkred" />
                     {redSoldiers.find(obj => obj.isOut === true) &&
                         <Player color={redSoldiers[0].color} />}
                 </View>
-                {/* Blue quadrant */}
+
                 <View style={[styles.quadrant, styles.blue]}>
                     <MaterialIcons name="home" size={24} color="darkblue" />
                     {blueSoldiers.find(obj => obj.isOut === true) &&
