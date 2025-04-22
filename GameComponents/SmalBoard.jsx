@@ -1,10 +1,9 @@
 import {
     View,
     StyleSheet,
-    Platform,
     Dimensions
 } from 'react-native';
-import React, { useEffect } from 'react';
+import React from 'react';
 import Player from './Player';
 import { boxes } from "../assets/shared/hardCodedData.js"
 import { useDispatch, useSelector } from 'react-redux';
@@ -103,7 +102,6 @@ export default function SmalBoard() {
             style={[styles.verbBox, styles.getNumber(number),
             ]}
         >
-           
                 {redSoldiers.map((soldier) =>
                     soldier.position === number && (
                         <Player

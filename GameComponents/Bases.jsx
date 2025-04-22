@@ -1,18 +1,14 @@
-import { View, Pressable, Text, StyleSheet, Alert, Platform, Dimensions } from "react-native";
+import { View, Pressable, Text, StyleSheet, Dimensions } from "react-native";
 import React from 'react';
 import Player from './Player';
 import { useDispatch, useSelector } from 'react-redux';
 import {
-    setCurrentPlayer,
     enterNewSoldier,
     checkIfCardUsed,
-    setActivePlayer,
-    resetTimer,
-    checkIfGotEnemy
 } from '../assets/store/gameSlice.jsx';
-import { setBoxesPosition } from '../assets/store/animationSlice.jsx'
-
-import { boxes, categories, directions, playerType } from "../assets/shared/hardCodedData.js";
+import { setBoxesPosition } from '../assets/store/animationSlice.jsx';
+import Toast from 'react-native-toast-message';
+import { boxes, categories, directions, playerType, uiStrings, getLocalizedColor } from "../assets/shared/hardCodedData.js";
 import { MaterialIcons } from '@expo/vector-icons';
 import Feather from '@expo/vector-icons/Feather';
 
@@ -30,7 +26,8 @@ export default function Bases() {
     const yellowCards = useSelector(state => state.game.yellowCards);
     const greenCards = useSelector(state => state.game.greenCards);
     const theme = useSelector(state => state.theme.current);
-    const showClone = useSelector(state => state.animation.showClone)
+    const showClone = useSelector(state => state.animation.showClone);
+    const systemLang = useSelector(state => state.language.systemLang);
 
     const windowWidth = Dimensions.get('window').width;
     const windowHeight = Dimensions.get('window').height;
@@ -197,41 +194,54 @@ export default function Bases() {
 
     const handleEnterNewSoldier = (color) => {
         if (activePlayer !== color) {
-            Alert.alert(
-                'Wrong Turn',
-                `It's ${activePlayer}'s turn to play`
-            );
+            const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
+            Toast.show({
+                type: 'error',
+                text1: uiStrings[systemLang].wrongTurn,
+                text2: uiStrings[systemLang].wrongColor.replace('{color}', localizedActivePlayer),
+                position: 'bottom',
+                visibilityTime: 2000,
+            });
             return;
         }
+   
+        dispatch(enterNewSoldier( color ));
 
-        const startingPositions = {
-            red: "1b",
-            yellow: "1c",
-            blue: "1a",
-            green: "1d"
-        };
-
-        dispatch(checkIfGotEnemy({ color, position: startingPositions[color] }));
-        dispatch(enterNewSoldier({ color }));
-    
     };
 
     const movePlayer = (color, steps) => {
-        console.log(activePlayer)
-        if (!currentPlayer || currentPlayer.isOut) return;
-        if (showClone) return
+        if (!currentPlayer || currentPlayer.isOut){
+            const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
+            Toast.show({
+                type: 'error',
+                text1: uiStrings[systemLang].selectPlayer.replace('{color}', localizedActivePlayer),
+                text2: uiStrings[systemLang].playerNotSelected,
+                position: 'bottom',
+                visibilityTime: 2000,
+            });
+            return;
+        } 
+        if (showClone) return;
         if (currentPlayer.color !== color) {
-            Alert.alert(
-                'Wrong Color',
-                `It's ${activePlayer}'s turn to play`
-            );
+            const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
+            Toast.show({
+                type: 'error',
+                text1: uiStrings[systemLang].wrongColor,
+                text2: uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer),
+                position: 'bottom',
+                visibilityTime: 2000,
+            });
             return;
         }
         if (activePlayer !== currentPlayer.color) {
-            Alert.alert(
-                'Wrong Turn',
-                `It's ${activePlayer}'s turn to play`
-            );
+            const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
+            Toast.show({
+                type: 'error',
+                text1: uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer),
+                text2: uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer),
+                position: 'bottom',
+                visibilityTime: 2000,
+            });
             return;
         }
 

@@ -1,10 +1,9 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { playerType } from "../shared/hardCodedData.js";
-// import { useDispatch, useSelector } from 'react-redux';
 
+import { startingPositions } from "../shared/hardCodedData.js";
 import { setBoxesPosition, setShowClone } from './animationSlice.jsx'
 
-// const showClone = useSelector(state => state.animation.showClone)
 
 const initialState = {
     currentPlayer: null,
@@ -137,167 +136,164 @@ export const checkIfCardUsed = ({ color, steps }) => (dispatch, getState) => {
     dispatch(updateAction({ used: true, value: steps }));
     return false;
 };
+export const enterNewSoldier = (color) => (dispatch, getState) => {
+
+    const state = getState().game;
+
+    const soldiers = {
+        blue: state.blueSoldiers,
+        red: state.redSoldiers,
+        yellow: state.yellowSoldiers,
+        green: state.greenSoldiers
+    }[color];
+
+
+    const soldier = soldiers.find(s => !s.onBoard && !s.isOut);
+    if (soldier) {
+        dispatch(moveSoldier({
+            color: soldier.color,
+            position: startingPositions[color],
+            soldierID: soldier.id,
+            onBoard: true
+        }));
+        checkIfGotEnemy({ color: soldier.color, position: startingPositions[color] })(dispatch, getState);
+    } else {
+        console.log("No available soldiers to enter the board.");
+    }
+};
 
 export const gameSlice = createSlice({
-    name: 'game',
-    initialState,
-    reducers: {
-        setCurrentPlayer: (state, action) => {
-            state.currentPlayer = action.payload;
-        },
-        setActivePlayer: (state, action) => {
-            const newActivePlayer = getNextPlayerType(state.activePlayer);
-            state.activePlayer = newActivePlayer;
+        name: 'game',
+        initialState,
+        reducers: {
+            setCurrentPlayer: (state, action) => {
+                state.currentPlayer = action.payload;
+            },
+            setActivePlayer: (state, action) => {
+                const newActivePlayer = getNextPlayerType(state.activePlayer);
+                state.activePlayer = newActivePlayer;
 
-            // Set currentPlayer to the first non-out soldier of the new active player
-            const soldiers = {
-                blue: state.blueSoldiers,
-                red: state.redSoldiers,
-                yellow: state.yellowSoldiers,
-                green: state.greenSoldiers
-            }[newActivePlayer];
+                // Set currentPlayer to the first non-out soldier of the new active player
+                const soldiers = {
+                    blue: state.blueSoldiers,
+                    red: state.redSoldiers,
+                    yellow: state.yellowSoldiers,
+                    green: state.greenSoldiers
+                }[newActivePlayer];
 
-            const firstAvailableSoldier = soldiers.find(soldier => !soldier.isOut && soldier.onBoard);
-            if (firstAvailableSoldier) {
-                state.currentPlayer = firstAvailableSoldier;
-            }
-        },
-        updateBlueCards: (state, action) => {
-            const { used, value, updateAll } = action.payload;
-            if (updateAll) {
-                state.blueCards = state.blueCards.map(card => ({ ...card, used }));
-            } else {
-                state.blueCards = state.blueCards.map(card =>
-                    card.value === value ? { ...card, used } : card
-                );
-            }
-        },
-
-        updateRedCards: (state, action) => {
-            const { used, value, updateAll } = action.payload;
-            if (updateAll) {
-                state.redCards = state.redCards.map(card => ({ ...card, used }));
-            } else {
-                state.redCards = state.redCards.map(card =>
-                    card.value === value ? { ...card, used } : card
-                );
-            }
-        },
-
-        updateYellowCards: (state, action) => {
-            const { used, value, updateAll } = action.payload;
-            if (updateAll) {
-                state.yellowCards = state.yellowCards.map(card => ({ ...card, used }));
-            } else {
-                state.yellowCards = state.yellowCards.map(card =>
-                    card.value === value ? { ...card, used } : card
-                );
-            }
-        },
-
-        updateGreenCards: (state, action) => {
-            const { used, value, updateAll } = action.payload;
-            if (updateAll) {
-                state.greenCards = state.greenCards.map(card => ({ ...card, used }));
-            } else {
-                state.greenCards = state.greenCards.map(card =>
-                    card.value === value ? { ...card, used } : card
-                );
-            }
-        },
-        moveSoldier: (state, action) => {
-            const { color, position, soldierID, returenToBase } = action.payload;
-            const soldiersByColor = {
-                blue: state.blueSoldiers,
-                red: state.redSoldiers,
-                yellow: state.yellowSoldiers,
-                green: state.greenSoldiers
-            };
-
-            console.log(position)
-            const updatedSoldiers = soldiersByColor[color].map(soldier =>
-                soldier.id === soldierID
-                    ? returenToBase
-                        ? { ...soldier, position: soldier.initialPosition, onBoard: false, isOut: false }
-                        : !position
-                            ? { ...soldier, position, onBoard: false, isOut: true }
-                            : { ...soldier, position }
-                    : soldier
-            );
-
-            switch (color) {
-                case 'blue':
-                    state.blueSoldiers = updatedSoldiers;
-                    break;
-                case 'red':
-                    state.redSoldiers = updatedSoldiers;
-                    break;
-                case 'yellow':
-                    state.yellowSoldiers = updatedSoldiers;
-                    break;
-                case 'green':
-                    state.greenSoldiers = updatedSoldiers;
-                    break;
-            }
-        },
-        enterNewSoldier: (state, action) => {
-            const { color } = action.payload;
-            if (color === 'blue') {
-                const soldier = state.blueSoldiers.find(s => !s.onBoard && !s.isOut);
-                if (soldier) {
-                    state.blueSoldiers = state.blueSoldiers.map(s =>
-                        s.id === soldier.id ? { ...s, position: '1a', onBoard: true } : s
+                const firstAvailableSoldier = soldiers.find(soldier => !soldier.isOut && soldier.onBoard);
+                if (firstAvailableSoldier) {
+                    state.currentPlayer = firstAvailableSoldier;
+                }
+            },
+            updateBlueCards: (state, action) => {
+                const { used, value, updateAll } = action.payload;
+                if (updateAll) {
+                    state.blueCards = state.blueCards.map(card => ({ ...card, used }));
+                } else {
+                    state.blueCards = state.blueCards.map(card =>
+                        card.value === value ? { ...card, used } : card
                     );
                 }
-            } else if (color === 'red') {
-                const soldier = state.redSoldiers.find(s => !s.onBoard && !s.isOut);
-                if (soldier) {
-                    state.redSoldiers = state.redSoldiers.map(s =>
-                        s.id === soldier.id ? { ...s, position: '1b', onBoard: true } : s
-                    );
-                }
-            }
-            else if (color === 'yellow') {
-                const soldier = state.yellowSoldiers.find(s => !s.onBoard && !s.isOut);
-                if (soldier) {
-                    state.yellowSoldiers = state.yellowSoldiers.map(s =>
-                        s.id === soldier.id ? { ...s, position: '1c', onBoard: true } : s
-                    );
-                }
-            } else if (color === 'green') {
-                const soldier = state.greenSoldiers.find(s => !s.onBoard && !s.isOut);
-                if (soldier) {
-                    state.greenSoldiers = state.greenSoldiers.map(s =>
-                        s.id === soldier.id ? { ...s, position: '1d', onBoard: true } : s
-                    );
-                }
-            }
-        },
+            },
 
-        updateTimer: (state, action) => {
-            state.timeRemaining = action.payload;
-        },
-        setTimerRunning: (state, action) => {
-            state.isTimerRunning = action.payload;
-        },
-        resetTimer: (state) => {
-            state.timeRemaining = 35;
+            updateRedCards: (state, action) => {
+                const { used, value, updateAll } = action.payload;
+                if (updateAll) {
+                    state.redCards = state.redCards.map(card => ({ ...card, used }));
+                } else {
+                    state.redCards = state.redCards.map(card =>
+                        card.value === value ? { ...card, used } : card
+                    );
+                }
+            },
+
+            updateYellowCards: (state, action) => {
+                const { used, value, updateAll } = action.payload;
+                if (updateAll) {
+                    state.yellowCards = state.yellowCards.map(card => ({ ...card, used }));
+                } else {
+                    state.yellowCards = state.yellowCards.map(card =>
+                        card.value === value ? { ...card, used } : card
+                    );
+                }
+            },
+
+            updateGreenCards: (state, action) => {
+                const { used, value, updateAll } = action.payload;
+                if (updateAll) {
+                    state.greenCards = state.greenCards.map(card => ({ ...card, used }));
+                } else {
+                    state.greenCards = state.greenCards.map(card =>
+                        card.value === value ? { ...card, used } : card
+                    );
+                }
+            },
+            moveSoldier: (state, action) => {
+                const { color, position, soldierID, returenToBase, onBoard } = action.payload;
+                const soldiersByColor = {
+                    blue: state.blueSoldiers,
+                    red: state.redSoldiers,
+                    yellow: state.yellowSoldiers,
+                    green: state.greenSoldiers
+                };
+
+                console.log(position)
+                const updatedSoldiers = soldiersByColor[color].map(soldier =>
+                    soldier.id === soldierID
+                        ? returenToBase
+                            ? { ...soldier, position: soldier.initialPosition, onBoard: false, isOut: false }
+                            : !position
+                                ? { ...soldier, position, onBoard: false, isOut: true } :
+                                onBoard ? {
+                                    ...soldier,
+                                    position: position,  // Update position to the new one
+                                    onBoard: true, isOut: false
+                                } : { ...soldier, position }
+                        : soldier
+                );
+
+                switch (color) {
+                    case 'blue':
+                        state.blueSoldiers = updatedSoldiers;
+                        break;
+                    case 'red':
+                        state.redSoldiers = updatedSoldiers;
+                        break;
+                    case 'yellow':
+                        state.yellowSoldiers = updatedSoldiers;
+                        break;
+                    case 'green':
+                        state.greenSoldiers = updatedSoldiers;
+                        break;
+                }
+            },
+
+
+            updateTimer: (state, action) => {
+                state.timeRemaining = action.payload;
+            },
+            setTimerRunning: (state, action) => {
+                state.isTimerRunning = action.payload;
+            },
+            resetTimer: (state) => {
+                state.timeRemaining = 35;
+            }
         }
-    }
-});
+    });
 
-export const {
-    setCurrentPlayer,
-    setActivePlayer,
-    moveSoldier,
-    enterNewSoldier,
-    updateBlueCards,
-    updateRedCards,
-    updateYellowCards,
-    updateGreenCards,
-    updateTimer,
-    setTimerRunning,
-    resetTimer
-} = gameSlice.actions;
+    export const {
+        setCurrentPlayer,
+        setActivePlayer,
+        moveSoldier,
+        // enterNewSoldier,
+        updateBlueCards,
+        updateRedCards,
+        updateYellowCards,
+        updateGreenCards,
+        updateTimer,
+        setTimerRunning,
+        resetTimer
+    } = gameSlice.actions;
 
-export default gameSlice.reducer;
+    export default gameSlice.reducer;
