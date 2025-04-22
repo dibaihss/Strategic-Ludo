@@ -227,7 +227,7 @@ export default function Bases() {
             Toast.show({
                 type: 'error',
                 text1: uiStrings[systemLang].wrongColor,
-                text2: uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer),
+                text2: uiStrings[systemLang].wrongTurn.replaceAll('{color}', localizedActivePlayer),
                 position: 'bottom',
                 visibilityTime: 2000,
             });

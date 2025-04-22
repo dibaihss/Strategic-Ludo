@@ -137,7 +137,7 @@ const uiStrings = {
         selectPlayer: '{color} اختر لاعب',
         playerNotSelected: 'يجب اختيار لاعب للتحرك',
         wrongColor: 'لون خاطئ',
-        wrongTurn: 'دور ال{color} ',
+        wrongTurn: 'دور ال{color} اختر لاعب من للون {color}',
         wonGame: 'فاز في اللعبة {color}',
         gotIt: 'فهمت'
     },
