@@ -517,7 +517,7 @@ export default function Bases() {
                                     >
                                         <Text style={[
                                             styles.buttonText,
-                                            card.used && { color: '#999' }
+                                            card.used && { color: '#999' }, {transform: [{ rotate: '180deg' }]}
                                         ]}>{card.value}</Text>
                                     </Pressable>
                                 )
@@ -531,7 +531,7 @@ export default function Bases() {
                                             styles.button,
                                             { marginVertical: 5 },
                                             card.used && { backgroundColor: '#ddd', opacity: 0.7 },
-                                            styles[color+i]
+                                            styles[color+i], {transform: [{ rotate: '180deg' }]}
                                         ]}
                                         onPress={() => movePlayer(color, card.value)}
                                     >
