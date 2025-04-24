@@ -10,6 +10,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
     setCurrentPlayer
 } from '../assets/store/gameSlice.jsx';
+import { Feather } from '@expo/vector-icons';
+import Entypo from '@expo/vector-icons/Entypo';
 
 export default function SmalBoard() {
 
@@ -95,6 +97,18 @@ export default function SmalBoard() {
             textAlign: 'center',
             fontSize: isSmallScreen ? 5 : 14,
         },
+        arrow: {
+            position: 'absolute',
+            // top: isSmallScreen ? 3 : 5,
+            // left: isSmallScreen ? 3 : 5,
+            left: "50%",
+            top: "50%",
+            transform: [{ translateX: -17 }, { translateY: -14 }],
+            zIndex: 2,
+            width: isSmallScreen ? 5 : 18,
+            height: isSmallScreen ? 5 : 18,
+            fontSize: isSmallScreen ? 5 : 30,
+        },
     });
     const renderBox = (number, i) => (
         <View
@@ -102,6 +116,20 @@ export default function SmalBoard() {
             style={[styles.verbBox, styles.getNumber(number),
             ]}
         >
+                {/* {number === "1a" && (
+                 <Entypo name="arrow-bold-up" size={24} color="blue" style={styles.arrow}/>
+                )}
+                
+                {number === "1d" && (
+                    <Entypo name="arrow-bold-left" size={24} color="green"  style={styles.arrow} />
+                )}
+                     {number === "1b" && (
+               <Entypo name="arrow-bold-right" size={24} color="red"  style={styles.arrow}/>
+                )}
+                {number === "1c" && (
+                  <Entypo name="arrow-bold-down" size={24} color="pink"  style={styles.arrow}/>
+                )} */}
+                
                 {redSoldiers.map((soldier) =>
                     soldier.position === number && (
                         <Player
@@ -112,6 +140,7 @@ export default function SmalBoard() {
                         />
                     )
                 )}
+                
                 {blueSoldiers.map((soldier) =>
                     soldier.position === number && (
                         <Player
