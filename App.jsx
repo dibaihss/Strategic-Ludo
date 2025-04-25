@@ -10,11 +10,11 @@ import Bases from './GameComponents/Bases.jsx';
 import Timer from './GameComponents/Timer.jsx';
 import { MaterialIcons } from '@expo/vector-icons';
 import { setTheme } from './assets/store/themeSlice.jsx';
-import Toast from 'react-native-toast-message';
 import { setActivePlayer, resetTimer } from './assets/store/gameSlice.jsx';
 import { setSystemLanguage } from './assets/store/languageSlice.jsx';
 import { gameInstructions, uiStrings, getLocalizedColor } from "./assets/shared/hardCodedData.js";
-import ActivePlayerIndicator from './GameComponents/ActivePlayerIndicator.jsx';
+import SimpleWebSocketConnection, { WebSocketExample } from './GameComponents/SimpleWebSocketConnection.jsx';
+
 
 function AppContent() {
   const dispatch = useDispatch();
@@ -222,8 +222,7 @@ function AppContent() {
 export default function App() {
   return (
     <Provider store={store}>
-      <AppContent />
-      <Toast />
+      <SimpleWebSocketConnection />
     </Provider>
   );
 }
