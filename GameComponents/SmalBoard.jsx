@@ -3,7 +3,7 @@ import {
     StyleSheet,
     Dimensions
 } from 'react-native';
-import React from 'react';
+import React, {useEffect} from 'react';
 import Player from './Player';
 import { boxes } from "../assets/shared/hardCodedData.js"
 import { useDispatch, useSelector } from 'react-redux';
@@ -12,6 +12,8 @@ import {
 } from '../assets/store/gameSlice.jsx';
 import { Feather } from '@expo/vector-icons';
 import Entypo from '@expo/vector-icons/Entypo';
+import { useWebSocket } from '../assets/shared/SimpleWebSocketConnection.jsx';
+
 
 export default function SmalBoard() {
 
@@ -24,14 +26,39 @@ export default function SmalBoard() {
     const boxSize = useSelector(state => state.animation.boxSize);
     const theme = useSelector(state => state.theme.current);
 
+    const { connected, subscribe, sendMessage } = useWebSocket();
+
     const windowWidth = Dimensions.get('window').width;
     const windowHeight = Dimensions.get('window').height;
     const isSmallScreen = windowWidth < 375 || windowHeight < 667;
 
     const currentSelectedPlayer = (selectedPlayer) => {
+        handlePlayerMove(selectedPlayer);
         dispatch(setCurrentPlayer(selectedPlayer));
     };
+    useEffect(() => {
+        if (connected) {
+          // Subscribe to receive board updates
+          const subscription = subscribe('/topic/board', (data) => {
+            // Update your component state or dispatch Redux actions
+            console.log('Board update received:', data);
+            // Example: dispatch(updateBoard(data));
+          });
+          
+          // Cleanup subscription when component unmounts
+          return () => {
+            if (subscription) {
+              subscription.unsubscribe();
+            }
+          };
+        }
+      }, [connected, subscribe]);
 
+      const handlePlayerMove = (player) => {
+        // Send player move through WebSocket
+        console.log('Sending player move:', player);
+        sendMessage('/app/board.getPos', { player: player.id, position: player.position });
+      };
   
     const styles = StyleSheet.create({
         board: {

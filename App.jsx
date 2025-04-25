@@ -13,7 +13,7 @@ import { setTheme } from './assets/store/themeSlice.jsx';
 import { setActivePlayer, resetTimer } from './assets/store/gameSlice.jsx';
 import { setSystemLanguage } from './assets/store/languageSlice.jsx';
 import { gameInstructions, uiStrings, getLocalizedColor } from "./assets/shared/hardCodedData.js";
-import SimpleWebSocketConnection, { WebSocketExample } from './GameComponents/SimpleWebSocketConnection.jsx';
+import { WebSocketProvider } from './assets/shared/SimpleWebSocketConnection.jsx';
 
 
 function AppContent() {
@@ -140,12 +140,12 @@ function AppContent() {
     },
   });
 
-  const cycleTheme = () => {
-    const themeNames = Object.keys(themeList);
-    const currentIndex = themeNames.indexOf(theme.name);
-    const nextIndex = (currentIndex + 1) % themeNames.length;
-    dispatch(setTheme(themeNames[nextIndex]));
-  };
+  // const cycleTheme = () => {
+  //   const themeNames = Object.keys(themeList);
+  //   const currentIndex = themeNames.indexOf(theme.name);
+  //   const nextIndex = (currentIndex + 1) % themeNames.length;
+  //   dispatch(setTheme(themeNames[nextIndex]));
+  // };
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -222,7 +222,9 @@ function AppContent() {
 export default function App() {
   return (
     <Provider store={store}>
-      <SimpleWebSocketConnection />
-    </Provider>
+    <WebSocketProvider>
+      <AppContent />
+    </WebSocketProvider>
+  </Provider>
   );
 }
