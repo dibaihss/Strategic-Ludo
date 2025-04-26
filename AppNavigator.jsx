@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginPage from './Menu/login.jsx'; // Import LoginPage
+import MatchListPage from './Menu/MultiplayerMenu.jsx';
 // Assuming you have this action creator
 // import { setGameUsername, setUserId } from './assets/store/gameSlice.jsx';
 
@@ -110,6 +111,7 @@ export default function AppNavigator() {
           <>
             <Stack.Screen name="Home" component={HomeScreen} />
             <Stack.Screen name="Game" component={GameScreen} />
+            <Stack.Screen name="MatchList" component={MatchListPage} />
             {/* Add other authenticated screens here */}
           </>
         ) : (

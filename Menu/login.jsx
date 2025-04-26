@@ -14,8 +14,11 @@ import {
 import { useSelector } from 'react-redux';
 import { MaterialIcons } from '@expo/vector-icons';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
+import { useDispatch } from 'react-redux';
+import { loginUser } from '../assets/store/authSlice.jsx';
 
 const LoginPage = ({ onLogin }) => {
+    const dispatch = useDispatch();
   const theme = useSelector(state => state.theme.current);
   const systemLang = useSelector(state => state.language.systemLang);
   const [username, setUsername] = useState('');

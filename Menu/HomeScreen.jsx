@@ -14,10 +14,11 @@ export default function HomeScreen({ navigation }) {
   
     const handleStartMultiplayerGame = () => {
   
-      dispatch(setOnlineModus(true));
-      dispatch(resetTimer());
-      dispatch(setActivePlayer());
-      navigation.navigate('Game', { mode: 'multiplayer' });
+    //   dispatch(setOnlineModus(true));
+    //   dispatch(resetTimer());
+    //   dispatch(setActivePlayer());
+    //   navigation.navigate('Game', { mode: 'multiplayer' });
+    navigation.navigate('MatchList');
     };
   
     return (
