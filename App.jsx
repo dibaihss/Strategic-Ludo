@@ -1,6 +1,8 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Pressable, Platform, Dimensions, Modal, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, Pressable, Platform, Dimensions, Modal, ScrollView, ActivityIndicator } from 'react-native'; // Added ActivityIndicator
 import { useEffect, useState } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import SmalBoard from './GameComponents/SmalBoard.jsx';
 import { Provider, useSelector, useDispatch } from 'react-redux';
 import { store } from './assets/store/store.jsx';
@@ -9,55 +11,57 @@ import Goals from './GameComponents/Goals.jsx';
 import Bases from './GameComponents/Bases.jsx';
 import Timer from './GameComponents/Timer.jsx';
 import HomePage from './Menu/Home.jsx';
+import LoginPage from './Menu/login.jsx'; // Import LoginPage
 import { MaterialIcons } from '@expo/vector-icons';
-import { setActivePlayer, resetTimer, setOnlineModus } from './assets/store/gameSlice.jsx';
+import { setActivePlayer, resetTimer, setOnlineModus, setUsername as setGameUsername } from './assets/store/gameSlice.jsx'; // Import setUsername
 import { setSystemLanguage } from './assets/store/languageSlice.jsx';
 import { gameInstructions, uiStrings, getLocalizedColor } from "./assets/shared/hardCodedData.js";
-import { WebSocketProvider } from './assets/shared/SimpleWebSocketConnection.jsx';
+import { WebSocketProvider, useWebSocket } from './assets/shared/SimpleWebSocketConnection.jsx'; // Import useWebSocket
 
+// Create the navigation stack
+const Stack = createNativeStackNavigator();
 
-function AppContent() {
+// --- Screens ---
+
+// Home Screen Component (No changes needed here for now)
+function HomeScreen({ navigation }) {
+  const dispatch = useDispatch();
+
+  const handleStartLocalGame = () => {
+    dispatch(resetTimer());
+    dispatch(setActivePlayer());
+    navigation.navigate('Game', { mode: 'local' });
+  };
+
+  const handleStartMultiplayerGame = () => {
+
+    dispatch(setOnlineModus(true));
+    dispatch(resetTimer());
+    dispatch(setActivePlayer());
+    navigation.navigate('Game', { mode: 'multiplayer' });
+  };
+
+  return (
+    <HomePage
+      onStartLocalGame={handleStartLocalGame}
+      onStartMultiplayerGame={handleStartMultiplayerGame}
+    />
+  );
+}
+
+// Game Screen Component (No changes needed here for now)
+function GameScreen({ route, navigation }) {
+  // ... existing GameScreen code ...
   const dispatch = useDispatch();
   const theme = useSelector(state => state.theme.current);
-  const [showModal, setShowModal] = useState(false);
-  const [currentScreen, setCurrentScreen] = useState('home'); // 'home', 'localGame', or 'multiplayerGame'
+  const [showModal, setShowModal] = useState(true);
   const systemLang = useSelector(state => state.language.systemLang);
   const windowWidth = Dimensions.get('window').width;
   const windowHeight = Dimensions.get('window').height;
   const isSmallScreen = windowWidth < 375 || windowHeight < 667;
 
-  useEffect(() => {
-    // Get system language
-    const detectedLang = Platform.OS === 'web'
-      ? navigator.language.split('-')[0]
-      : Platform.OS === 'ios'
-        ? 'en' // You would use NativeModules.SettingsManager.settings.AppleLocale
-        : 'en'; // You would use NativeModules.I18nManager.localeIdentifier
-
-    // Set language based on supported languages
-    dispatch(setSystemLanguage(gameInstructions[detectedLang] ? detectedLang : 'en'));
-  }, []);
-
-  const handleStartLocalGame = () => {
-    setCurrentScreen('localGame');
-    // Initialize game state for local play
-    dispatch(resetTimer());
-    dispatch(setActivePlayer());
-    setShowModal(true);
-  };
-
-  const handleStartMultiplayerGame = () => {
-    setCurrentScreen('multiplayerGame');
-    // Initialize game state for multiplayer
-    dispatch(setOnlineModus(true));
-    dispatch(resetTimer());
-    dispatch(setActivePlayer());
-    setShowModal(true);
-  };
-
-  const handleBackToHome = () => {
-    setCurrentScreen('home');
-  };
+  // Get the game mode from navigation params
+  const { mode } = route.params;
 
   const styles = StyleSheet.create({
     container: {
@@ -159,115 +163,148 @@ function AppContent() {
       fontSize: 16,
       fontWeight: 'bold',
     },
-    backButton: {
-      position: 'absolute',
-      top: 20,
-      left: 20,
-      zIndex: 10,
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: theme.colors.button,
-      paddingVertical: 8,
-      paddingHorizontal: 12,
-      borderRadius: 8,
-    },
-    backButtonText: {
-      color: theme.colors.buttonText,
-      marginLeft: 5,
-      fontWeight: '500',
-    },
   });
 
-  // Render the current screen
-  const renderCurrentScreen = () => {
-    if (currentScreen === 'home') {
-      return (
-        <HomePage 
-          onStartLocalGame={handleStartLocalGame} 
-          onStartMultiplayerGame={handleStartMultiplayerGame} 
-        />
-      );
-    }
-    
-    // Both game modes use the same components but might have different logic
-    return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        {/* Back button */}
-        <Pressable style={styles.backButton} onPress={handleBackToHome}>
-          <MaterialIcons name="arrow-back" size={20} color={theme.colors.buttonText} />
-          <Text style={styles.backButtonText}>{uiStrings[systemLang].back || 'Back'}</Text>
-        </Pressable>
-        
-        <Timer />
-        <SmalBoard />
-        <Goals />
-        <Bases />
-        <View style={[styles.controls, { backgroundColor: theme.colors.background }]}>
-          <Pressable
-            style={[styles.button, {
-              backgroundColor: theme.colors.button,
-              borderColor: theme.colors.buttonBorder
-            }]}
-            onPress={() => {
-              dispatch(setActivePlayer());
-              dispatch(resetTimer());
-            }}
-          >
-            <MaterialIcons name="casino" size={24} color={theme.colors.buttonText} />
-            <Text style={[styles.buttonText, { color: theme.colors.buttonText }]}>
-              {uiStrings[systemLang].skipButton}
-            </Text>
-          </Pressable>
-        </View>
-
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={showModal}
-          onRequestClose={() => setShowModal(false)}
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>{gameInstructions[systemLang].title}</Text>
-              <ScrollView style={styles.modalScroll}>
-                <Text style={styles.modalText}>
-                  {currentScreen === 'multiplayerGame' 
-                    ? uiStrings[systemLang].multiplayerInstructions || gameInstructions[systemLang].content
-                    : gameInstructions[systemLang].content
-                  }
-                </Text>
-              </ScrollView>
-              <Pressable
-                style={styles.closeButton}
-                onPress={() => {
-                  setShowModal(false);
-                  dispatch(setActivePlayer());
-                  dispatch(resetTimer());
-                }}
-              >
-                <Text style={styles.closeButtonText}>
-                  {uiStrings[systemLang].gotIt}
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        </Modal>
-      </View>
-    );
-  };
-
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      {renderCurrentScreen()}
-    </GestureHandlerRootView>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <Timer />
+      <SmalBoard />
+      <Goals />
+      <Bases />
+      <View style={[styles.controls, { backgroundColor: theme.colors.background }]}>
+        <Pressable
+          style={[styles.button, {
+            backgroundColor: theme.colors.button,
+            borderColor: theme.colors.buttonBorder
+          }]}
+          onPress={() => {
+            dispatch(setActivePlayer());
+            dispatch(resetTimer());
+          }}
+        >
+          <MaterialIcons name="casino" size={24} color={theme.colors.buttonText} />
+          <Text style={[styles.buttonText, { color: theme.colors.buttonText }]}>
+            {uiStrings[systemLang].skipButton}
+          </Text>
+        </Pressable>
+      </View>
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showModal}
+        onRequestClose={() => setShowModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{gameInstructions[systemLang].title}</Text>
+            <ScrollView style={styles.modalScroll}>
+              <Text style={styles.modalText}>
+                {mode === 'multiplayer'
+                  ? uiStrings[systemLang].multiplayerInstructions || gameInstructions[systemLang].content
+                  : gameInstructions[systemLang].content
+                }
+              </Text>
+            </ScrollView>
+            <Pressable
+              style={styles.closeButton}
+              onPress={() => {
+                setShowModal(false);
+                dispatch(setActivePlayer());
+                dispatch(resetTimer());
+              }}
+            >
+              <Text style={styles.closeButtonText}>
+                {uiStrings[systemLang].gotIt}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 }
 
+
+// --- App Navigator ---
+function AppNavigator() {
+  const dispatch = useDispatch();
+  const [isLoading, setIsLoading] = useState(true); // Check auth status on load
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // Auth state
+
+  // Language detection effect
+  useEffect(() => {
+    const detectedLang = Platform.OS === 'web'
+      ? navigator.language.split('-')[0]
+      : Platform.OS === 'ios'
+        ? 'en' // Replace with actual detection if needed
+        : 'en'; // Replace with actual detection if needed
+    dispatch(setSystemLanguage(gameInstructions[detectedLang] ? detectedLang : 'en'));
+  }, [dispatch]);
+
+  // Simulate checking auth status on app start
+  useEffect(() => {
+    // In a real app, check AsyncStorage or secure store for a token
+    setTimeout(() => {
+      setIsLoading(false);
+      // setIsLoggedIn(true); // Uncomment to simulate being logged in
+    }, 1000); // Simulate loading time
+  }, []);
+
+  // Login handler function
+  const handleLogin = (username) => {
+    console.log('Logged in as:', username);
+    // dispatch(setGameUsername(username)); // Store username in Redux if needed
+    setIsLoggedIn(true);
+    // Optionally connect WebSocket after login
+    // connectWebSocket(username); // Pass username if needed by your WebSocket setup
+  };
+
+  // Show loading indicator while checking auth
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  return (
+    <NavigationContainer>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+          gestureEnabled: true,
+          animation: 'slide_from_right',
+        }}
+      >
+        {isLoggedIn ? (
+          // Screens shown when logged in
+          <>
+            <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="Game" component={GameScreen} />
+            {/* Add other authenticated screens here */}
+          </>
+        ) : (
+          // Screen shown when logged out
+          <Stack.Screen name="Login">
+            {(props) => <LoginPage {...props} onLogin={handleLogin} />}
+          </Stack.Screen>
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
+// --- Main App Component ---
 export default function App() {
   return (
     <Provider store={store}>
+      {/* WebSocketProvider wraps the entire app */}
       <WebSocketProvider>
-        <AppContent />
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <AppNavigator />
+        </GestureHandlerRootView>
       </WebSocketProvider>
     </Provider>
   );
