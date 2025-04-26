@@ -8,6 +8,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Goals from './GameComponents/Goals.jsx';
 import Bases from './GameComponents/Bases.jsx';
 import Timer from './GameComponents/Timer.jsx';
+import HomePage from './Menu/Home.jsx';
 import { MaterialIcons } from '@expo/vector-icons';
 import { setTheme } from './assets/store/themeSlice.jsx';
 import { setActivePlayer, resetTimer } from './assets/store/gameSlice.jsx';
@@ -20,7 +21,8 @@ function AppContent() {
   const dispatch = useDispatch();
   const theme = useSelector(state => state.theme.current);
   const themeList = useSelector(state => state.theme.themes);
-  const [showModal, setShowModal] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [currentScreen, setCurrentScreen] = useState('home'); // 'home', 'localGame', or 'multiplayerGame'
   const systemLang = useSelector(state => state.language.systemLang);
   const windowWidth = Dimensions.get('window').width;
   const windowHeight = Dimensions.get('window').height;
@@ -37,6 +39,26 @@ function AppContent() {
     // Set language based on supported languages
     dispatch(setSystemLanguage(gameInstructions[detectedLang] ? detectedLang : 'en'));
   }, []);
+
+  const handleStartLocalGame = () => {
+    setCurrentScreen('localGame');
+    // Initialize game state for local play
+    dispatch(resetTimer());
+    dispatch(setActivePlayer());
+    setShowModal(true);
+  };
+
+  const handleStartMultiplayerGame = () => {
+    setCurrentScreen('multiplayerGame');
+    // Initialize game state for multiplayer
+    dispatch(resetTimer());
+    dispatch(setActivePlayer());
+    setShowModal(true);
+  };
+
+  const handleBackToHome = () => {
+    setCurrentScreen('home');
+  };
 
   const styles = StyleSheet.create({
     container: {
@@ -138,47 +160,60 @@ function AppContent() {
       fontSize: 16,
       fontWeight: 'bold',
     },
+    backButton: {
+      position: 'absolute',
+      top: 20,
+      left: 20,
+      zIndex: 10,
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.colors.button,
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      borderRadius: 8,
+    },
+    backButtonText: {
+      color: theme.colors.buttonText,
+      marginLeft: 5,
+      fontWeight: '500',
+    },
   });
 
-  // const cycleTheme = () => {
-  //   const themeNames = Object.keys(themeList);
-  //   const currentIndex = themeNames.indexOf(theme.name);
-  //   const nextIndex = (currentIndex + 1) % themeNames.length;
-  //   dispatch(setTheme(themeNames[nextIndex]));
-  // };
-
-  return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+  // Render the current screen
+  const renderCurrentScreen = () => {
+    if (currentScreen === 'home') {
+      return (
+        <HomePage 
+          onStartLocalGame={handleStartLocalGame} 
+          onStartMultiplayerGame={handleStartMultiplayerGame} 
+        />
+      );
+    }
+    
+    // Both game modes use the same components but might have different logic
+    return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        {/* Back button */}
+        <Pressable style={styles.backButton} onPress={handleBackToHome}>
+          <MaterialIcons name="arrow-back" size={20} color={theme.colors.buttonText} />
+          <Text style={styles.backButtonText}>{uiStrings[systemLang].back || 'Back'}</Text>
+        </Pressable>
         
         <Timer />
         <SmalBoard />
         <Goals />
         <Bases />
         <View style={[styles.controls, { backgroundColor: theme.colors.background }]}>
-          {/* <Pressable
-            style={[styles.button, {
-              backgroundColor: theme.colors.button,
-              borderColor: theme.colors.buttonBorder
-            }]}
-            onPress={cycleTheme}
-          >
-            <MaterialIcons name="color-lens" size={24} color={theme.colors.buttonText} />
-            <Text style={[styles.buttonText, { color: theme.colors.buttonText }]}>
-              {uiStrings[systemLang].themeButton.replace('{name}', theme.name)}
-            </Text>
-          </Pressable> */}
           <Pressable
             style={[styles.button, {
               backgroundColor: theme.colors.button,
               borderColor: theme.colors.buttonBorder
             }]}
             onPress={() => {
-              dispatch(setActivePlayer(),
-                dispatch(resetTimer())
-              )
-            }
-            }>
+              dispatch(setActivePlayer());
+              dispatch(resetTimer());
+            }}
+          >
             <MaterialIcons name="casino" size={24} color={theme.colors.buttonText} />
             <Text style={[styles.buttonText, { color: theme.colors.buttonText }]}>
               {uiStrings[systemLang].skipButton}
@@ -196,15 +231,19 @@ function AppContent() {
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>{gameInstructions[systemLang].title}</Text>
               <ScrollView style={styles.modalScroll}>
-                <Text style={styles.modalText}>{gameInstructions[systemLang].content}</Text>
+                <Text style={styles.modalText}>
+                  {currentScreen === 'multiplayerGame' 
+                    ? uiStrings[systemLang].multiplayerInstructions || gameInstructions[systemLang].content
+                    : gameInstructions[systemLang].content
+                  }
+                </Text>
               </ScrollView>
               <Pressable
                 style={styles.closeButton}
                 onPress={() => {
-                  setShowModal(false)
-                  dispatch(setActivePlayer())
-                  dispatch(resetTimer())
-                 
+                  setShowModal(false);
+                  dispatch(setActivePlayer());
+                  dispatch(resetTimer());
                 }}
               >
                 <Text style={styles.closeButtonText}>
@@ -215,6 +254,12 @@ function AppContent() {
           </View>
         </Modal>
       </View>
+    );
+  };
+
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      {renderCurrentScreen()}
     </GestureHandlerRootView>
   );
 }
@@ -222,9 +267,9 @@ function AppContent() {
 export default function App() {
   return (
     <Provider store={store}>
-    <WebSocketProvider>
-      <AppContent />
-    </WebSocketProvider>
-  </Provider>
+      <WebSocketProvider>
+        <AppContent />
+      </WebSocketProvider>
+    </Provider>
   );
 }
