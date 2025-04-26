@@ -10,40 +10,37 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  ActivityIndicator
 } from 'react-native';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { MaterialIcons } from '@expo/vector-icons';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
-import { useDispatch } from 'react-redux';
 import { loginUser } from '../assets/store/authSlice.jsx';
 
-const LoginPage = ({ onLogin }) => {
-    const dispatch = useDispatch();
+const LoginPage = () => {
+  const dispatch = useDispatch();
   const theme = useSelector(state => state.theme.current);
   const systemLang = useSelector(state => state.language.systemLang);
+  const authError = useSelector(state => state.auth.error);
+  const loading = useSelector(state => state.auth.loading);
+  
   const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
 
   const handleLoginPress = () => {
-    if (!username.trim() || !password.trim()) {
+    if (!username.trim()) {
       Alert.alert(
         uiStrings[systemLang].error || 'Error',
-        uiStrings[systemLang].fillFields || 'Please fill in all fields.'
+        uiStrings[systemLang].fillFields || 'Please enter a username'
       );
       return;
     }
-    setLoading(true);
-    // Simulate login process
-    setTimeout(() => {
-      // In a real app, you'd call your auth API here
-      onLogin(username); // Pass username to the parent handler
-      setLoading(false);
-    }, 1500);
+    
+    // Use the loginUser thunk
+    dispatch(loginUser(username));
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: "white" }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
@@ -72,46 +69,34 @@ const LoginPage = ({ onLogin }) => {
                 value={username}
                 onChangeText={setUsername}
                 autoCapitalize="none"
-              />
-            </View>
-
-            <View style={[styles.inputWrapper, { borderColor: theme.colors.border }]}>
-              <MaterialIcons name="lock" size={20} color={theme.colors.textSecondary} style={styles.inputIcon} />
-              <TextInput
-                style={[styles.input, { color: theme.colors.text }]}
-                placeholder={uiStrings[systemLang].password || 'Password'}
-                placeholderTextColor={theme.colors.textSecondary}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
+                editable={!loading}
               />
             </View>
           </View>
+
+          {/* Error message */}
+          {authError && (
+            <Text style={[styles.errorText, { color: theme.colors.error }]}>
+              {authError}
+            </Text>
+          )}
 
           {/* Login Button */}
           <Pressable
-            style={[styles.button, { backgroundColor: loading ? theme.colors.disabled : theme.colors.button }]}
+            style={[styles.button, { 
+              backgroundColor: loading ? theme.colors.disabled : theme.colors.button 
+            }]}
             onPress={handleLoginPress}
             disabled={loading}
           >
-            <Text style={[styles.buttonText, { color: theme.colors.buttonText }]}>
-              {loading ? (uiStrings[systemLang].loggingIn || 'Logging In...') : (uiStrings[systemLang].login || 'Login')}
-            </Text>
+            {loading ? (
+              <ActivityIndicator color={theme.colors.buttonText} />
+            ) : (
+              <Text style={[styles.buttonText, { color: theme.colors.buttonText }]}>
+                {uiStrings[systemLang].login || 'Login'}
+              </Text>
+            )}
           </Pressable>
-
-          {/* Optional: Links for Sign Up / Forgot Password */}
-          <View style={styles.linksContainer}>
-            <Pressable onPress={() => Alert.alert('Navigate', 'Go to Sign Up')}>
-              <Text style={[styles.linkText, { color: theme.colors.primary }]}>
-                {uiStrings[systemLang].signUp || 'Sign Up'}
-              </Text>
-            </Pressable>
-            <Pressable onPress={() => Alert.alert('Navigate', 'Go to Forgot Password')}>
-              <Text style={[styles.linkText, { color: theme.colors.textSecondary }]}>
-                {uiStrings[systemLang].forgotPassword || 'Forgot Password?'}
-              </Text>
-            </Pressable>
-          </View>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -144,7 +129,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   inputContainer: {
-    marginBottom: 30,
+    marginBottom: 20,
   },
   inputWrapper: {
     flexDirection: 'row',
@@ -172,13 +157,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  linksContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  linkText: {
+  errorText: {
     fontSize: 14,
-  },
+    marginBottom: 15,
+    textAlign: 'center',
+  }
 });
 
 export default LoginPage;

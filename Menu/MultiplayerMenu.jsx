@@ -12,127 +12,55 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import { MaterialIcons } from '@expo/vector-icons';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
+import { fetchMatches, createMatch, joinMatch } from '../assets/store/authSlice.jsx';
 
 const MatchListPage = ({ navigation }) => {
-  const [matches, setMatches] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState(null);
   
+  const dispatch = useDispatch();
   const theme = useSelector(state => state.theme.current);
   const systemLang = useSelector(state => state.language.systemLang);
-  const userId = useSelector(state => state.game.userId); // Assuming you store userId in Redux
+  const matches = useSelector(state => state.auth.matches);
+  const loading = useSelector(state => state.auth.loading);
+  const error = useSelector(state => state.auth.error);
   
-  // Fetch matches from API
-  const fetchMatches = async () => {
-    try {
-      setError(null);
-      setLoading(true);
-      
-      const response = await fetch('http://localhost:8080/api/sessions');
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      setMatches(data);
-    } catch (error) {
-      console.error('Error fetching matches:', error);
-      setError('Failed to load matches. Please try again.');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+  // Load matches when component mounts
+  useEffect(() => {
+    dispatch(fetchMatches());
+  }, [dispatch]);
   
   // Handle pull-to-refresh
   const onRefresh = () => {
     setRefreshing(true);
-    fetchMatches();
+    dispatch(fetchMatches()).finally(() => setRefreshing(false));
   };
   
-  // Load matches when component mounts
-  useEffect(() => {
-    fetchMatches();
-  }, []);
-  
   // Handle match join
-  const handleJoinMatch = async (matchId) => {
-    try {
-      setLoading(true);
-      
-      // Call API to join match
-      const response = await fetch(`http://localhost:8080/api/sessions/${matchId}/users/${userId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+  const handleJoinMatch = (matchId) => {
+    dispatch(joinMatch(matchId)).unwrap()
+      .then(() => {
+        navigation.navigate('Game', { mode: 'multiplayer' });
+      })
+      .catch(err => {
+        Alert.alert(
+          uiStrings[systemLang].error || 'Error',
+          err || 'Failed to join match'
+        );
       });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Failed to join match. Status: ${response.status}`);
-      }
-      
-      // Navigate to game screen with match ID
-      navigation.navigate('Game', { mode: 'multiplayer', matchId });
-      
-    } catch (error) {
-      console.error('Error joining match:', error);
-      Alert.alert(
-        uiStrings[systemLang].error || 'Error',
-        error.message || 'Failed to join match'
-      );
-    } finally {
-      setLoading(false);
-    }
   };
   
   // Handle create new match
-  const handleCreateMatch = async () => {
-    try {
-      setLoading(true);
-      
-      // Call API to create a new match
-      const response = await fetch('http://localhost:8080/api/sessions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: `Game Room ${Math.floor(Math.random() * 1000)}`,
-          status: 'waiting'
-        }),
+  const handleCreateMatch = () => {
+    dispatch(createMatch()).unwrap()
+      .then(() => {
+        navigation.navigate('Game', { mode: 'multiplayer' });
+      })
+      .catch(err => {
+        Alert.alert(
+          uiStrings[systemLang].error || 'Error',
+          err || 'Failed to create match'
+        );
       });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Failed to create match. Status: ${response.status}`);
-      }
-      
-      const newMatch = await response.json();
-      
-      // Auto-join the match you just created
-      await fetch(`http://localhost:8080/api/sessions/${newMatch.id}/users/${userId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      // Navigate to game screen with the new match ID
-      navigation.navigate('Game', { mode: 'multiplayer', matchId: newMatch.id });
-      
-    } catch (error) {
-      console.error('Error creating match:', error);
-      Alert.alert(
-        uiStrings[systemLang].error || 'Error',
-        error.message || 'Failed to create match'
-      );
-    } finally {
-      setLoading(false);
-    }
   };
   
   // Render each match item
@@ -164,7 +92,7 @@ const MatchListPage = ({ navigation }) => {
   );
   
   // Loading indicator
-  if (loading && !refreshing) {
+  if (loading && !refreshing && matches.length === 0) {
     return (
       <View style={[styles.container, styles.centered, { backgroundColor: theme.colors.background }]}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -176,7 +104,7 @@ const MatchListPage = ({ navigation }) => {
   }
   
   return (
-    <View style={[styles.container, { backgroundColor: "white" }]}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Header */}
       <View style={styles.header}>
         <Pressable 
@@ -193,12 +121,12 @@ const MatchListPage = ({ navigation }) => {
       {/* Error message */}
       {error && (
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
+          <Text style={[styles.errorText, { color: theme.colors.error }]}>{error}</Text>
           <Pressable 
-            style={styles.retryButton}
-            onPress={fetchMatches}
+            style={[styles.retryButton, { backgroundColor: theme.colors.button }]}
+            onPress={() => dispatch(fetchMatches())}
           >
-            <Text style={styles.retryText}>
+            <Text style={[styles.retryText, { color: theme.colors.buttonText }]}>
               {uiStrings[systemLang].retry || 'Retry'}
             </Text>
           </Pressable>
@@ -237,13 +165,26 @@ const MatchListPage = ({ navigation }) => {
       {/* Create match button */}
       <View style={styles.footer}>
         <Pressable 
-          style={[styles.createButton, { backgroundColor: theme.colors.button }]}
+          style={[
+            styles.createButton, 
+            { 
+              backgroundColor: loading ? theme.colors.disabled : theme.colors.button,
+              opacity: loading ? 0.7 : 1
+            }
+          ]}
           onPress={handleCreateMatch}
+          disabled={loading}
         >
-          <MaterialIcons name="add" size={24} color={theme.colors.buttonText} />
-          <Text style={[styles.createButtonText, { color: theme.colors.buttonText }]}>
-            {uiStrings[systemLang].createMatch || 'Create New Match'}
-          </Text>
+          {loading ? (
+            <ActivityIndicator color={theme.colors.buttonText} />
+          ) : (
+            <>
+              <MaterialIcons name="add" size={24} color={theme.colors.buttonText} />
+              <Text style={[styles.createButtonText, { color: theme.colors.buttonText }]}>
+                {uiStrings[systemLang].createMatch || 'Create New Match'}
+              </Text>
+            </>
+          )}
         </Pressable>
       </View>
     </View>
@@ -335,18 +276,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   errorText: {
-    color: 'red',
     marginBottom: 12,
     textAlign: 'center',
   },
   retryButton: {
     paddingVertical: 8,
     paddingHorizontal: 16,
-    backgroundColor: '#e0e0e0',
     borderRadius: 8,
   },
   retryText: {
-    color: '#333',
     fontWeight: '600',
   },
   emptyContainer: {

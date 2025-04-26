@@ -1,30 +1,26 @@
-import { setActivePlayer, resetTimer, setOnlineModus } from '../assets/store/gameSlice.jsx';
-import { useDispatch, useSelector } from 'react-redux';
+import React from 'react';
+import { useDispatch } from 'react-redux';
 import HomePage from './Home.jsx';
-
+import { resetTimer, setActivePlayer } from '../assets/store/gameSlice.jsx';
 
 export default function HomeScreen({ navigation }) {
-    const dispatch = useDispatch();
+  const dispatch = useDispatch();
   
-    const handleStartLocalGame = () => {
-      dispatch(resetTimer());
-      dispatch(setActivePlayer());
-      navigation.navigate('Game', { mode: 'local' });
-    };
+  const handleStartLocalGame = () => {
+    dispatch(resetTimer());
+    dispatch(setActivePlayer());
+    navigation.navigate('Game', { mode: 'local' });
+  };
   
-    const handleStartMultiplayerGame = () => {
-  
-    //   dispatch(setOnlineModus(true));
-    //   dispatch(resetTimer());
-    //   dispatch(setActivePlayer());
-    //   navigation.navigate('Game', { mode: 'multiplayer' });
+  const handleStartMultiplayerGame = () => {
+    // Navigate to the match list page
     navigation.navigate('MatchList');
-    };
+  };
   
-    return (
-      <HomePage
-        onStartLocalGame={handleStartLocalGame}
-        onStartMultiplayerGame={handleStartMultiplayerGame}
-      />
-    );
-  }
+  return (
+    <HomePage
+      onStartLocalGame={handleStartLocalGame}
+      onStartMultiplayerGame={handleStartMultiplayerGame}
+    />
+  );
+}
