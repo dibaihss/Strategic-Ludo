@@ -33,15 +33,15 @@ export default function SmalBoard() {
     const isSmallScreen = windowWidth < 375 || windowHeight < 667;
 
     const currentSelectedPlayer = (selectedPlayer) => {
-        handlePlayerMove(selectedPlayer);
-        dispatch(setCurrentPlayer(selectedPlayer));
+        connected ? handlePlayerMove(selectedPlayer) : dispatch(setCurrentPlayer(selectedPlayer));
     };
     useEffect(() => {
         if (connected) {
           // Subscribe to receive board updates
-          const subscription = subscribe('/topic/board', (data) => {
+          const subscription = subscribe('/topic/currentPlayer', (data) => {
             // Update your component state or dispatch Redux actions
             console.log('Board update received:', data);
+            dispatch(setCurrentPlayer(data));
             // Example: dispatch(updateBoard(data));
           });
           
@@ -56,8 +56,8 @@ export default function SmalBoard() {
 
       const handlePlayerMove = (player) => {
         // Send player move through WebSocket
-        console.log('Sending player move:', player);
-        sendMessage('/app/board.getPos', { player: player.id, position: player.position });
+        console.log('Sending player:', player);
+        sendMessage('/app/player.getPlayer',  player );
       };
   
     const styles = StyleSheet.create({

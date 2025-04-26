@@ -8,6 +8,7 @@ import { setBoxesPosition, setShowClone } from './animationSlice.jsx'
 const initialState = {
     currentPlayer: null,
     activePlayer: "blue",
+    onlineModus: false,
     timeRemaining: 35,
     isTimerRunning: false,
     blueSoldiers: [
@@ -278,7 +279,10 @@ export const gameSlice = createSlice({
             },
             resetTimer: (state) => {
                 state.timeRemaining = 35;
-            }
+            },
+            setOnlineModus: (state, action) => {
+                state.onlineModus = action.payload;
+            },
         }
     });
 
@@ -286,7 +290,7 @@ export const gameSlice = createSlice({
         setCurrentPlayer,
         setActivePlayer,
         moveSoldier,
-        // enterNewSoldier,
+        setOnlineModus,
         updateBlueCards,
         updateRedCards,
         updateYellowCards,

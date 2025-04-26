@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Client } from '@stomp/stompjs';
 import SockJs from 'sockjs-client';
+import { useSelector, useDispatch } from 'react-redux';
 
 // Create the context
 const WebSocketContext = createContext(null);
@@ -10,8 +11,10 @@ export const WebSocketProvider = ({ children }) => {
   const [stompClient, setStompClient] = useState(null);
   const [connected, setConnected] = useState(false);
   const [messages, setMessages] = useState({});
+  const onlineModus = useSelector(state => state.game.onlineModus);
 
   useEffect(() => {
+    if (!onlineModus) return; // Don't create a WebSocket connection if onlineModus is false
     // Create STOMP client
     const client = new Client({
       webSocketFactory: () => {
@@ -50,7 +53,7 @@ export const WebSocketProvider = ({ children }) => {
         client.deactivate();
       }
     };
-  }, []);
+  }, [onlineModus]);
 
   // Subscribe to a topic
   const subscribe = (topic, callback) => {

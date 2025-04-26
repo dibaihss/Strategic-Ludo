@@ -86,22 +86,15 @@ const HomePage = ({ onStartLocalGame, onStartMultiplayerGame }) => {
           style={[
             styles.button, 
             { 
-              backgroundColor: connected ? theme.colors.button : theme.colors.disabled,
-              opacity: connected ? 1 : 0.7 
+              backgroundColor: theme.colors.button,
             }
           ]}
           onPress={onStartMultiplayerGame}
-          disabled={!connected}
         >
           <MaterialIcons name="public" size={28} color={theme.colors.buttonText} />
           <Text style={[styles.buttonText, { color: theme.colors.buttonText }]}>
             {uiStrings[systemLang].playMultiplayer || 'Multiplayer'}
           </Text>
-          {!connected && (
-            <Text style={[styles.connectionWarning, { color: theme.colors.error }]}>
-              {uiStrings[systemLang].serverOffline || 'Server offline'}
-            </Text>
-          )}
         </Pressable>
       </View>
       
