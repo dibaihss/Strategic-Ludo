@@ -11,11 +11,12 @@ const initialState = {
     onlineModus: false,
     timeRemaining: 35,
     isTimerRunning: false,
-    playerAssignments: 
-       [{user_id: null, color: null},
-        {user_id: null, color: null}, 
-        {user_id: null, color: null}, 
-        {user_id: null, color: null}],
+    playerAssignments: {
+        blue: null,
+        red: null,
+        yellow: null,
+        green: null
+    },
     blueSoldiers: [
         { id: 1, position: '1a', color: "blue", initialPosition: '1blue', onBoard: true, isOut: false},
         { id: 2, position: '2blue', color: "blue", initialPosition: '2blue', onBoard: false, isOut: false},

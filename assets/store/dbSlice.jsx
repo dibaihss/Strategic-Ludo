@@ -7,7 +7,6 @@ const API_URL = 'http://localhost:8080/api';
 export const registerUser = createAsyncThunk(
     'auth/registerUser',
     async (userData, { rejectWithValue }) => {
-        console.log('Registering user:', userData);
       try {
         const response = await fetch(`${API_URL}/users`, {
           method: 'POST',
@@ -125,14 +124,12 @@ export const logout = createAsyncThunk(
    
     try {
       const state = getState();
-      console.log(state.auth.user);
       const user = state.auth.user;
       const isGuest = user?.isGuest;
       const userId = user?.id;
       
       // If it's a guest user, delete from database
       if (isGuest && userId) {
-        console.log("Deleting guest user:", userId);
         
         // Make API call to delete the guest user
         const response = await fetch(`${API_URL}/users/${userId}`, {

@@ -28,7 +28,7 @@ export default function SmalBoard() {
     const boxSize = useSelector(state => state.animation.boxSize);
     const theme = useSelector(state => state.theme.current);
     const user = useSelector(state => state.auth.user);
-
+    const currentMatch = useSelector(state => state.auth.currentMatch);
 
     const { connected, subscribe, sendMessage } = useWebSocket();
 
@@ -37,12 +37,29 @@ export default function SmalBoard() {
     const isSmallScreen = windowWidth < 375 || windowHeight < 667;
 
     const currentSelectedPlayer = (selectedPlayer) => {
-        connected ? handlePlayerMove(selectedPlayer) : dispatch(setCurrentPlayer(selectedPlayer));
+        if (connected) {
+            const soldiers = {
+                blue: state.blueSoldiers,
+                red: state.redSoldiers,
+                yellow: state.yellowSoldiers,
+                green: state.greenSoldiers
+            }[color];
+        
+            console.log("selectedPlayer", playerAssignments)
+            playerAssignments.forEach((player) => {
+                if (player.userId === user.id) {
+                    if (selectedPlayer.color === player.color) handlePlayerMove(selectedPlayer)
+                }
+            });
+
+        } else {
+            dispatch(setCurrentPlayer(selectedPlayer));
+        }
     };
     useEffect(() => {
         if (connected) {
             // Subscribe to receive board updates
-            const subscription = subscribe('/topic/currentPlayer', (data) => {
+            const subscription = subscribe(`/topic/currentPlayer/${currentMatch.id}`, (data) => {
                 // Update your component state or dispatch Redux actions
                 console.log('Board update received:', data);
                 dispatch(setCurrentPlayer(data));
@@ -63,7 +80,7 @@ export default function SmalBoard() {
     const handlePlayerMove = (player) => {
         // Send player move through WebSocket
         console.log('Sending player:', player);
-        sendMessage('/app/player.getPlayer', player);
+        sendMessage(`/app/player.getPlayer/${currentMatch.id}`, player);
     };
 
     const styles = StyleSheet.create({

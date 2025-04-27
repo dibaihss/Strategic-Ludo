@@ -38,13 +38,13 @@ const MatchListPage = ({ navigation }) => {
   };
 
   
-  // Handle match join
+
   const handleJoinMatch = (matchId) => {
     dispatch(joinMatch(matchId)).unwrap()
       .then(() => {
-        
+
         dispatch(setOnlineModus(true));
-        navigation.navigate('Game', { mode: 'multiplayer' });
+        navigation.navigate('WaitingRoom', { matchId });
       })
       .catch(err => {
         Alert.alert(
@@ -53,12 +53,14 @@ const MatchListPage = ({ navigation }) => {
         );
       });
   };
+
   
   // Handle create new match
   const handleCreateMatch = () => {
     dispatch(createMatch()).unwrap()
-      .then(() => {
-        navigation.navigate('Game', { mode: 'multiplayer' });
+      .then((createdMatch) => {
+        // Navigate to waiting room instead of directly to game
+        navigation.navigate('WaitingRoom', { matchId: createdMatch.id });
         dispatch(setOnlineModus(true));
       })
       .catch(err => {
@@ -68,7 +70,6 @@ const MatchListPage = ({ navigation }) => {
         );
       });
   };
-  
   // Render each match item
   const renderMatchItem = ({ item }) => (
     <Pressable 
