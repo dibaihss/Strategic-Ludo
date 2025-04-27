@@ -25,6 +25,7 @@ export default function SmalBoard() {
     const greenSoldiers = useSelector(state => state.game.greenSoldiers);
     const boxSize = useSelector(state => state.animation.boxSize);
     const theme = useSelector(state => state.theme.current);
+    const user = useSelector(state => state.auth.user);
 
     const { connected, subscribe, sendMessage } = useWebSocket();
 

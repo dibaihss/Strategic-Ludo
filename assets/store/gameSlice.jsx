@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { playerType } from "../shared/hardCodedData.js";
 
 import { startingPositions } from "../shared/hardCodedData.js";
-import { setBoxesPosition, setShowClone } from './animationSlice.jsx'
+import { setBoxesPosition } from './animationSlice.jsx'
 
 
 const initialState = {
