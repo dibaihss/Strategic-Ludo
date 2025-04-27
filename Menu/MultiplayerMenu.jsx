@@ -104,7 +104,7 @@ const MatchListPage = ({ navigation }) => {
   }
   
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View style={[styles.container, { backgroundColor: "white" }]}>
       {/* Header */}
       <View style={styles.header}>
         <Pressable 

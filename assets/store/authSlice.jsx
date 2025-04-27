@@ -1,20 +1,118 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_URL = 'http://localhost:8080/api';
 
-// Simplified login thunk
+// Register user thunk
+export const registerUser = createAsyncThunk(
+    'auth/registerUser',
+    async (userData, { rejectWithValue }) => {
+        console.log('Registering user:', userData);
+      try {
+        const response = await fetch(`${API_URL}/users`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            name: userData.username, 
+            email: userData.email,
+            password: userData.password,
+            status: 'active' 
+          }),
+        });
+  
+        if (!response.ok) return rejectWithValue('Registration failed');
+        return await response.json();
+      } catch (error) {
+        return rejectWithValue('Network error');
+      }
+    }
+  );
+  
+
+ // Load user from storage
+export const loadStoredUser = createAsyncThunk(
+  'auth/loadStoredUser',
+  async (_, { rejectWithValue }) => {
+    try {
+      const storedUser = await AsyncStorage.getItem('user');
+      const storedToken = await AsyncStorage.getItem('token');
+      
+      if (!storedUser) {
+        return rejectWithValue('No stored user found');
+      }
+      
+      return { 
+        user: JSON.parse(storedUser), 
+        token: storedToken 
+      };
+    } catch (error) {
+      console.error('Error loading stored user:', error);
+      return rejectWithValue('Failed to load user data');
+    }
+  }
+);
+
+// Login user thunk - add storage
 export const loginUser = createAsyncThunk(
   'auth/loginUser',
-  async (username, { rejectWithValue }) => {
+  async (userData, { rejectWithValue }) => {
     try {
+      // Keep your existing API call
       const response = await fetch(`${API_URL}/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: username, status: 'active' }),
+        body: JSON.stringify({ 
+          email: userData.email,
+          password: userData.password,
+        }),
       });
 
       if (!response.ok) return rejectWithValue('Login failed');
-      return await response.json();
+      
+      const result = await response.json();
+      
+      // Store the user data in AsyncStorage
+      await AsyncStorage.setItem('user', JSON.stringify(result));
+      if (result.token) {
+        await AsyncStorage.setItem('token', result.token);
+      }
+      
+      return result;
+    } catch (error) {
+      return rejectWithValue('Network error');
+    }
+  }
+);
+
+// Guest login thunk - add storage
+export const loginGuest = createAsyncThunk(
+  'auth/loginGuest',
+  async (_, { rejectWithValue }) => {
+    try {
+      const guestName = `Guest_${Math.floor(Math.random() * 10000)}`;
+      
+      const response = await fetch(`${API_URL}/guest-login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          name: guestName,
+          isGuest: true,
+          status: 'active' 
+        }),
+      });
+
+      if (!response.ok) return rejectWithValue('Guest login failed');
+      
+      const result = await response.json();
+      result.isGuest = true;
+      
+      // Store the guest user data
+      await AsyncStorage.setItem('user', JSON.stringify(result));
+      if (result.token) {
+        await AsyncStorage.setItem('token', result.token);
+      }
+      
+      return result;
     } catch (error) {
       return rejectWithValue('Network error');
     }
@@ -110,6 +208,13 @@ const authSlice = createSlice({
       state.isLoggedIn = false;
       state.user = null;
       state.currentMatch = null;
+      AsyncStorage.removeItem('user');
+      AsyncStorage.removeItem('token');
+      
+      state.isLoggedIn = false;
+      state.user = null;
+      state.token = null;
+      state.currentMatch = null;
     },
     updateMatch: (state, action) => {
       // Update match data (e.g., from WebSocket)
@@ -127,21 +232,64 @@ const authSlice = createSlice({
     }
   },
   extraReducers: (builder) => {
-    builder
-      // Login
-      .addCase(loginUser.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(loginUser.fulfilled, (state, action) => {
-        state.loading = false;
-        state.isLoggedIn = true;
-        state.user = action.payload;
-      })
-      .addCase(loginUser.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
+        builder
+          // Register
+          .addCase(registerUser.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+          })
+          .addCase(registerUser.fulfilled, (state, action) => {
+            state.loading = false;
+            state.isLoggedIn = true;
+            state.user = action.payload;
+          })
+          .addCase(registerUser.rejected, (state, action) => {
+            state.loading = false;
+            state.error = action.payload;
+          })
+  
+          // Login
+          .addCase(loginUser.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+          })
+          .addCase(loginUser.fulfilled, (state, action) => {
+            state.loading = false;
+            state.isLoggedIn = true;
+            state.user = action.payload;
+          })
+          .addCase(loginUser.rejected, (state, action) => {
+            state.loading = false;
+            state.error = action.payload;
+          })
+          .addCase(loginGuest.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+          })
+          .addCase(loginGuest.fulfilled, (state, action) => {
+            state.loading = false;
+            state.isLoggedIn = true;
+            state.user = action.payload;
+            state.user.isGuest = true; // Mark user as guest
+          })
+          .addCase(loginGuest.rejected, (state, action) => {
+            state.loading = false;
+            state.error = action.payload;
+          })
+          .addCase(loadStoredUser.pending, (state) => {
+            state.loading = true;
+          })
+          .addCase(loadStoredUser.fulfilled, (state, action) => {
+            state.loading = false;
+            state.isLoggedIn = true;
+            state.user = action.payload.user;
+            state.token = action.payload.token;
+          })
+          .addCase(loadStoredUser.rejected, (state) => {
+            state.loading = false;
+            // We don't set an error here since this is a normal scenario
+            // when the user hasn't logged in before
+          })
       
       // Fetch matches
       .addCase(fetchMatches.pending, (state) => {
