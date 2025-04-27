@@ -190,22 +190,21 @@ const LoginPage = ({ navigation }) => {
 
                 {/* Guest Login */}
                 <Pressable
-                    style={[styles.guestButton, {
-                        backgroundColor: 'transparent',
-                        borderWidth: 1,
-                        borderColor: theme.colors.border
-                    }]}
-                    onPress={handleGuestLogin}
-                    disabled={loading}
-                >
-                    {loading ? (
-                        <ActivityIndicator color={theme.colors.text} />
-                    ) : (
-                        <Text style={[styles.guestButtonText, { color: theme.colors.text }]}>
-                            {uiStrings[systemLang].continueAsGuest || 'Continue as Guest'}
-                        </Text>
-                    )}
-                </Pressable>
+                        style={[styles.button, {
+                            backgroundColor: loading ? theme.colors.disabled : theme.colors.button
+                        }]}
+                        onPress={handleGuestLogin}
+                        disabled={loading}
+
+                    >
+                        {loading ? (
+                            <ActivityIndicator color={theme.colors.buttonText} />
+                        ) : (
+                            <Text style={[styles.buttonText, { color: theme.colors.buttonText }]}>
+                                {uiStrings[systemLang].continueAsGuest || 'Continue as Guest'}
+                            </Text>
+                        )}
+                    </Pressable>
                 </View>
               
             </KeyboardAvoidingView>

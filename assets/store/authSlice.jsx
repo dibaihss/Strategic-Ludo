@@ -119,6 +119,53 @@ export const loginGuest = createAsyncThunk(
   }
 );
 
+export const logout = createAsyncThunk(
+  'auth/logout',
+  async (_, { getState, rejectWithValue }) => {
+   
+    try {
+      const state = getState();
+      console.log(state.auth.user);
+      const user = state.auth.user;
+      const isGuest = user?.isGuest;
+      const userId = user?.id;
+      
+      // If it's a guest user, delete from database
+      if (isGuest && userId) {
+        console.log("Deleting guest user:", userId);
+        
+        // Make API call to delete the guest user
+        const response = await fetch(`${API_URL}/users/${userId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            // Include auth token if required
+            'Authorization': `Bearer ${state.auth.token}`
+          },
+        });
+        
+        if (!response.ok) {
+          console.error("Failed to delete guest user");
+        }
+      }
+      
+      // Clear stored credentials regardless of user type
+      await AsyncStorage.removeItem('user');
+      await AsyncStorage.removeItem('token');
+      
+      return { success: true };
+    } catch (error) {
+      console.error("Logout error:", error);
+      // We still want to clear local storage even if API call fails
+      await AsyncStorage.removeItem('user');
+      await AsyncStorage.removeItem('token');
+
+
+      return rejectWithValue('Logout failed');
+    }
+  }
+);
+
 // Fetch available matches
 export const fetchMatches = createAsyncThunk(
   'auth/fetchMatches',
@@ -198,19 +245,14 @@ const authSlice = createSlice({
   initialState: {
     isLoggedIn: false,
     user: null,
+    token: null,
     error: null,
     matches: [],
     currentMatch: null,
     loading: false
   },
   reducers: {
-    logout: (state) => {
-      state.isLoggedIn = false;
-      state.user = null;
-      state.currentMatch = null;
-      AsyncStorage.removeItem('user');
-      AsyncStorage.removeItem('token');
-      
+    clearAuth: (state) => {
       state.isLoggedIn = false;
       state.user = null;
       state.token = null;
@@ -290,6 +332,7 @@ const authSlice = createSlice({
             // We don't set an error here since this is a normal scenario
             // when the user hasn't logged in before
           })
+          
       
       // Fetch matches
       .addCase(fetchMatches.pending, (state) => {
@@ -334,7 +377,7 @@ const authSlice = createSlice({
   }
 });
 
-export const { logout, updateMatch } = authSlice.actions;
+export const { updateMatch, clearAuth } = authSlice.actions;
 
 // Simple selectors
 export const selectUser = (state) => state.auth.user;

@@ -8,20 +8,30 @@ import {
   Dimensions, 
   SafeAreaView 
 } from 'react-native';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { MaterialIcons } from '@expo/vector-icons';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
-import { useWebSocket } from '../assets/shared/SimpleWebSocketConnection.jsx';
 
-const HomePage = ({ onStartLocalGame, onStartMultiplayerGame }) => {
-  const dispatch = useDispatch();
+
+const HomePage = ({ onStartLocalGame, onStartMultiplayerGame, onLogout }) => {
+
   const theme = useSelector(state => state.theme.current);
   const systemLang = useSelector(state => state.language.systemLang);
-  const { connected } = useWebSocket();
+  const user = useSelector(state => state.auth.user);
+
   
   const windowWidth = Dimensions.get('window').width;
   const windowHeight = Dimensions.get('window').height;
   const isSmallScreen = windowWidth < 375 || windowHeight < 667;
+
+
+  const handleLogout = () => {
+    onLogout();
+  };
+
+  // Get appropriate user display name
+  const displayName = user?.name || user?.email || user?.username || "User";
+  const isGuest = user?.isGuest || false;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: "rgb(255 255 255)" }]}>
@@ -35,6 +45,32 @@ const HomePage = ({ onStartLocalGame, onStartMultiplayerGame }) => {
           style={styles.logo}
           resizeMode="contain"
         />
+      </View>
+      
+      {/* User Profile Section */}
+      <View style={[styles.profileCard, { backgroundColor: theme.colors.card }]}>
+        <View style={styles.profileHeader}>
+          <View style={styles.profileInfo}>
+            <Text style={[styles.welcomeText, { color: theme.colors.textSecondary }]}>
+              {uiStrings[systemLang].welcome || 'Welcome'}
+            </Text>
+            <Text style={[styles.username, { color: theme.colors.text }]}>
+              {displayName}
+              {isGuest && (
+                <Text style={[styles.guestBadge, { color: theme.colors.primary }]}>
+                  {" "}({uiStrings[systemLang].guest || 'Guest'})
+                </Text>
+              )}
+            </Text>
+          </View>
+          
+          <Pressable 
+            style={styles.logoutButton}
+            onPress={handleLogout}
+          >
+            <MaterialIcons name="logout" size={24} color={theme.colors.primary} />
+          </Pressable>
+        </View>
       </View>
       
       {/* User Dashboard */}
@@ -101,7 +137,7 @@ const HomePage = ({ onStartLocalGame, onStartMultiplayerGame }) => {
       {/* Version Footer */}
       <View style={styles.footer}>
         <Text style={[styles.footerText, { color: theme.colors.textSecondary }]}>
-          v1.0.0
+        The game is in development phase
         </Text>
       </View>
     </SafeAreaView>
@@ -117,7 +153,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: 20,
   },
   logo: {
     width: 100,
@@ -127,6 +163,43 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     marginBottom: 10,
+  },
+  profileCard: {
+    padding: 20,
+    borderRadius: 12,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2.62,
+    elevation: 2,
+  },
+  profileHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  welcomeText: {
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  username: {
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  guestBadge: {
+    fontStyle: 'italic',
+    fontWeight: '400',
+  },
+  logoutButton: {
+    padding: 8,
+    borderRadius: 20,
   },
   dashboard: {
     padding: 20,
