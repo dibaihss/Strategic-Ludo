@@ -16,7 +16,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { MaterialIcons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
-import { registerUser } from '../assets/store/authSlice.jsx';
+import { registerUser } from '../assets/store/dbSlice.jsx';
 
 const RegisterPage = ({ navigation }) => {
   const dispatch = useDispatch();

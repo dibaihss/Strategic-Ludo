@@ -239,6 +239,33 @@ export const joinMatch = createAsyncThunk(
     }
   }
 );
+export const fetchCurrentMatch = createAsyncThunk(
+  'auth/fetchCurrentMatch',
+  async (matchId, { getState, rejectWithValue }) => {
+    try {
+      const state = getState();
+      const token = state.auth.token;
+      
+      // Fetch match data from your API
+      const response = await fetch(`${API_URL}/sessions/${matchId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+      });
+
+      if (!response.ok) {
+        return rejectWithValue('Failed to fetch match data');
+      }
+
+      const matchData = await response.json();
+      return matchData;
+    } catch (error) {
+      return rejectWithValue('Network error while fetching match data');
+    }
+  }
+);
 
 const authSlice = createSlice({
   name: 'auth',

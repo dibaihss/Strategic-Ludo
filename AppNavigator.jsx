@@ -10,7 +10,7 @@ import RegisterPage from './Menu/Register.jsx'; // Import the RegisterPage
 import MatchListPage from './Menu/MultiplayerMenu.jsx';
 import { setSystemLanguage } from './assets/store/languageSlice.jsx';
 import { gameInstructions } from "./assets/shared/hardCodedData.js";
-import { selectIsLoggedIn, loadStoredUser } from './assets/store/authSlice.jsx';
+import { selectIsLoggedIn, loadStoredUser } from './assets/store/dbSlice.jsx';
 
 
 const Stack = createNativeStackNavigator();

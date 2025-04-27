@@ -2,7 +2,7 @@ import React from 'react';
 import { useDispatch } from 'react-redux';
 import HomePage from './Home.jsx';
 import { resetTimer, setActivePlayer } from '../assets/store/gameSlice.jsx';
-import { logout, clearAuth} from '../assets/store/authSlice.jsx';
+import { logout, clearAuth} from '../assets/store/dbSlice.jsx';
 
 export default function HomeScreen({ navigation }) {
   const dispatch = useDispatch();

@@ -3,17 +3,17 @@ import { MaterialIcons } from '@expo/vector-icons';
 import Goals from '../GameComponents/Goals.jsx';
 import Bases from '../GameComponents/Bases.jsx';
 import Timer from '../GameComponents/Timer.jsx';
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 
 
 import { useDispatch, useSelector } from 'react-redux';
 import { View, Text, StyleSheet, Pressable, Modal, ScrollView, Dimensions, Platform } from 'react-native';
 import { setActivePlayer, resetTimer } from '../assets/store/gameSlice.jsx';
+import { fetchCurrentMatch } from '../assets/store/dbSlice.jsx';
 import { gameInstructions, uiStrings } from '../assets/shared/hardCodedData.js';
 
 
-
-export default function GameScreen({ route, navigation }) {
+export default function GameScreen({ route}) {
     // ... existing GameScreen code ...
     const dispatch = useDispatch();
     const theme = useSelector(state => state.theme.current);
@@ -22,9 +22,22 @@ export default function GameScreen({ route, navigation }) {
     const windowWidth = Dimensions.get('window').width;
     const windowHeight = Dimensions.get('window').height;
     const isSmallScreen = windowWidth < 375 || windowHeight < 667;
-  
+    const user = useSelector(state => state.auth.user);
+    const currentMatch = useSelector(state => state.auth.currentMatch);
+
+    
     // Get the game mode from navigation params
     const { mode } = route.params;
+
+    useEffect(() => {
+      // Only set up websockets for multiplayer games
+      if (mode === 'multiplayer') {
+        // Initial fetch when component mounts
+        dispatch(fetchCurrentMatch(currentMatch.id));
+        console.log("currentMatch", currentMatch)
+        
+      }
+    }, []);
   
     const styles = StyleSheet.create({
       container: {

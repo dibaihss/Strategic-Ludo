@@ -3,7 +3,7 @@ import gameReducer from './gameSlice';
 import animationReducer from './animationSlice';
 import themeReducer from './themeSlice';
 import languageReducer from './languageSlice';
-import authReducer from './authSlice.jsx';
+import authReducer from './dbSlice.jsx';
 
 export const store = configureStore({
     reducer: {

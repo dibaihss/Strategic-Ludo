@@ -12,7 +12,7 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import { MaterialIcons } from '@expo/vector-icons';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
-import { fetchMatches, createMatch, joinMatch } from '../assets/store/authSlice.jsx';
+import { fetchMatches, createMatch, joinMatch } from '../assets/store/dbSlice.jsx';
 import { setOnlineModus } from '../assets/store/gameSlice.jsx';
 
 
@@ -25,7 +25,6 @@ const MatchListPage = ({ navigation }) => {
   const matches = useSelector(state => state.auth.matches);
   const loading = useSelector(state => state.auth.loading);
   const error = useSelector(state => state.auth.error);
-  const user = useSelector(state => state.auth.user);
   
   // Load matches when component mounts
   useEffect(() => {
@@ -37,11 +36,13 @@ const MatchListPage = ({ navigation }) => {
     setRefreshing(true);
     dispatch(fetchMatches()).finally(() => setRefreshing(false));
   };
+
   
   // Handle match join
   const handleJoinMatch = (matchId) => {
     dispatch(joinMatch(matchId)).unwrap()
       .then(() => {
+        
         dispatch(setOnlineModus(true));
         navigation.navigate('Game', { mode: 'multiplayer' });
       })

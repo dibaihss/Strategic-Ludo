@@ -15,7 +15,7 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import { MaterialIcons } from '@expo/vector-icons';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
-import { loginUser, loginGuest } from '../assets/store/authSlice.jsx';
+import { loginUser, loginGuest } from '../assets/store/dbSlice.jsx';
 import Toast from 'react-native-toast-message';
 
 const LoginPage = ({ navigation }) => {
