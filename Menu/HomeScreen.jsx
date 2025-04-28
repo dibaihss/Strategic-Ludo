@@ -7,6 +7,8 @@ import { logout, clearAuth} from '../assets/store/dbSlice.jsx';
 export default function HomeScreen({ navigation }) {
   const dispatch = useDispatch();
 
+
+
   const handleStartLocalGame = () => {
     dispatch(resetTimer());
     dispatch(setActivePlayer());

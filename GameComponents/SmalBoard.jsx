@@ -38,12 +38,7 @@ export default function SmalBoard() {
 
     const currentSelectedPlayer = (selectedPlayer) => {
         if (connected) {
-            const soldiers = {
-                blue: state.blueSoldiers,
-                red: state.redSoldiers,
-                yellow: state.yellowSoldiers,
-                green: state.greenSoldiers
-            }[color];
+    
         
             console.log("selectedPlayer", playerAssignments)
             playerAssignments.forEach((player) => {

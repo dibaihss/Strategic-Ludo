@@ -3,6 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_URL = 'http://localhost:8080/api';
 
+
+
 // Register user thunk
 export const registerUser = createAsyncThunk(
     'auth/registerUser',
@@ -263,6 +265,38 @@ export const fetchCurrentMatch = createAsyncThunk(
     }
   }
 );
+
+export const updateMatchStatus = createAsyncThunk(
+  'auth/updateMatchStatus',
+  async ({ session }, { getState, rejectWithValue }) => {
+    try {
+      const state = getState();
+      const token = state.auth.token;
+      
+      // Make API request to update session status
+      const response = await fetch(`${API_URL}/sessions/${session.sessionId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+        body: JSON.stringify(session),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        return rejectWithValue(errorData.message || 'Failed to update match status');
+      }
+
+      const updatedMatch = await response.json();
+      return updatedMatch;
+    } catch (error) {
+      console.error('Error updating match status:', error);
+      return rejectWithValue('Network error while updating match status');
+    }
+  }
+);
+
 
 const authSlice = createSlice({
   name: 'auth',

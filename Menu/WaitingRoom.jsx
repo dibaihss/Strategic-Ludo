@@ -5,16 +5,15 @@ import {
   StyleSheet,
   Pressable,
   ActivityIndicator,
-  ScrollView,
   FlatList,
-  Image,
   Dimensions
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchCurrentMatch, updateMatch } from '../assets/store/dbSlice.jsx';
-import { setOnlineModus } from '../assets/store/gameSlice.jsx';
+import { fetchCurrentMatch, updateMatch, updateMatchStatus } from '../assets/store/dbSlice.jsx';
+import { setOnlineModus, updateAllCards } from '../assets/store/gameSlice.jsx';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
+import { useWebSocket } from '../assets/shared/SimpleWebSocketConnection.jsx';
 
 const WaitingRoom = ({ navigation, route }) => {
   const dispatch = useDispatch();
@@ -23,118 +22,149 @@ const WaitingRoom = ({ navigation, route }) => {
   const currentMatch = useSelector(state => state.auth.currentMatch);
   const user = useSelector(state => state.auth.user);
   const loading = useSelector(state => state.auth.loading);
-  
-  const [refreshing, setRefreshing] = useState(false);
-  const [showStartButton, setShowStartButton] = useState(false);
-  
-  const windowWidth = Dimensions.get('window').width;
-  const windowHeight = Dimensions.get('window').height;
-  const isSmallScreen = windowWidth < 375 || windowHeight < 667;
 
-  // Poll for match updates
-  useEffect(() => {
-    if (currentMatch?.id) {
-      const pollingInterval = setInterval(() => {
-        updateMatchData()
- 
-      }, 2000); // Poll every 5 seconds
-      
-      return () => clearInterval(pollingInterval);
-    }
-  }, [currentMatch?.id, dispatch]);
-  
+  const [refreshing, setRefreshing] = useState(false);
+  const { connected, subscribe, sendMessage } = useWebSocket();
+
+
+  // useEffect(() => {
+  //   if (currentMatch?.id) {
+
+
+  //     // const pollingInterval = setInterval(() => {
+  //     //   updateMatchData()
+
+  //     // }, 2000); // Poll every 5 seconds
+
+  //     // return () => clearInterval(pollingInterval);
+  //   }
+  // }, [currentMatch?.id, dispatch]);
+
+
   // Check if we should show start button or auto-start the game
   useEffect(() => {
     if (!currentMatch || !currentMatch.users) return;
-    
-    const players = currentMatch.users;
-    
+    dispatch(setOnlineModus(true));
+
+    if (connected) {
+      const subscription = subscribe(`/topic/gameStarted/${currentMatch.id}`, async (data) => {
+
+        console.log('Game Started received:', data);
+        handleStartGame();
+      });
+      const subscriptionMatchData = subscribe(`/topic/sessionData/${currentMatch.id}`, async (data) => {
+
+        console.log(data)
+        dispatch(fetchCurrentMatch(currentMatch.id))
+        .unwrap() // Extract the Promise from the Thunk
+        .then(result => {
+       
+          console.log("Match data refreshed:", result);
+          refreshMatchData(result)
+        })
+        .catch(error => {
+          console.error("Error refreshing match data:", error);
+        })
+        .finally(() => {
+          setRefreshing(false);
+          console.log("Refresh operation complete");
+
+        });
+      });
+
+      sendMatchData()
+
+      // Cleanup subscription when component unmounts
+      return () => {
+        if (subscriptionMatchData) {
+          subscriptionMatchData.unsubscribe();
+        }
+        if(subscription) {
+          subscription.unsubscribe();
+        }
+      };
+    }
+  }, [connected]);
+
+  const sendMatchData = () => {
+
+    console.log("sendMatchData", currentMatch)
+    sendMessage(`/app/allPlayers.sendMatchData/${currentMatch.id}`, currentMatch);
+  }
+  const checkInWaitingRoomPlayers = (players) => {
+
+    console.log("checkInWaitingRoomPlayers", players)
     // If there are 4 players, automatically start the game
     if (players.length === 4) {
-      handleStartGame();
+      startGame();
       return;
     }
-    
-    // If there are at least 2 players and current user is the host, show start button
-    if (players.length >= 2 && isUserHost()) {
-      setShowStartButton(true);
-    } else {
-      setShowStartButton(false);
-    }
-  }, [currentMatch?.users?.length]);
-  
+  }
   const isUserHost = () => {
     if (!currentMatch || !user) return false;
-    
+
     // Assuming the first user in the array is the host
     return currentMatch.users[0]?.id === user.id;
   };
-  
+
+  const refreshMatchData = (data) => {
+    console.log("refreshMatchData", data)
+    if (data?.users?.length > 0) {
+      dispatch(updateMatch(data))
+      const players = data.users;
+      console.log(players)
+      const playerColors = {
+        blue: players[0]?.id,
+        red: players[1]?.id,
+        yellow: players[2]?.id ? players[2]?.id : players[0]?.id,
+        green: players[3]?.id ? players[3]?.id : players[1]?.id
+      }
+
+      console.log("playerColors", playerColors)
+      checkInWaitingRoomPlayers(players)
+
+    }
+  }
   const handleRefresh = () => {
     if (!currentMatch?.id) return;
     setRefreshing(true);
-    updateMatchData()
-   
   };
-  
-  const updateMatchData = () => {
-    dispatch(fetchCurrentMatch(currentMatch.id))
-    .unwrap() // Extract the Promise from the Thunk
-    .then(result => {
-      console.log("Match data refreshed successfully:", result);
-      dispatch(updateMatch(result)); // Update the Redux store with the new match data
-    })
-    .catch(error => {
-      console.error("Error refreshing match data:", error);
-    })
-    .finally(() => {
-      setRefreshing(false);
-      console.log("Refresh operation complete");
-    });
 
+  const updateMatchDataStatus = async (status) => {
+      currentMatch.status = status
+      dispatch(updateMatchStatus(currentMatch))
+      .unwrap() // Extract the Promise from the Thunk
+      .then(result => {
+        dispatch(updateMatch(result)); // Update the Redux store with the new match data
+      })
+      .catch(error => {
+        console.error("Error refreshing match data:", error);
+      })
+      .finally(() => {
+        setRefreshing(false);
+        console.log("Refresh operation complete");
+      });
   }
+
+
+  const startGame = () => {
+    sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, currentMatch);
+    console.log('Sending player:');
+
+  };
+
   const handleStartGame = () => {
-    const players = currentMatch.users;
-    
-    // Prepare player assignments based on number of players
-    // let playerAssignments = [];
-    
-    // if (players.length === 2) {
-    //   playerAssignments = [
-    //     { userId: players[0]?.id, color: 'blue' },
-    //     { userId: players[1]?.id, color: 'red' }
-    //   ];
-    // } else if (players.length === 3) {
-    //   playerAssignments = [
-    //     { userId: players[0]?.id, color: 'blue' },
-    //     { userId: players[1]?.id, color: 'red' },
-    //     { userId: players[2]?.id, color: 'yellow' }
-    //   ];
-    // } else if (players.length === 4) {
-    //   playerAssignments = [
-    //     { userId: players[0]?.id, color: 'blue' },
-    //     { userId: players[1]?.id, color: 'red' },
-    //     { userId: players[2]?.id, color: 'yellow' },
-    //     { userId: players[3]?.id, color: 'green' }
-    //   ];
-    // }
-    
-    // Set online mode and assign players to colors
-    dispatch(setOnlineModus(true));
-    // dispatch(assignSoldiersToUsers(playerAssignments));
-    
-    // Navigate to the game screen
-    navigation.navigate('Game', { 
+    navigation.navigate('Game', {
       mode: 'multiplayer',
       matchId: currentMatch.id
     });
   };
-  
+
   const handleLeaveMatch = () => {
     // Logic to leave the match (could be implemented in your dbSlice)
     navigation.navigate('Home');
   };
-  
+
   if (loading && !currentMatch) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -145,7 +175,7 @@ const WaitingRoom = ({ navigation, route }) => {
       </View>
     );
   }
-  
+
   if (!currentMatch) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -163,52 +193,52 @@ const WaitingRoom = ({ navigation, route }) => {
       </View>
     );
   }
-  
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: theme.colors.text }]}>
           {uiStrings[systemLang].waitingRoom || 'Waiting Room'}
         </Text>
-        
+
         <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
           {uiStrings[systemLang].matchId || 'Match ID'}: {currentMatch.id}
         </Text>
       </View>
-      
+
       <View style={[styles.playersContainer, { backgroundColor: theme.colors.card }]}>
         <View style={styles.playersHeader}>
           <Text style={[styles.playersTitle, { color: theme.colors.text }]}>
             {uiStrings[systemLang].players || 'Players'} ({currentMatch.users?.length || 0}/4)
           </Text>
-          
-          <Pressable 
-            style={styles.refreshButton} 
+
+          <Pressable
+            style={styles.refreshButton}
             onPress={handleRefresh}
             disabled={refreshing}
           >
-            <MaterialIcons 
-              name="refresh" 
-              size={20} 
-              color={refreshing ? theme.colors.disabled : theme.colors.primary} 
+            <MaterialIcons
+              name="refresh"
+              size={20}
+              color={refreshing ? theme.colors.disabled : theme.colors.primary}
             />
           </Pressable>
         </View>
-        
+
         {refreshing && (
-          <ActivityIndicator 
-            size="small" 
+          <ActivityIndicator
+            size="small"
             color={theme.colors.primary}
-            style={styles.refreshIndicator} 
+            style={styles.refreshIndicator}
           />
         )}
-        
+
         <FlatList
           data={currentMatch.users || []}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item, index }) => (
-            <View style={[styles.playerItem, { 
-              backgroundColor: index % 2 === 0 ? theme.colors.background : theme.colors.card 
+            <View style={[styles.playerItem, {
+              backgroundColor: index % 2 === 0 ? theme.colors.background : theme.colors.card
             }]}>
               <View style={styles.playerDetails}>
                 <View style={[styles.playerAvatar, { backgroundColor: getPlayerColor(index) }]}>
@@ -216,7 +246,7 @@ const WaitingRoom = ({ navigation, route }) => {
                     {(item.name || item.username || "User").charAt(0).toUpperCase()}
                   </Text>
                 </View>
-                
+
                 <Text style={[styles.playerName, { color: theme.colors.text }]}>
                   {item.name || item.username || "User"}
                   {item.id === user.id && (
@@ -224,7 +254,7 @@ const WaitingRoom = ({ navigation, route }) => {
                   )}
                 </Text>
               </View>
-              
+
               {index === 0 && (
                 <View style={styles.hostBadge}>
                   <Text style={styles.hostBadgeText}>
@@ -240,24 +270,24 @@ const WaitingRoom = ({ navigation, route }) => {
             </Text>
           }
         />
-        
+
         <View style={styles.joinInfo}>
           <Text style={[styles.joinInfoText, { color: theme.colors.textSecondary }]}>
             {uiStrings[systemLang].waitingForPlayers || 'Waiting for more players to join...'}
           </Text>
           <Text style={[styles.joinInfoText, { color: theme.colors.textSecondary }]}>
-            {currentMatch.users?.length === 1 
+            {currentMatch.users?.length === 1
               ? uiStrings[systemLang].needMorePlayers || 'Need at least one more player to start'
               : uiStrings[systemLang].gameStartsWith4 || 'Game will start automatically with 4 players'}
           </Text>
         </View>
       </View>
-      
+
       <View style={styles.footer}>
-        {showStartButton && (
+        {(currentMatch?.users?.length >= 2 && isUserHost()) && (
           <Pressable
             style={[styles.startButton, { backgroundColor: theme.colors.primary }]}
-            onPress={handleStartGame}
+            onPress={startGame}
           >
             <MaterialIcons name="play-arrow" size={24} color="#fff" />
             <Text style={styles.startButtonText}>
@@ -265,7 +295,7 @@ const WaitingRoom = ({ navigation, route }) => {
             </Text>
           </Pressable>
         )}
-        
+
         <Pressable
           style={[styles.leaveButton, { backgroundColor: theme.colors.error }]}
           onPress={handleLeaveMatch}

@@ -11,7 +11,7 @@ const initialState = {
     onlineModus: false,
     timeRemaining: 35,
     isTimerRunning: false,
-    playerAssignments: {
+    playerColors: {
         blue: null,
         red: null,
         yellow: null,
@@ -339,20 +339,21 @@ export const gameSlice = createSlice({
         setOnlineModus: (state, action) => {
             state.onlineModus = action.payload;
         },
- ////////////////////////////////////////////////////////////////////////////////////
-        setAssignOwner: (state, action) => {
+        setPlayerColors: (state, action) => {
             // action.payload should be an array of { userId, color } objects
             const assignments = action.payload;
             
             if (!Array.isArray(assignments)) return;
             
             // Reset the assignOwner array
-            state.playerAssignments = [
-                {user_id: null, color: null},
-                {user_id: null, color: null},
-                {user_id: null, color: null},
-                {user_id: null, color: null}
-            ];
+            state.playerColors = {
+               
+                    blue: state.blueSoldiers,
+                    red: state.redSoldiers,
+                    yellow: state.yellowSoldiers,
+                    green: state.greenSoldiers
+               
+             }
             
             // Update with new assignments
             assignments.forEach((assignment, index) => {
@@ -521,7 +522,7 @@ export const {
     resetTimer,
     setSoldierUserIds,  // Add these new exports
     resetSoldierUserIds,
-    setAssignOwner, // New
+    setPlayerColors,
     updateAllSoldiers, // New
     updateAllCards, // New
     resetGameState, // New
