@@ -316,6 +316,9 @@ const authSlice = createSlice({
       state.token = null;
       state.currentMatch = null;
     },
+    setUser: (state, action) => {
+      state.user = action.payload;
+    },
     updateMatch: (state, action) => {
       // Update match data (e.g., from WebSocket)
       const index = state.matches.findIndex(m => m.id === action.payload.id);
@@ -435,7 +438,7 @@ const authSlice = createSlice({
   }
 });
 
-export const { updateMatch, clearAuth } = authSlice.actions;
+export const { updateMatch, clearAuth, setUser } = authSlice.actions;
 
 // Simple selectors
 export const selectUser = (state) => state.auth.user;

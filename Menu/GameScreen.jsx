@@ -24,7 +24,7 @@ export default function GameScreen({ route, navigation }) {
   const [loading, setLoading] = useState(true);
 
   // Get the game mode from navigation params
-  const { mode, matchId } = route.params;
+  const { mode, matchId } = route.params || { mode: 'local', matchId: 1 };
 
   useEffect(() => {
     // For multiplayer games, set up polling and player assignments
@@ -48,6 +48,7 @@ export default function GameScreen({ route, navigation }) {
       return () => clearInterval(pollingInterval);
     } else {
       // For local games, just set gameIsStarted to true
+      console.log(user)
       setGameIsStarted(true);
       setLoading(false);
     }

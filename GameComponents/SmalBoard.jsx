@@ -38,7 +38,6 @@ export default function SmalBoard() {
 
     const currentSelectedPlayer = (selectedPlayer) => {
         if (connected) {
-    
         
             console.log("selectedPlayer", playerAssignments)
             playerAssignments.forEach((player) => {

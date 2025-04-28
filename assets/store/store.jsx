@@ -1,17 +1,22 @@
 import { configureStore } from '@reduxjs/toolkit';
+import authReducer from './dbSlice';
 import gameReducer from './gameSlice';
-import animationReducer from './animationSlice';
 import themeReducer from './themeSlice';
+import animationReducer from './animationSlice';
+import asyncStorageReducer from './asyncStorageSlice';
 import languageReducer from './languageSlice';
-import authReducer from './dbSlice.jsx';
 
 export const store = configureStore({
-    reducer: {
-        game: gameReducer,
-        animation: animationReducer,
-        theme: themeReducer,
-        language: languageReducer,
-        auth: authReducer,
-    },
+  reducer: {
+    auth: authReducer,
+    game: gameReducer,
+    theme: themeReducer,
+    animation: animationReducer,
+    asyncStorage: asyncStorageReducer,
+    language: languageReducer,
+  },
+  middleware: (getDefaultMiddleware) => 
+    getDefaultMiddleware({
+      serializableCheck: false,
+    }),
 });
-
