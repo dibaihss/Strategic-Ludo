@@ -19,6 +19,7 @@ export default function GameScreen({ route, navigation }) {
   const isSmallScreen = windowWidth < 375 || windowHeight < 667;
   const currentMatch = useSelector(state => state.auth.currentMatch);
   const user = useSelector(state => state.auth.user);
+ const playerColors = useSelector(state => state.game.playerColors);
 
   const [gameIsStarted, setGameIsStarted] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -27,6 +28,7 @@ export default function GameScreen({ route, navigation }) {
   const { mode, matchId } = route.params || { mode: 'local', matchId: 1 };
 
   useEffect(() => {
+    console.log(playerColors)
     // For multiplayer games, set up polling and player assignments
     if (mode === 'multiplayer') {
       // Set up polling for match updates

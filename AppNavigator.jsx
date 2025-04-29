@@ -34,11 +34,11 @@ export default function AppNavigator() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName='input' screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="input" component={ModalUserInput} />
-      <Stack.Screen name="Game" component={GameScreen} />
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {/* <Stack.Screen name="input" component={ModalUserInput} />
+      <Stack.Screen name="Game" component={GameScreen} /> */}
      
-        {/* {isLoggedIn ? (
+        {isLoggedIn ? (
           // Fix: Remove any whitespace between the fragments
           <>
             <Stack.Screen name="Home" component={HomeScreen} />
@@ -52,7 +52,7 @@ export default function AppNavigator() {
             <Stack.Screen name="Login" component={LoginPage} />
             <Stack.Screen name="Register" component={RegisterPage} />
           </>
-        )} */}
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );

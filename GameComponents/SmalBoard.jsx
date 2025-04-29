@@ -52,7 +52,7 @@ export default function SmalBoard() {
     useEffect(() => {
         if (connected) {
             // Subscribe to receive board updates
-            const subscription = subscribe(`/topic/currentPlayer/1`, (data) => {
+            const subscription = subscribe(`/topic/currentPlayer/${currentMatch.id}`, (data) => {
                 // Update your component state or dispatch Redux actions
                 console.log('SelectedPlayer update received:', data);
                 dispatch(setCurrentPlayer(data));
@@ -73,7 +73,7 @@ export default function SmalBoard() {
     const handlePlayerMove = (player) => {
         // Send player move through WebSocket
         console.log('Sending player:', player);
-        sendMessage(`/app/player.getPlayer/1`, player);
+        sendMessage(`/app/player.getPlayer/${currentMatch.id}`, player);
     };
 
     const styles = StyleSheet.create({

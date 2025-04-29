@@ -200,7 +200,7 @@ export default function Bases() {
 
     useEffect(() => {
         if (connected) {
-            const subscription = subscribe(`/topic/playerMove/1`, (data) => {
+            const subscription = subscribe(`/topic/playerMove/${currentMatch.id}`, (data) => {
 
                 const parsedData = JSON.parse(data);
 
@@ -240,7 +240,7 @@ export default function Bases() {
 
     const sendMoveUpdate = (message) => {
         if (connected) {
-            sendMessage(`/app/player.Move/1`, JSON.stringify(message));
+            sendMessage(`/app/player.Move/${currentMatch.id}`, JSON.stringify(message));
         } else {
             console.log("WebSocket not connected. Message not sent:", message);
         }

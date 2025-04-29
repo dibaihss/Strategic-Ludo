@@ -5,7 +5,7 @@ import { setUser } from '../assets/store/dbSlice.jsx';
 import { setOnlineModus } from '../assets/store/gameSlice.jsx';
 
 
-export default function ModalUserInput({ route, navigation }) {
+export default function ModalUserInput({ navigation }) {
     const dispatch = useDispatch();
     const theme = useSelector(state => state.theme.current);
 

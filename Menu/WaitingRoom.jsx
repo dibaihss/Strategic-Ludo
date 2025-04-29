@@ -11,7 +11,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchCurrentMatch, updateMatch, updateMatchStatus } from '../assets/store/dbSlice.jsx';
-import { setOnlineModus, updateAllCards } from '../assets/store/gameSlice.jsx';
+import { setOnlineModus, setPlayerColors } from '../assets/store/gameSlice.jsx';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 import { useWebSocket } from '../assets/shared/SimpleWebSocketConnection.jsx';
 
@@ -29,13 +29,9 @@ const WaitingRoom = ({ navigation, route }) => {
 
   // useEffect(() => {
   //   if (currentMatch?.id) {
-
-
   //     // const pollingInterval = setInterval(() => {
   //     //   updateMatchData()
-
   //     // }, 2000); // Poll every 5 seconds
-
   //     // return () => clearInterval(pollingInterval);
   //   }
   // }, [currentMatch?.id, dispatch]);
@@ -50,7 +46,7 @@ const WaitingRoom = ({ navigation, route }) => {
       const subscription = subscribe(`/topic/gameStarted/${currentMatch.id}`, async (data) => {
 
         console.log('Game Started received:', data);
-        handleStartGame();
+        handleStartGame(data);
       });
       const subscriptionMatchData = subscribe(`/topic/sessionData/${currentMatch.id}`, async (data) => {
 
@@ -111,18 +107,7 @@ const WaitingRoom = ({ navigation, route }) => {
     console.log("refreshMatchData", data)
     if (data?.users?.length > 0) {
       dispatch(updateMatch(data))
-      const players = data.users;
-      console.log(players)
-      const playerColors = {
-        blue: players[0]?.id,
-        red: players[1]?.id,
-        yellow: players[2]?.id ? players[2]?.id : players[0]?.id,
-        green: players[3]?.id ? players[3]?.id : players[1]?.id
-      }
-
-      console.log("playerColors", playerColors)
-      checkInWaitingRoomPlayers(players)
-
+      checkInWaitingRoomPlayers(data.users)
     }
   }
   const handleRefresh = () => {
@@ -148,15 +133,33 @@ const WaitingRoom = ({ navigation, route }) => {
 
 
   const startGame = () => {
+    if (!currentMatch || !currentMatch.id) return;
+    if (currentMatch.users.length < 2) {
+      console.log('Not enough players to start the game.');
+      return;
+    }
     sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, currentMatch);
     console.log('Sending player:');
 
   };
 
-  const handleStartGame = () => {
+  const handleStartGame = (data) => {
+     // Update the match status to 'inProgress' or similar
+     const players = data.users;
+     console.log(players)
+    
+      const playerColors = {
+        blue: players[0].id,
+        red: players[1].id,
+        yellow: players[2] ? players[2].id : players[1].id,
+        green: players[3] ? players[3].id : players[0].id
+      }
+  
+     dispatch(setPlayerColors(playerColors))
+ 
     navigation.navigate('Game', {
       mode: 'multiplayer',
-      matchId: currentMatch.id
+      matchId: data.id
     });
   };
 

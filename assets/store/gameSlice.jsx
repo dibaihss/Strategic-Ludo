@@ -340,32 +340,9 @@ export const gameSlice = createSlice({
             state.onlineModus = action.payload;
         },
         setPlayerColors: (state, action) => {
-            // action.payload should be an array of { userId, color } objects
-            const assignments = action.payload;
-            
-            if (!Array.isArray(assignments)) return;
-            
-            // Reset the assignOwner array
-            state.playerColors = {
-               
-                    blue: state.blueSoldiers,
-                    red: state.redSoldiers,
-                    yellow: state.yellowSoldiers,
-                    green: state.greenSoldiers
-               
-             }
-            
-            // Update with new assignments
-            assignments.forEach((assignment, index) => {
-                if (index < 4) { // Make sure we don't exceed array bounds
-                    state.playerAssignments[index] = {
-                        user_id: assignment.userId,
-                        color: assignment.color
-                    };
-                }
-            });
+            console.log(action.payload)
+           state.playerColors = action.payload;   
         },
-        
         setSoldierUserIds: (state, action) => {
             const { color, userId } = action.payload;
             
