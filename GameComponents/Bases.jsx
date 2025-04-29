@@ -1,5 +1,5 @@
 import { View, Pressable, Text, StyleSheet, Dimensions } from "react-native";
-import React from 'react';
+import React, { useEffect } from 'react';
 import Player from './Player';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -11,6 +11,7 @@ import Toast from 'react-native-toast-message';
 import { boxes, categories, directions, playerType, uiStrings, getLocalizedColor } from "../assets/shared/hardCodedData.js";
 import { MaterialIcons } from '@expo/vector-icons';
 import Feather from '@expo/vector-icons/Feather';
+import { useWebSocket } from '../assets/shared/SimpleWebSocketConnection.jsx';
 
 export default function Bases() {
 
@@ -28,6 +29,11 @@ export default function Bases() {
     const theme = useSelector(state => state.theme.current);
     const showClone = useSelector(state => state.animation.showClone);
     const systemLang = useSelector(state => state.language.systemLang);
+    const user = useSelector(state => state.auth.user);
+    const currentMatch = useSelector(state => state.auth.currentMatch);
+    const playerColors = useSelector(state => state.game.playerColors);
+
+    const { connected, subscribe, sendMessage } = useWebSocket();
 
     const windowWidth = Dimensions.get('window').width;
     const windowHeight = Dimensions.get('window').height;
@@ -160,8 +166,8 @@ export default function Bases() {
                 width: 0,
                 height: 0,
             },
-            shadowOpacity:activePlayer === "blue" ? 0.7: "",
-            shadowRadius:activePlayer === "blue" ? 50: "",
+            shadowOpacity: activePlayer === "blue" ? 0.7 : "",
+            shadowRadius: activePlayer === "blue" ? 50 : "",
         },
         red0: {
             shadowColor: activePlayer === "red" ? theme.colors.shadowColor : "",
@@ -169,8 +175,8 @@ export default function Bases() {
                 width: 0,
                 height: 0,
             },
-            shadowOpacity:activePlayer === "red" ? 0.7: "",
-            shadowRadius:activePlayer === "red" ? 50: "",
+            shadowOpacity: activePlayer === "red" ? 0.7 : "",
+            shadowRadius: activePlayer === "red" ? 50 : "",
         },
         yellow1: {
             shadowColor: activePlayer === "yellow" ? theme.colors.shadowColor : "",
@@ -178,8 +184,8 @@ export default function Bases() {
                 width: 0,
                 height: 0,
             },
-            shadowOpacity:activePlayer === "yellow" ? 0.7: "",
-            shadowRadius:activePlayer === "yellow" ? 50: "",
+            shadowOpacity: activePlayer === "yellow" ? 0.7 : "",
+            shadowRadius: activePlayer === "yellow" ? 50 : "",
         },
         green3: {
             shadowColor: activePlayer === "green" ? theme.colors.shadowColor : "",
@@ -187,10 +193,34 @@ export default function Bases() {
                 width: 0,
                 height: 0,
             },
-            shadowOpacity:activePlayer === "green" ? 0.7: "",
-            shadowRadius:activePlayer === "green" ? 50: "",
+            shadowOpacity: activePlayer === "green" ? 0.7 : "",
+            shadowRadius: activePlayer === "green" ? 50 : "",
         },
     });
+
+    useEffect(() => {
+        if (connected) {
+            const subscription = subscribe(`/topic/playerMove/1`, (data) => {
+
+                const parsedData = JSON.parse(data);
+
+                if (parsedData.type === 'movePlayer') {
+                    console.log("Received data:", parsedData);
+                    const { color, steps } = parsedData.payload;
+                    movePlayer(color, steps);
+                } else if (parsedData.type === 'enterNewSoldier') {
+                    const { color } = parsedData.payload;
+                    handleEnterNewSoldier(color);
+                }
+            });
+            return () => {
+                if (subscription) {
+                    subscription.unsubscribe();
+                }
+            };
+        }
+    }, [connected, subscribe, currentMatch, user, currentPlayer]);
+
 
     const handleEnterNewSoldier = (color) => {
         if (activePlayer !== color) {
@@ -204,13 +234,23 @@ export default function Bases() {
             });
             return;
         }
-   
-        dispatch(enterNewSoldier( color ));
 
+        dispatch(enterNewSoldier(color));
     };
 
+    const sendMoveUpdate = (message) => {
+        if (connected) {
+            sendMessage(`/app/player.Move/1`, JSON.stringify(message));
+        } else {
+            console.log("WebSocket not connected. Message not sent:", message);
+        }
+    };
+
+
+
     const movePlayer = (color, steps) => {
-        if (!currentPlayer || currentPlayer.isOut){
+        console.log(currentPlayer)
+        if (!currentPlayer || currentPlayer.isOut) {
             const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
             Toast.show({
                 type: 'error',
@@ -220,7 +260,7 @@ export default function Bases() {
                 visibilityTime: 2000,
             });
             return;
-        } 
+        }
         if (showClone) return;
         if (currentPlayer.color !== color) {
             const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
@@ -244,6 +284,8 @@ export default function Bases() {
             });
             return;
         }
+
+
 
         dispatch(checkIfCardUsed({ color, steps }));
 
@@ -434,6 +476,45 @@ export default function Bases() {
         }
     };
 
+    // Mutliplayer Functions
+    const movePlayerHanlder = (color, steps) => {
+        if (connected) {
+            const soldierOwner = playerColors[currentPlayer.color]
+            console.log(user)
+            if (soldierOwner === user.id) {
+                console.log("You are the owner of this soldier")
+                sendMoveUpdate({
+                    type: 'movePlayer',
+                    payload: {
+                        color: currentPlayer.color,
+                        steps
+                    },
+                });
+            }
+        } else {
+            movePlayer(color, steps);
+        }
+    }
+
+    const enterNewSoldierHandler = (color) => {
+        if (connected) {
+            const soldierOwner = playerColors[currentPlayer.color]
+            console.log(user)
+            if (soldierOwner === user.id) {
+                console.log("You are the owner of this soldier")
+                sendMoveUpdate({
+                    type: 'enterNewSoldier',
+                    payload: {
+                        color: currentPlayer.color,
+                    },
+                });
+            }
+
+        } else {
+            handleEnterNewSoldier(color);
+        }
+    }
+
     const renderInCirclePlayers = (j, playerType, i) => (
         <>
             {[
@@ -470,10 +551,10 @@ export default function Bases() {
                                             styles.button,
                                             { marginVertical: 5 },
                                             card.used && { backgroundColor: '#ddd', opacity: 0.7 },
-                                            styles[color+i]
-                                            
+                                            styles[color + i]
+
                                         ]}
-                                        onPress={() => movePlayer(color, card.value)}
+                                        onPress={() => movePlayerHanlder(color, card.value)}
                                     >
                                         <Text style={[
                                             styles.buttonText,
@@ -491,9 +572,9 @@ export default function Bases() {
                                             styles.button,
                                             { marginVertical: 5 },
                                             card.used && { backgroundColor: '#ddd', opacity: 0.7 },
-                                            styles[color+i]
+                                            styles[color + i]
                                         ]}
-                                        onPress={() => movePlayer(color, card.value)}
+                                        onPress={() => movePlayerHanlder(color, card.value)}
                                     >
                                         <Text style={[
                                             styles.buttonText,
@@ -511,13 +592,13 @@ export default function Bases() {
                                             styles.button,
                                             { marginVertical: 5 },
                                             card.used && { backgroundColor: '#ddd', opacity: 0.7 },
-                                            styles[color+i]
+                                            styles[color + i]
                                         ]}
-                                        onPress={() => movePlayer(color, card.value)}
+                                        onPress={() => movePlayerHanlder(color, card.value)}
                                     >
                                         <Text style={[
                                             styles.buttonText,
-                                            card.used && { color: '#999' }, {transform: [{ rotate: '180deg' }]}
+                                            card.used && { color: '#999' }, { transform: [{ rotate: '180deg' }] }
                                         ]}>{card.value}</Text>
                                     </Pressable>
                                 )
@@ -531,9 +612,9 @@ export default function Bases() {
                                             styles.button,
                                             { marginVertical: 5 },
                                             card.used && { backgroundColor: '#ddd', opacity: 0.7 },
-                                            styles[color+i], {transform: [{ rotate: '180deg' }]}
+                                            styles[color + i], { transform: [{ rotate: '180deg' }] }
                                         ]}
-                                        onPress={() => movePlayer(color, card.value)}
+                                        onPress={() => movePlayerHanlder(color, card.value)}
                                     >
                                         <Text style={[
                                             styles.buttonText,
@@ -551,7 +632,7 @@ export default function Bases() {
                             </View>
                         ))}
                     </View>
-                    <Pressable style={[styles.button,styles[color+i], { marginVertical: 5 }]} onPress={() => handleEnterNewSoldier(color)}>
+                    <Pressable style={[styles.button, styles[color + i], { marginVertical: 5 }]} onPress={() => enterNewSoldierHandler(color)}>
                         {
                             color === "yellow" ?
                                 <Feather name="arrow-right" size={24} color={theme.name === "dark" ? "white" : "black"} /> :

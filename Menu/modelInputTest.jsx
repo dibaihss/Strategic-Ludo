@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { View, Text, StyleSheet, Pressable, Modal, TextInput, Dimensions, Platform } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, Pressable, Modal, TextInput } from 'react-native';
 import { setUser } from '../assets/store/dbSlice.jsx';
+import { setOnlineModus } from '../assets/store/gameSlice.jsx';
+
 
 export default function ModalUserInput({ route, navigation }) {
     const dispatch = useDispatch();
@@ -27,7 +28,7 @@ export default function ModalUserInput({ route, navigation }) {
 
         // Set the user in Redux state
         dispatch(setUser(user));
-        
+        dispatch(setOnlineModus(true));
         // Close modal and navigate to game
         setShowNameModal(false);
         navigation.navigate('Game', { mode: 'local' });

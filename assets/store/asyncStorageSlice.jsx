@@ -214,18 +214,6 @@ const asyncStorageSlice = createSlice({
   },
   extraReducers: (builder) => {
     // User accounts
-    builder.addCase(loadUserAccounts.pending, (state) => {
-      state.loading = true;
-    });
-    builder.addCase(loadUserAccounts.fulfilled, (state, action) => {
-      state.loading = false;
-      state.userAccounts = action.payload;
-      state.error = null;
-    });
-    builder.addCase(loadUserAccounts.rejected, (state, action) => {
-      state.loading = false;
-      state.error = action.payload;
-    });
 
     // Add user account
     builder.addCase(addUserAccount.fulfilled, (state, action) => {
@@ -243,10 +231,6 @@ const asyncStorageSlice = createSlice({
     });
 
     // Active user
-    builder.addCase(loadActiveUser.fulfilled, (state, action) => {
-      state.activeUser = action.payload;
-      state.error = null;
-    });
     builder.addCase(setActiveUser.fulfilled, (state, action) => {
       state.activeUser = action.payload;
       state.error = null;

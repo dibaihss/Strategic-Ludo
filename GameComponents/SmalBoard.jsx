@@ -24,7 +24,7 @@ export default function SmalBoard() {
     const redSoldiers = useSelector(state => state.game.redSoldiers);
     const yellowSoldiers = useSelector(state => state.game.yellowSoldiers);
     const greenSoldiers = useSelector(state => state.game.greenSoldiers);
-    const playerAssignments = useSelector(state => state.game.playerAssignments);
+    const playerColors = useSelector(state => state.game.playerColors);
     const boxSize = useSelector(state => state.animation.boxSize);
     const theme = useSelector(state => state.theme.current);
     const user = useSelector(state => state.auth.user);
@@ -38,14 +38,13 @@ export default function SmalBoard() {
 
     const currentSelectedPlayer = (selectedPlayer) => {
         if (connected) {
-        
-            console.log("selectedPlayer", playerAssignments)
-            playerAssignments.forEach((player) => {
-                if (player.userId === user.id) {
-                    if (selectedPlayer.color === player.color) handlePlayerMove(selectedPlayer)
-                }
-            });
 
+            const soldierOwner = playerColors[selectedPlayer.color]
+            console.log(user)
+            if (soldierOwner === user.id) {
+                console.log("You are the owner of this soldier")
+                handlePlayerMove(selectedPlayer)
+            }
         } else {
             dispatch(setCurrentPlayer(selectedPlayer));
         }
@@ -53,9 +52,9 @@ export default function SmalBoard() {
     useEffect(() => {
         if (connected) {
             // Subscribe to receive board updates
-            const subscription = subscribe(`/topic/currentPlayer/${currentMatch.id}`, (data) => {
+            const subscription = subscribe(`/topic/currentPlayer/1`, (data) => {
                 // Update your component state or dispatch Redux actions
-                console.log('Board update received:', data);
+                console.log('SelectedPlayer update received:', data);
                 dispatch(setCurrentPlayer(data));
                 // Example: dispatch(updateBoard(data));
             });
@@ -67,14 +66,14 @@ export default function SmalBoard() {
                 }
             };
         }
-        console.log("connected", playerAssignments)
+
 
     }, [connected, subscribe]);
 
     const handlePlayerMove = (player) => {
         // Send player move through WebSocket
         console.log('Sending player:', player);
-        sendMessage(`/app/player.getPlayer/${currentMatch.id}`, player);
+        sendMessage(`/app/player.getPlayer/1`, player);
     };
 
     const styles = StyleSheet.create({
