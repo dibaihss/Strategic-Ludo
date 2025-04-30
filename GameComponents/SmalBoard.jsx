@@ -3,7 +3,7 @@ import {
     StyleSheet,
     Dimensions
 } from 'react-native';
-import React from 'react';
+import React, { useEffect } from 'react';
 import Player from './Player';
 import { boxes } from "../assets/shared/hardCodedData.js"
 import { useDispatch, useSelector } from 'react-redux';
@@ -12,6 +12,9 @@ import {
 } from '../assets/store/gameSlice.jsx';
 import { Feather } from '@expo/vector-icons';
 import Entypo from '@expo/vector-icons/Entypo';
+import { useWebSocket } from '../assets/shared/SimpleWebSocketConnection.jsx';
+
+
 
 export default function SmalBoard() {
 
@@ -21,18 +24,58 @@ export default function SmalBoard() {
     const redSoldiers = useSelector(state => state.game.redSoldiers);
     const yellowSoldiers = useSelector(state => state.game.yellowSoldiers);
     const greenSoldiers = useSelector(state => state.game.greenSoldiers);
+    const playerColors = useSelector(state => state.game.playerColors);
     const boxSize = useSelector(state => state.animation.boxSize);
     const theme = useSelector(state => state.theme.current);
+    const user = useSelector(state => state.auth.user);
+    const currentMatch = useSelector(state => state.auth.currentMatch);
+
+    const { connected, subscribe, sendMessage } = useWebSocket();
 
     const windowWidth = Dimensions.get('window').width;
     const windowHeight = Dimensions.get('window').height;
     const isSmallScreen = windowWidth < 375 || windowHeight < 667;
 
     const currentSelectedPlayer = (selectedPlayer) => {
-        dispatch(setCurrentPlayer(selectedPlayer));
+        if (connected) {
+
+            const soldierOwner = playerColors[selectedPlayer.color]
+            console.log(user)
+            if (soldierOwner === user.id) {
+                console.log("You are the owner of this soldier")
+                handlePlayerMove(selectedPlayer)
+            }
+        } else {
+            dispatch(setCurrentPlayer(selectedPlayer));
+        }
+    };
+    useEffect(() => {
+        if (connected) {
+            // Subscribe to receive board updates
+            const subscription = subscribe(`/topic/currentPlayer/${currentMatch.id}`, (data) => {
+                // Update your component state or dispatch Redux actions
+                console.log('SelectedPlayer update received:', data);
+                dispatch(setCurrentPlayer(data));
+                // Example: dispatch(updateBoard(data));
+            });
+
+            // Cleanup subscription when component unmounts
+            return () => {
+                if (subscription) {
+                    subscription.unsubscribe();
+                }
+            };
+        }
+
+
+    }, [connected, subscribe]);
+
+    const handlePlayerMove = (player) => {
+        // Send player move through WebSocket
+        console.log('Sending player:', player);
+        sendMessage(`/app/player.getPlayer/${currentMatch.id}`, player);
     };
 
-  
     const styles = StyleSheet.create({
         board: {
             position: "absolute",
@@ -46,38 +89,38 @@ export default function SmalBoard() {
             flexDirection: "row",
             justifyContent: "space-between",
             width: 5,
-            left: isSmallScreen ? "50%": "50%",
+            left: isSmallScreen ? "50%" : "50%",
             display: "flex",
             justifyContent: "center"
         },
-    
+
         rowsContainer: {
             position: "fixed",
             flexDirection: "column",
             justifyContent: "space-between",
             height: 5,
-            top: isSmallScreen ? "50%": "50%",
+            top: isSmallScreen ? "50%" : "50%",
             display: "flex",
             justifyContent: "center"
         },
-    
+
         verticalColumn: {
             width: "auto",
             padding: isSmallScreen ? 1 : 3,
             marginHorizontal: isSmallScreen ? 1 : 5,
             flexDirection: "column",
         },
-    
+
         horizontalRow: {
             width: "auto",
             padding: isSmallScreen ? 1 : 3,
             marginVertical: isSmallScreen ? 2 : 5,
             flexDirection: "row",
         },
-        getNumber: number =>({
-         visibility: number === "home1" || number === "hom2" || number === "home3" ? "hidden" : ""
+        getNumber: number => ({
+            visibility: number === "home1" || number === "hom2" || number === "home3" ? "hidden" : ""
         }),
-    
+
         verbBox: {
             backgroundColor: "rgba(240, 244, 248, 0.5)",
             borderWidth: isSmallScreen ? 1 : 2,
@@ -85,7 +128,7 @@ export default function SmalBoard() {
             padding: isSmallScreen ? 9 : 20,
             margin: isSmallScreen ? 1 : 1,
             width: isSmallScreen ? 21 : boxSize,
-            height: isSmallScreen ? 21  : boxSize,
+            height: isSmallScreen ? 21 : boxSize,
             justifyContent: 'center',
             alignItems: 'center',
             position: 'relative',
@@ -116,7 +159,7 @@ export default function SmalBoard() {
             style={[styles.verbBox, styles.getNumber(number),
             ]}
         >
-                {/* {number === "1a" && (
+            {/* {number === "1a" && (
                  <Entypo name="arrow-bold-up" size={24} color="blue" style={styles.arrow}/>
                 )}
                 
@@ -129,50 +172,50 @@ export default function SmalBoard() {
                 {number === "1c" && (
                   <Entypo name="arrow-bold-down" size={24} color="pink"  style={styles.arrow}/>
                 )} */}
-                
-                {redSoldiers.map((soldier) =>
-                    soldier.position === number && (
-                        <Player
-                            key={`red-${soldier.id}`}
-                            isSelected={currentPlayer?.id === soldier.id}
-                            onPress={() => currentSelectedPlayer(soldier)}
-                            color={soldier.color}
-                        />
-                    )
-                )}
-                
-                {blueSoldiers.map((soldier) =>
-                    soldier.position === number && (
-                        <Player
-                            key={`blue-${soldier.id}`}
-                            isSelected={currentPlayer?.id === soldier.id}
-                            onPress={() => currentSelectedPlayer(soldier)}
-                            color={soldier.color}
-                        />
-                    )
-                )}
 
-                {yellowSoldiers.map((soldier) =>
-                    soldier.position === number && (
-                        <Player
-                            key={`yellow-${soldier.id}`}
-                            isSelected={currentPlayer?.id === soldier.id}
-                            onPress={() => currentSelectedPlayer(soldier)}
-                            color={soldier.color}
-                        />
-                    )
-                )}
-                {greenSoldiers.map((soldier) =>
-                    soldier.position === number && (
-                        <Player
-                            key={`green-${soldier.id}`}
-                            isSelected={currentPlayer?.id === soldier.id}
-                            onPress={() => currentSelectedPlayer(soldier)}
-                            color={soldier.color}
-                        />
-                    )
-                )}
-            </View>
+            {redSoldiers.map((soldier) =>
+                soldier.position === number && (
+                    <Player
+                        key={`red-${soldier.id}`}
+                        isSelected={currentPlayer?.id === soldier.id}
+                        onPress={() => currentSelectedPlayer(soldier)}
+                        color={soldier.color}
+                    />
+                )
+            )}
+
+            {blueSoldiers.map((soldier) =>
+                soldier.position === number && (
+                    <Player
+                        key={`blue-${soldier.id}`}
+                        isSelected={currentPlayer?.id === soldier.id}
+                        onPress={() => currentSelectedPlayer(soldier)}
+                        color={soldier.color}
+                    />
+                )
+            )}
+
+            {yellowSoldiers.map((soldier) =>
+                soldier.position === number && (
+                    <Player
+                        key={`yellow-${soldier.id}`}
+                        isSelected={currentPlayer?.id === soldier.id}
+                        onPress={() => currentSelectedPlayer(soldier)}
+                        color={soldier.color}
+                    />
+                )
+            )}
+            {greenSoldiers.map((soldier) =>
+                soldier.position === number && (
+                    <Player
+                        key={`green-${soldier.id}`}
+                        isSelected={currentPlayer?.id === soldier.id}
+                        onPress={() => currentSelectedPlayer(soldier)}
+                        color={soldier.color}
+                    />
+                )
+            )}
+        </View>
     );
 
     return (
