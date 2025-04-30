@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://localhost:8080/api';
+const API_URL = 'https://strategic-ludo-srping-boot.onrender.com/api';
 
 
 

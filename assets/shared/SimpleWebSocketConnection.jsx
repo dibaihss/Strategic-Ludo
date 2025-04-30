@@ -18,7 +18,7 @@ export const WebSocketProvider = ({ children }) => {
     // Create STOMP client
     const client = new Client({
       webSocketFactory: () => {
-        const socket = new SockJs('http://localhost:8080/ws', null, {
+        const socket = new SockJs('https://strategic-ludo-srping-boot.onrender.com/ws', null, {
           transports: ['websocket', 'xhr-streaming', 'xhr-polling'],
           timeout: 10000,
           headers: {
