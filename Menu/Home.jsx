@@ -52,13 +52,13 @@ const HomePage = ({ onStartLocalGame, onStartMultiplayerGame, onLogout }) => {
         <View style={styles.profileHeader}>
           <View style={styles.profileInfo}>
             <Text style={[styles.welcomeText, { color: theme.colors.textSecondary }]}>
-              {uiStrings[systemLang].welcome || 'Welcome'}
+              {uiStrings[systemLang].welcome}
             </Text>
             <Text style={[styles.username, { color: theme.colors.text }]}>
               {displayName}
               {isGuest && (
                 <Text style={[styles.guestBadge, { color: theme.colors.primary }]}>
-                  {" "}({uiStrings[systemLang].guest || 'Guest'})
+                  {" "}({uiStrings[systemLang].guest})
                 </Text>
               )}
             </Text>
@@ -76,7 +76,7 @@ const HomePage = ({ onStartLocalGame, onStartMultiplayerGame, onLogout }) => {
       {/* User Dashboard */}
       <View style={[styles.dashboard, { backgroundColor: theme.colors.card }]}>
         <Text style={[styles.dashboardTitle, { color: theme.colors.text }]}>
-          {uiStrings[systemLang].dashboard || 'Dashboard'}
+          {uiStrings[systemLang].dashboard}
         </Text>
         
         <View style={styles.statsContainer}>
@@ -84,7 +84,7 @@ const HomePage = ({ onStartLocalGame, onStartMultiplayerGame, onLogout }) => {
             <MaterialIcons name="emoji-events" size={24} color={theme.colors.primary} />
             <Text style={[styles.statValue, { color: theme.colors.text }]}>5</Text>
             <Text style={[styles.statLabel, { color: theme.colors.text }]}>
-              {uiStrings[systemLang].wins || 'Wins'}
+              {uiStrings[systemLang].wins}
             </Text>
           </View>
           
@@ -92,7 +92,7 @@ const HomePage = ({ onStartLocalGame, onStartMultiplayerGame, onLogout }) => {
             <MaterialIcons name="history" size={24} color={theme.colors.primary} />
             <Text style={[styles.statValue, { color: theme.colors.text }]}>12</Text>
             <Text style={[styles.statLabel, { color: theme.colors.text }]}>
-              {uiStrings[systemLang].gamesPlayed || 'Games Played'}
+              {uiStrings[systemLang].gamesPlayed}
             </Text>
           </View>
           
@@ -100,7 +100,7 @@ const HomePage = ({ onStartLocalGame, onStartMultiplayerGame, onLogout }) => {
             <MaterialIcons name="star" size={24} color={theme.colors.primary} />
             <Text style={[styles.statValue, { color: theme.colors.text }]}>1024</Text>
             <Text style={[styles.statLabel, { color: theme.colors.text }]}>
-              {uiStrings[systemLang].points || 'Points'}
+              {uiStrings[systemLang].points}
             </Text>
           </View>
         </View>
@@ -114,7 +114,7 @@ const HomePage = ({ onStartLocalGame, onStartMultiplayerGame, onLogout }) => {
         >
           <MaterialIcons name="people" size={28} color={theme.colors.buttonText} />
           <Text style={[styles.buttonText, { color: theme.colors.buttonText }]}>
-            {uiStrings[systemLang].playLocal || 'Play Local'}
+            {uiStrings[systemLang].playLocal}
           </Text>
         </Pressable>
         
@@ -129,7 +129,7 @@ const HomePage = ({ onStartLocalGame, onStartMultiplayerGame, onLogout }) => {
         >
           <MaterialIcons name="public" size={28} color={theme.colors.buttonText} />
           <Text style={[styles.buttonText, { color: theme.colors.buttonText }]}>
-            {uiStrings[systemLang].playMultiplayer || 'Multiplayer'}
+            {uiStrings[systemLang].playMultiplayer}
           </Text>
         </Pressable>
       </View>
@@ -137,7 +137,7 @@ const HomePage = ({ onStartLocalGame, onStartMultiplayerGame, onLogout }) => {
       {/* Version Footer */}
       <View style={styles.footer}>
         <Text style={[styles.footerText, { color: theme.colors.textSecondary }]}>
-        The game is in development phase
+          {uiStrings[systemLang].developmentPhase}
         </Text>
       </View>
     </SafeAreaView>

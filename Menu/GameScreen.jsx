@@ -5,9 +5,8 @@ import Bases from '../GameComponents/Bases.jsx';
 import Timer from '../GameComponents/Timer.jsx';
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { View, Text, StyleSheet, Pressable, Dimensions, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Dimensions, Platform, ActivityIndicator, Modal, Alert } from 'react-native';
 import { setActivePlayer, resetTimer, setOnlineModus } from '../assets/store/gameSlice.jsx';
-import { fetchCurrentMatch } from '../assets/store/dbSlice.jsx';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 import { useWebSocket } from '../assets/shared/SimpleWebSocketConnection.jsx';
 
@@ -25,6 +24,7 @@ export default function GameScreen({ route, navigation }) {
 
   const [gameIsStarted, setGameIsStarted] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showExitModal, setShowExitModal] = useState(false); // <-- Add this state
 
   // Get the game mode from navigation params
   const { mode, matchId } = route.params || { mode: 'local', matchId: 1 };
@@ -53,10 +53,7 @@ export default function GameScreen({ route, navigation }) {
     }
   }, [currentMatch?.users, mode, dispatch]);
 
-  const handleExitGame = () => {
-    // Navigate back to home
-    navigation.navigate('Home');
-  };
+ 
 
   const sendMoveUpdate = (message) => {
     sendMessage(`/app/player.Move/${currentMatch.id}`, JSON.stringify(message));
@@ -87,6 +84,23 @@ export default function GameScreen({ route, navigation }) {
     }
   }
 
+  const handleExitGame = () => {
+    // Show the confirmation modal instead of navigating directly
+    setShowExitModal(true);
+  };
+
+  const confirmExitGame = () => {
+    setShowExitModal(false); // Close the modal
+    // Navigate back to home
+    navigation.navigate('Home');
+    // Optional: Add logic here to notify backend if it's a multiplayer game
+    // e.g., sendMoveUpdate({ type: 'leaveGame' });
+  };
+
+  const cancelExitGame = () => {
+    setShowExitModal(false); // Close the modal
+  };
+  
   const styles = StyleSheet.create({
     container: {
       padding: isSmallScreen ? 1 : 10,
@@ -97,7 +111,7 @@ export default function GameScreen({ route, navigation }) {
     },
     controls: {
       position: 'absolute',
-      bottom: isSmallScreen ? 20 : -20,
+      bottom: isSmallScreen ? 22 : -20,
       left: isSmallScreen ? "25%" : "",
       flexDirection: 'row',
       gap: isSmallScreen ? 4 : 20,
@@ -142,6 +156,66 @@ export default function GameScreen({ route, navigation }) {
       marginTop: 10,
       fontSize: 16,
       color: '#333',
+    },
+    loadingText: {
+      marginTop: 10,
+      fontSize: 16,
+      color: '#333',
+    },
+    // --- Add Modal Styles ---
+    modalOverlay: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0, 0, 0, 0.6)', // Darker overlay
+    },
+    modalContainer: {
+      width: '85%',
+      maxWidth: 350,
+      padding: 25,
+      borderRadius: 12,
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 4,
+      elevation: 5,
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      marginBottom: 15,
+      textAlign: 'center',
+    },
+    modalMessage: {
+      fontSize: 16,
+      textAlign: 'center',
+      marginBottom: 25,
+      lineHeight: 22,
+    },
+    modalButtonRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      width: '100%',
+    },
+    modalButton: {
+      flex: 1, // Make buttons share space
+      paddingVertical: 12,
+      paddingHorizontal: 15,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginHorizontal: 5, // Add some space between buttons
+    },
+    cancelButton: {
+      borderWidth: 1,
+    },
+    confirmButton: {
+      // backgroundColor is set inline using theme
+    },
+    modalButtonText: {
+      fontSize: 16,
+      fontWeight: '500',
     },
   });
 
@@ -189,7 +263,7 @@ export default function GameScreen({ route, navigation }) {
             >
               <MaterialIcons name="exit-to-app" size={24} color={theme.colors.buttonText} />
               <Text style={[styles.buttonText, { color: theme.colors.buttonText }]}>
-                {uiStrings[systemLang].exitGame || 'Exit Game'}
+                {uiStrings[systemLang].exitGame || 'Exit'}
               </Text>
             </Pressable>
           </View>
@@ -212,6 +286,43 @@ export default function GameScreen({ route, navigation }) {
           </Pressable>
         </View>
       )}
+       {/* Exit Confirmation Modal */}
+  <Modal
+    visible={showExitModal}
+    transparent={true}
+    animationType="fade"
+    onRequestClose={cancelExitGame} // Handle back button on Android
+  >
+    <View style={styles.modalOverlay}>
+      <View style={[styles.modalContainer, { backgroundColor: theme.colors.background }]}>
+        <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
+          {uiStrings[systemLang].exitGameTitle || 'Exit Game?'}
+        </Text>
+        <Text style={[styles.modalMessage, { color: theme.colors.textSecondary }]}>
+          {uiStrings[systemLang].exitGameConfirm || 'Are you sure you want to leave the current game?'}
+        </Text>
+        <View style={styles.modalButtonRow}>
+          <Pressable
+            style={[styles.modalButton, styles.cancelButton, { borderColor: theme.colors.border }]}
+            onPress={cancelExitGame}
+          >
+            <Text style={[styles.modalButtonText, { color: theme.colors.textSecondary }]}>
+              {uiStrings[systemLang].cancel || 'Cancel'}
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[styles.modalButton, styles.confirmButton, { backgroundColor: theme.colors.danger || '#dc3545' }]} // Use a danger color
+            onPress={confirmExitGame}
+          >
+            <Text style={[styles.modalButtonText, { color: '#fff' }]}>
+              {uiStrings[systemLang].exit || 'Exit'}
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+    </View>
+  </Modal>
+  {/* End Exit Confirmation Modal */}
     </View>
   );
 }

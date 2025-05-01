@@ -1,9 +1,12 @@
 import { createSlice } from '@reduxjs/toolkit';
+import { getLocales } from 'expo-localization';
 import { errorMsgs, gameInstructions } from '../shared/hardCodedData';
 
+// Get the device's primary language code
+const deviceLanguage = getLocales()[0]?.languageCode || "en";
 
 const initialState = {
-    systemLang: "en",
+    systemLang: deviceLanguage,
     gameInstructions,
     errorMsgs
 };

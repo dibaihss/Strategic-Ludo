@@ -85,23 +85,6 @@ useEffect(() => {
     return currentMatch.users[0]?.id === user.id;
   };
 
-  // const fetchCurrentMatchData = (id) => {
-  //   console.log("fetchCurrentMatch", id)
-  //   dispatch(fetchCurrentMatch(id))
-  //     .unwrap() // Extract the Promise from the Thunk
-  //     .then(result => {
-  //       console.log("Match data fetched:", result);
-  //       sendMatchData(result)
-  //     })
-  //     .catch(error => {
-  //       console.error("Error refreshing match data:", error);
-  //     })
-  //     .finally(() => {
-  //       setRefreshing(false);
-  //       console.log("Refresh operation complete");
-  //     });
-  // }
-
   const refreshMatchData = (data) => {
     console.log("refreshMatchData", data)
     if (data?.users?.length > 0) {
@@ -195,14 +178,14 @@ useEffect(() => {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View style={[styles.container, { backgroundColor: "white" }]}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: theme.colors.text }]}>
           {uiStrings[systemLang].waitingRoom || 'Waiting Room'}
         </Text>
 
         <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-          {uiStrings[systemLang].matchId || 'Match ID'}: {currentMatch.id}
+          {uiStrings[systemLang].matchId || 'Match ID'}: {currentMatch.name}
         </Text>
       </View>
 
@@ -237,9 +220,7 @@ useEffect(() => {
           data={currentMatch.users || []}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item, index }) => (
-            <View style={[styles.playerItem, {
-              backgroundColor: index % 2 === 0 ? theme.colors.background : theme.colors.card
-            }]}>
+            <View style={[styles.playerItem]}>
               <View style={styles.playerDetails}>
                 <View style={[styles.playerAvatar, { backgroundColor: getPlayerColor(index) }]}>
                   <Text style={styles.playerInitial}>
@@ -250,7 +231,7 @@ useEffect(() => {
                 <Text style={[styles.playerName, { color: theme.colors.text }]}>
                   {item.name || item.username || "User"}
                   {item.id === user.id && (
-                    <Text style={{ color: theme.colors.primary }}> (You)</Text>
+                    <Text style={{ color: theme.colors.primary }}> {uiStrings[systemLang].you || '(You)'}</Text>
                   )}
                 </Text>
               </View>
@@ -289,7 +270,7 @@ useEffect(() => {
             style={[styles.startButton, { backgroundColor: theme.colors.primary }]}
             onPress={startGame}
           >
-            <MaterialIcons name="play-arrow" size={24} color="#fff" />
+            <MaterialIcons name="play-arrow" size={24} color="black" />
             <Text style={styles.startButtonText}>
               {uiStrings[systemLang].startGame || 'Start Game'}
             </Text>
@@ -300,7 +281,7 @@ useEffect(() => {
           style={[styles.leaveButton, { backgroundColor: theme.colors.error }]}
           onPress={handleLeaveMatch}
         >
-          <MaterialIcons name="exit-to-app" size={20} color="#fff" />
+          <MaterialIcons name="exit-to-app" size={20} color="black" />
           <Text style={styles.leaveButtonText}>
             {uiStrings[systemLang].leaveMatch || 'Leave Match'}
           </Text>
@@ -421,12 +402,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     justifyContent: 'center',
     flex: 0.7,
+    border: 1,
+    borderColor: "black",
+    borderRadius: 8,
+    padding: 5,
   },
   startButtonText: {
-    color: '#fff',
+    color: "black",
     fontSize: 16,
     fontWeight: 'bold',
     marginLeft: 10,
+  
   },
   leaveButton: {
     flexDirection: 'row',
@@ -436,11 +422,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginLeft: 10,
     justifyContent: 'center',
+    border: 1,
+    borderColor: "black",
+    borderRadius: 8,
+    padding: 5,
   },
   leaveButtonText: {
-    color: '#fff',
+    color: "black",
     fontSize: 14,
     marginLeft: 5,
+   
   },
   loadingText: {
     marginTop: 20,

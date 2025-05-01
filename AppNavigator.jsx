@@ -3,13 +3,14 @@ import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSelector, useDispatch } from 'react-redux';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import HomeScreen from './Menu/HomeScreen.jsx';
 import GameScreen from './Menu/GameScreen.jsx';
 import LoginPage from './Menu/login.jsx';
 import RegisterPage from './Menu/Register.jsx';
 import MatchListPage from './Menu/MultiplayerMenu.jsx';
-import WaitingRoom from './Menu/WaitingRoom.jsx'; // Make sure this is imported
-import ModalUserInput from './Menu/modelInputTest.jsx';
+import WaitingRoom from './Menu/WaitingRoom.jsx';
+import { setUser, setLoggedIn } from './assets/store/dbSlice.jsx';
 
 const Stack = createNativeStackNavigator();
 
@@ -20,8 +21,32 @@ export default function AppNavigator() {
 
   // Load stored user on startup
   useEffect(() => {
-    // Your loading logic
-    setIsLoading(false);
+    const checkStoredUser = async () => {
+      try {
+        // Check if user data exists in AsyncStorage
+        const storedUserData = await AsyncStorage.getItem('user');
+        
+        console.log('Stored user data:', storedUserData); // Debugging line
+        if (storedUserData) {
+          const userData = JSON.parse(storedUserData);
+          
+          // Dispatch actions to set user data and login state
+          // Use the appropriate actions from your dbSlice
+          dispatch(setUser(userData)); // Assuming you have a setUser action
+          dispatch(setLoggedIn(true)); // Assuming you have a setLoggedIn action
+          
+          console.log('User found in storage, auto-login successful');
+        } else {
+          console.log('No stored user found, staying on login screen');
+        }
+      } catch (error) {
+        console.error('Error checking stored user:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkStoredUser();
   }, [dispatch]);
 
   if (isLoading) {
@@ -35,11 +60,7 @@ export default function AppNavigator() {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {/* <Stack.Screen name="input" component={ModalUserInput} />
-      <Stack.Screen name="Game" component={GameScreen} /> */}
-     
         {isLoggedIn ? (
-          // Fix: Remove any whitespace between the fragments
           <>
             <Stack.Screen name="Home" component={HomeScreen} />
             <Stack.Screen name="Game" component={GameScreen} />
@@ -47,7 +68,6 @@ export default function AppNavigator() {
             <Stack.Screen name="WaitingRoom" component={WaitingRoom} />
           </>
         ) : (
-          // Fix: Remove any whitespace between the fragments
           <>
             <Stack.Screen name="Login" component={LoginPage} />
             <Stack.Screen name="Register" component={RegisterPage} />
