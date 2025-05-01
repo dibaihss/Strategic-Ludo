@@ -178,6 +178,9 @@ const uiStrings = {
         startGame: 'Start Game',
         leaveMatch: 'Leave Match',
         you: '(You)',
+        gameStartingIn: 'Game starting in',
+        gameStartingSoon: 'Game starting soon...',
+        startingAutomatically: 'Starting automatically...',
     },
     ar: {
         timer: '{time} :الوقت',
@@ -238,6 +241,9 @@ const uiStrings = {
         startGame: 'ابدأ اللعبة',
         leaveMatch: 'مغادرة المباراة',
         you: '(أنت)',
+        gameStartingIn: 'تبدأ اللعبة في',
+        gameStartingSoon: 'ستبدأ اللعبة قريبًا...',
+        startingAutomatically: 'يبدأ تلقائيًا...',
     },
     de: {
         timer: 'Zeit: {time}s',
@@ -298,6 +304,9 @@ const uiStrings = {
         startGame: 'Spiel starten',
         leaveMatch: 'Match verlassen',
         you: '(Du)',
+        gameStartingIn: 'Spiel startet in',
+        gameStartingSoon: 'Spiel startet bald...',
+        startingAutomatically: 'Startet automatisch...',
     }
 };
 

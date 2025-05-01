@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,12 +6,11 @@ import {
   Pressable,
   ActivityIndicator,
   FlatList,
-  Dimensions
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchCurrentMatch, updateMatch, deleteMatch } from '../assets/store/dbSlice.jsx';
-import { setOnlineModus, setPlayerColors } from '../assets/store/gameSlice.jsx';
+import { setPlayerColors } from '../assets/store/gameSlice.jsx';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 import { useWebSocket } from '../assets/shared/SimpleWebSocketConnection.jsx';
 
@@ -23,11 +22,45 @@ const WaitingRoom = ({ navigation, route }) => {
   const user = useSelector(state => state.auth.user);
   const loading = useSelector(state => state.auth.loading);
 
+  const [count, setCount] = useState(3);
+  const intervalRef = useRef(null);
+
   const [refreshing, setRefreshing] = useState(false);
   const [matchDeleted, setMatchDeleted] = useState(false);
   const { connected, subscribe, sendMessage } = useWebSocket();
- 
+  const [showCountdown, setShowCountdown] = useState(false);
+
   const join = route.params?.join || false;
+
+  // Modify this useEffect to only start countdown when showCountdown becomes true
+  useEffect(() => {
+    // Only start countdown if showCountdown is true
+    if (showCountdown) {
+      // Reset count when starting countdown
+      setCount(3);
+
+      // Start the countdown
+      intervalRef.current = setInterval(() => {
+        setCount(prevCount => {
+          if (prevCount <= 1) {
+            // When countdown reaches 0, clear interval and start game
+            clearInterval(intervalRef.current);
+            if (isUserHost()) startGame();
+            return 0;
+          }
+          return prevCount - 1;
+        });
+      }, 1000);
+
+      // Cleanup function
+      return () => {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+        }
+      };
+    }
+  }, [showCountdown]); // Only re-run this effect when showCountdown changes
+
 
   useEffect(() => {
     if (!currentMatch) return;
@@ -36,48 +69,53 @@ const WaitingRoom = ({ navigation, route }) => {
       const subscription = subscribe(`/topic/gameStarted/${currentMatch.id}`, async (data) => {
 
         console.log('Game Started received:', data);
-        if(data.type === 'startGame') {
+        if (data.type === 'startGame') {
           handleStartGame(currentMatch);
-        } else if(data.type === 'gotMatchData') {
+        } else if (data.type === 'gotMatchData') {
           refreshMatchData(data.match);
         }
       });
-   
+
       // Cleanup subscription when component unmounts
       return () => {
-        if(subscription) {
+        if (subscription) {
           subscription.unsubscribe();
         }
       };
     }
-   
+
   }, [subscribe, currentMatch, connected, matchDeleted]);
 
-useEffect(() => {
-  console.log("WaitingRoom join", join)
+  useEffect(() => {
+    console.log("WaitingRoom join", join)
     if (join && currentMatch) {
-     sendMatchData(currentMatch);
+      sendMatchData(currentMatch);
     }
   }
-  , [join,subscribe]);
+    , [join, subscribe]);
 
   const sendMatchData = (match) => {
-      if (!match || !match.id) return;
-      console.log("sendMatchData", match)
-      setTimeout(() => {
-        sendMessage(`/app/waitingRoom.gameStarted/${match.id}`, {type: "gotMatchData", match});
-      } , 1000);
-    }
+    if (!match || !match.id) return;
+    console.log("sendMatchData", match)
+    setTimeout(() => {
+      sendMessage(`/app/waitingRoom.gameStarted/${match.id}`, { type: "gotMatchData", match });
+    }, 1000);
+  }
 
   const checkInWaitingRoomPlayers = (players) => {
+    console.log("checkInWaitingRoomPlayers", players);
 
-    console.log("checkInWaitingRoomPlayers", players)
-    // If there are 4 players, automatically start the game
-    if (players.length === 4) {
-      startGame();
-      return;
+    // If there are 4 players, start the countdown
+    if (players.length === 4 && !showCountdown) {
+      console.log("Starting countdown with 4 players");
+      setShowCountdown(true);
+    } else if (players.length < 4 && showCountdown) {
+      // If a player leaves during countdown (less than 4 players), cancel countdown
+      console.log("Cancelling countdown, player left");
+      setShowCountdown(false);
     }
-  }
+  };
+
   const isUserHost = () => {
     if (!currentMatch || !user) return false;
 
@@ -94,11 +132,31 @@ useEffect(() => {
   }
   const handleRefresh = () => {
     if (!currentMatch?.id) return;
+    const id = currentMatch.id;
     setRefreshing(true);
+    fetchCurrentMatchData(id);
   };
 
+  const fetchCurrentMatchData = (id) => {
+    console.log("fetchCurrentMatch", id)
+    dispatch(fetchCurrentMatch(id))
+      .unwrap() // Extract the Promise from the Thunk
+      .then(result => {
+        console.log("Match data fetched:", result);
+        // Update the match data in the store
+        setRefreshing(false);
+        dispatch(updateMatch(result));
+      })
+      .catch(error => {
+        console.error("Error refreshing match data:", error);
+      })
+      .finally(() => {
+        console.log("Refresh operation complete");
+      });
+  }
+
   const deleteMatchData = async (id) => {
-      dispatch(deleteMatch(id))
+    dispatch(deleteMatch(id))
       .unwrap() // Extract the Promise from the Thunk
       .then(result => {
         console.log("Match data deleted:");
@@ -119,33 +177,44 @@ useEffect(() => {
       return;
     }
     deleteMatchData(currentMatch.id)
-    sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, {type: 'startGame'});
+    sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'startGame' });
     console.log('Sending player:');
 
   };
 
   const handleStartGame = (data) => {
-     // Update the match status to 'inProgress' or similar
-     const players = data.users;
-     console.log(players)
-      const playerColors = {
-        blue: players[0].id,
-        red: players[1].id,
-        yellow: players[2] ? players[2].id : players[1].id,
-        green: players[3] ? players[3].id : players[0].id
-      }
-  
-     
-     dispatch(setPlayerColors(playerColors))
-     navigation.navigate('Game', {
+    // Update the match status to 'inProgress' or similar
+    const players = data.users;
+    console.log(players)
+    const playerColors = {
+      blue: players[0].id,
+      red: players[1].id,
+      yellow: players[2] ? players[2].id : players[1].id,
+      green: players[3] ? players[3].id : players[0].id
+    }
+
+
+    dispatch(setPlayerColors(playerColors))
+    navigation.navigate('Game', {
       mode: 'multiplayer',
       matchId: data.id
     });
   };
 
+
   const handleLeaveMatch = () => {
     // Logic to leave the match (could be implemented in your dbSlice)
     navigation.navigate('Home');
+  };
+  const handleCountdownComplete = () => {
+    console.log("Countdown complete, starting game");
+    setShowCountdown(false);
+    startGame(); // Uncomment this line to actually start the game
+  };
+
+  const handleCountdownCancel = () => {
+    console.log("Countdown cancelled");
+    setShowCountdown(false);
   };
 
   if (loading && !currentMatch) {
@@ -158,6 +227,8 @@ useEffect(() => {
       </View>
     );
   }
+
+
 
   if (!currentMatch) {
     return (
@@ -179,6 +250,15 @@ useEffect(() => {
 
   return (
     <View style={[styles.container, { backgroundColor: "white" }]}>
+      {/* Render countdown timer if showCountdown is true */}
+      {showCountdown && (
+        <View style={styles.countdownContainer}>
+          <Text style={styles.countdownText}>
+            {uiStrings[systemLang]?.gameStartingIn || 'Game starting in'}: {count}
+          </Text>
+        </View>
+
+      )}
       <View style={styles.header}>
         <Text style={[styles.title, { color: theme.colors.text }]}>
           {uiStrings[systemLang].waitingRoom || 'Waiting Room'}
@@ -251,17 +331,19 @@ useEffect(() => {
             </Text>
           }
         />
+        {!showCountdown &&
+          <View style={styles.joinInfo}>
+            <Text style={[styles.joinInfoText, { color: theme.colors.textSecondary }]}>
+              {uiStrings[systemLang].waitingForPlayers || 'Waiting for more players to join...'}
+            </Text>
+            <Text style={[styles.joinInfoText, { color: theme.colors.textSecondary }]}>
+              {currentMatch.users?.length === 1
+                ? uiStrings[systemLang].needMorePlayers || 'Need at least one more player to start'
+                : uiStrings[systemLang].gameStartsWith4 || 'Game will start automatically with 4 players'}
+            </Text>
+          </View>
+        }
 
-        <View style={styles.joinInfo}>
-          <Text style={[styles.joinInfoText, { color: theme.colors.textSecondary }]}>
-            {uiStrings[systemLang].waitingForPlayers || 'Waiting for more players to join...'}
-          </Text>
-          <Text style={[styles.joinInfoText, { color: theme.colors.textSecondary }]}>
-            {currentMatch.users?.length === 1
-              ? uiStrings[systemLang].needMorePlayers || 'Need at least one more player to start'
-              : uiStrings[systemLang].gameStartsWith4 || 'Game will start automatically with 4 players'}
-          </Text>
-        </View>
       </View>
 
       <View style={styles.footer}>
@@ -412,7 +494,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginLeft: 10,
-  
+
   },
   leaveButton: {
     flexDirection: 'row',
@@ -431,7 +513,7 @@ const styles = StyleSheet.create({
     color: "black",
     fontSize: 14,
     marginLeft: 5,
-   
+
   },
   loadingText: {
     marginTop: 20,
@@ -453,6 +535,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
+  countdownContainer: {
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    position: 'absolute',
+    top: '80%',
+    alignSelf: 'center',
+    zIndex: 1000,
+    width: '80%',
+  },
+  countdownText: {
+    color: 'white',
+    fontSize: 22,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  }
 });
 
 export default WaitingRoom;
