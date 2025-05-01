@@ -29,7 +29,8 @@
     "react-native-web": "^0.19.13",
     "react-redux": "^9.2.0",
     "react-stomp": "^5.1.0",
-    "sockjs": "^0.3.24"
+    "sockjs": "^0.3.24",
+    "expo-localization": "~16.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"

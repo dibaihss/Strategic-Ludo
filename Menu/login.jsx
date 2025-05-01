@@ -36,8 +36,8 @@ const LoginPage = ({ navigation }) => {
         if (!email.trim() || !password.trim()) {
             Toast.show({
                 type: 'error',
-                text1: uiStrings[systemLang].error || 'Error',
-                text2: uiStrings[systemLang].fillFields || 'Please fill in all fields',
+                text1: uiStrings[systemLang].error,
+                text2: uiStrings[systemLang].fillFields,
                 position: 'bottom',
             });
             return;
@@ -64,8 +64,8 @@ const LoginPage = ({ navigation }) => {
                 console.log("Guest login successful:", result);
                 Toast.show({
                     type: 'success',
-                    text1: uiStrings[systemLang].success || 'Success',
-                    text2: uiStrings[systemLang].guestLoginSuccess || 'Logged in as guest',
+                    text1: uiStrings[systemLang].success,
+                    text2: uiStrings[systemLang].guestLoginSuccess,
                     position: 'bottom',
                 });
             })
@@ -73,8 +73,8 @@ const LoginPage = ({ navigation }) => {
                 console.error("Guest login failed:", error);
                 Toast.show({
                     type: 'error',
-                    text1: uiStrings[systemLang].error || 'Error',
-                    text2: error || uiStrings[systemLang].guestLoginFailed || 'Guest login failed',
+                    text1: uiStrings[systemLang].error,
+                    text2: error || uiStrings[systemLang].guestLoginFailed,
                     position: 'bottom',
                 });
             });
@@ -100,7 +100,7 @@ const LoginPage = ({ navigation }) => {
                             resizeMode="contain"
                         />
                         <Text style={[styles.title, { color: theme.colors.text }]}>
-                            {uiStrings[systemLang].loginTitle || 'Login to Ludo'}
+                            {uiStrings[systemLang].loginTitle}
                         </Text>
                     </View>
 
@@ -111,7 +111,7 @@ const LoginPage = ({ navigation }) => {
                             <MaterialIcons name="email" size={20} color={theme.colors.textSecondary} style={styles.inputIcon} />
                             <TextInput
                                 style={[styles.input, { color: theme.colors.text }]}
-                                placeholder={uiStrings[systemLang].email || 'Email Address'}
+                                placeholder={uiStrings[systemLang].email}
                                 placeholderTextColor={theme.colors.textSecondary}
                                 value={email}
                                 onChangeText={setEmail}
@@ -126,7 +126,7 @@ const LoginPage = ({ navigation }) => {
                             <MaterialIcons name="lock" size={20} color={theme.colors.textSecondary} style={styles.inputIcon} />
                             <TextInput
                                 style={[styles.input, { color: theme.colors.text }]}
-                                placeholder={uiStrings[systemLang].password || 'Password'}
+                                placeholder={uiStrings[systemLang].password}
                                 placeholderTextColor={theme.colors.textSecondary}
                                 value={password}
                                 onChangeText={setPassword}
@@ -155,7 +155,7 @@ const LoginPage = ({ navigation }) => {
                             <ActivityIndicator color={theme.colors.buttonText} />
                         ) : (
                             <Text style={[styles.buttonText, { color: theme.colors.buttonText }]}>
-                                {uiStrings[systemLang].login || 'Login'}
+                                {uiStrings[systemLang].login}
                             </Text>
                         )}
                     </Pressable>
@@ -165,7 +165,7 @@ const LoginPage = ({ navigation }) => {
                         style={styles.forgotPasswordContainer}
                     >
                         <Text style={[styles.forgotPasswordText, { color: theme.colors.primary }]}>
-                            {uiStrings[systemLang].forgotPassword || 'Forgot password?'}
+                            {uiStrings[systemLang].forgotPassword}
                         </Text>
                     </TouchableOpacity>
 
@@ -175,15 +175,15 @@ const LoginPage = ({ navigation }) => {
                         onPress={goToRegister}
                     >
                         <Text style={[styles.registerText, { color: theme.colors.primary }]}>
-                            {uiStrings[systemLang].noAccount || "Don't have an account?"}
-                            <Text style={{ fontWeight: 'bold' }}> {uiStrings[systemLang].signUp || "Sign Up"}</Text>
+                            {uiStrings[systemLang].noAccount}
+                            <Text style={{ fontWeight: 'bold' }}> {uiStrings[systemLang].signUp}</Text>
                         </Text>
                     </TouchableOpacity>
                       {/* Divider */}
                 <View style={styles.divider}>
                     <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
                     <Text style={[styles.dividerText, { color: theme.colors.textSecondary }]}>
-                        {uiStrings[systemLang].or || 'OR'}
+                        {uiStrings[systemLang].or}
                     </Text>
                     <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
                 </View>
@@ -201,7 +201,7 @@ const LoginPage = ({ navigation }) => {
                             <ActivityIndicator color={theme.colors.buttonText} />
                         ) : (
                             <Text style={[styles.buttonText, { color: theme.colors.buttonText }]}>
-                                {uiStrings[systemLang].continueAsGuest || 'Continue as Guest'}
+                                {uiStrings[systemLang].continueAsGuest}
                             </Text>
                         )}
                     </Pressable>

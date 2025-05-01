@@ -46,6 +46,9 @@
     },
     "updates": {
       "url": "https://u.expo.dev/6c26f375-258e-42b3-a044-fb4f831e68e7"
-    }
+    },
+    "plugins": [
+      "expo-localization"
+    ]
   }
 }

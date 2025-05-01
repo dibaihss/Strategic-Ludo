@@ -32,12 +32,12 @@ const MatchListPage = ({ navigation }) => {
     dispatch(fetchMatches());
   }, [dispatch]);
 
-  // Handle pull-to-refresh
+  // Handle pull-to-refresh and button press
   const onRefresh = () => {
     setRefreshing(true);
     dispatch(fetchMatches()).finally(() => setRefreshing(false));
   };
-
+  
   useEffect(() => {
     // Return the cleanup function that runs when the component unmounts
     return () => {
@@ -161,6 +161,18 @@ const MatchListPage = ({ navigation }) => {
         <Text style={[styles.title, { color: theme.colors.text }]}>
           {uiStrings[systemLang].availableMatches || 'Available Matches'}
         </Text>
+        {/* Add Refresh Button Here */}
+        <Pressable
+          style={styles.refreshButtonHeader} // Add a new style for positioning
+          onPress={onRefresh}
+          disabled={refreshing || loading}
+        >
+          <MaterialIcons 
+            name="refresh" 
+            size={24} 
+            color={(refreshing || loading) ? theme.colors.disabled : theme.colors.primary} 
+          />
+        </Pressable>
       </View>
 
       {/* Error message */}
@@ -249,13 +261,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     paddingTop: 20,
+    justifyContent: 'space-between', // Adjust layout
   },
   backButton: {
-    marginRight: 16,
+    // Keep existing styles or adjust if needed
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
+    flex: 1, // Allow title to take available space
+    textAlign: 'center', // Center title
+    marginHorizontal: 10, // Add some margin around title
+  },
+  refreshButtonHeader: {
+    padding: 8, // Add padding for easier pressing
   },
   listContent: {
     padding: 16,
