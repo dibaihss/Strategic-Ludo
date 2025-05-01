@@ -3,6 +3,15 @@ import { Client } from '@stomp/stompjs';
 import SockJs from 'sockjs-client';
 import { useSelector, useDispatch } from 'react-redux';
 
+// --- START: WebSocket URL Configuration ---
+const PRODUCTION_WS_URL = 'https://strategic-ludo-srping-boot.onrender.com/ws';
+// Use your local IP for physical devices, 10.0.2.2 for Android emulator, or localhost for iOS simulator/web
+const LOCALHOST_WS_URL = 'http://localhost:8080/ws'; // Or your local backend port
+
+const WEBSOCKET_URL = __DEV__ ? LOCALHOST_WS_URL : PRODUCTION_WS_URL;
+
+console.log(`Using WebSocket URL: ${WEBSOCKET_URL}`); // Optional: Log which URL is being used
+// --- END: WebSocket URL Configuration ---
 // Create the context
 const WebSocketContext = createContext(null);
 
@@ -18,7 +27,7 @@ export const WebSocketProvider = ({ children }) => {
     // Create STOMP client
     const client = new Client({
       webSocketFactory: () => {
-        const socket = new SockJs('https://strategic-ludo-srping-boot.onrender.com/ws', null, {
+        const socket = new SockJs(WEBSOCKET_URL, null, {
           transports: ['websocket', 'xhr-streaming', 'xhr-polling'],
           timeout: 10000,
           headers: {

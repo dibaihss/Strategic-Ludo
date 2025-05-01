@@ -5,10 +5,11 @@ import Bases from '../GameComponents/Bases.jsx';
 import Timer from '../GameComponents/Timer.jsx';
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { View, Text, StyleSheet, Pressable, Modal, ScrollView, Dimensions, Platform, ActivityIndicator } from 'react-native';
-import { setActivePlayer, resetTimer, assignSoldiersToUsers, setOnlineModus } from '../assets/store/gameSlice.jsx';
+import { View, Text, StyleSheet, Pressable, Dimensions, Platform, ActivityIndicator } from 'react-native';
+import { setActivePlayer, resetTimer, setOnlineModus } from '../assets/store/gameSlice.jsx';
 import { fetchCurrentMatch } from '../assets/store/dbSlice.jsx';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
+import { useWebSocket } from '../assets/shared/SimpleWebSocketConnection.jsx';
 
 export default function GameScreen({ route, navigation }) {
   const dispatch = useDispatch();
@@ -19,62 +20,72 @@ export default function GameScreen({ route, navigation }) {
   const isSmallScreen = windowWidth < 375 || windowHeight < 667;
   const currentMatch = useSelector(state => state.auth.currentMatch);
   const user = useSelector(state => state.auth.user);
- const playerColors = useSelector(state => state.game.playerColors);
+  const playerColors = useSelector(state => state.game.playerColors);
+  const activePlayer = useSelector(state => state.game.activePlayer);
 
   const [gameIsStarted, setGameIsStarted] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Get the game mode from navigation params
   const { mode, matchId } = route.params || { mode: 'local', matchId: 1 };
+  const { connected, sendMessage } = useWebSocket();
 
   useEffect(() => {
     console.log(playerColors)
-    // For multiplayer games, set up polling and player assignments
-    if (mode === 'multiplayer') {
-      // Set up polling for match updates
-      const pollingInterval = setInterval(() => {
-        if (matchId) {
-          dispatch(fetchCurrentMatch(matchId));
-        }
-      }, 3000); // Poll every 3 seconds
-      
-      // Initial fetch when component mounts
-      if (matchId) {
-        dispatch(fetchCurrentMatch(matchId))
-          .then(() => {
-            setLoading(false);
-          });
-      }
-      
-      // Clean up interval when component unmounts
-      return () => clearInterval(pollingInterval);
-    } else {
-      // For local games, just set gameIsStarted to true
+
       console.log(user)
       setGameIsStarted(true);
       setLoading(false);
-    }
+    // }
   }, [mode, matchId, dispatch]);
-  
-  // Setup player assignments when match data is available
+
   useEffect(() => {
     if (mode === 'multiplayer' && currentMatch && currentMatch.users) {
       const players = currentMatch.users;
-      
+
       if (players.length >= 2) {
-        
+
         // Set online mode and assign players to colors
         dispatch(setOnlineModus(true));
-  
+
         setGameIsStarted(true);
       }
     }
   }, [currentMatch?.users, mode, dispatch]);
-  
+
   const handleExitGame = () => {
     // Navigate back to home
     navigation.navigate('Home');
   };
+
+  const sendMoveUpdate = (message) => {
+    sendMessage(`/app/player.Move/${currentMatch.id}`, JSON.stringify(message));
+  };
+
+  const findUserColor = () => {
+    if (!user || !user.id || !playerColors) {
+      return null; // Return null if user or playerColors aren't available
+    }
+    // Object.entries converts { blue: 'id1', red: 'id2' } to [ ['blue', 'id1'], ['red', 'id2'] ]
+    const userEntry = Object.entries(playerColors).find(([color, userId]) => userId === user.id);
+    // userEntry will be like ['blue', 'user123'] or undefined if not found
+    console.log(userEntry)
+    return userEntry ? userEntry[0] : null; // Return the color (first element) or null
+  };
+
+  const skipTurn = () => {
+    if (connected) {
+      const userColor = findUserColor();
+      if (userColor === activePlayer) {
+        sendMoveUpdate({
+          type: 'skipTurn'
+        });
+      }
+    } else {
+      dispatch(setActivePlayer());
+      dispatch(resetTimer());
+    }
+  }
 
   const styles = StyleSheet.create({
     container: {
@@ -160,8 +171,7 @@ export default function GameScreen({ route, navigation }) {
                 borderColor: theme.colors.buttonBorder
               }]}
               onPress={() => {
-                dispatch(setActivePlayer());
-                dispatch(resetTimer());
+                skipTurn();
               }}
             >
               <MaterialIcons name="casino" size={24} color={theme.colors.buttonText} />
@@ -169,7 +179,7 @@ export default function GameScreen({ route, navigation }) {
                 {uiStrings[systemLang].skipButton || 'Skip Turn'}
               </Text>
             </Pressable>
-            
+
             <Pressable
               style={[styles.button, {
                 backgroundColor: theme.colors.button,

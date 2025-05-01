@@ -5,6 +5,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
     enterNewSoldier,
     checkIfCardUsed,
+    setActivePlayer,
+    resetTimer,
 } from '../assets/store/gameSlice.jsx';
 import { setBoxesPosition } from '../assets/store/animationSlice.jsx';
 import Toast from 'react-native-toast-message';
@@ -211,6 +213,8 @@ export default function Bases() {
                 } else if (parsedData.type === 'enterNewSoldier') {
                     const { color } = parsedData.payload;
                     handleEnterNewSoldier(color);
+                } else if (parsedData.type === 'skipTurn') {
+                        HandleskipTurn()                 
                 }
             });
             return () => {
@@ -246,7 +250,20 @@ export default function Bases() {
         }
     };
 
+    // const findUserColor = () => {
+    //     if (!user || !user.id || !playerColors) {
+    //         return null; // Return null if user or playerColors aren't available
+    //     }
+    //     // Object.entries converts { blue: 'id1', red: 'id2' } to [ ['blue', 'id1'], ['red', 'id2'] ]
+    //     const userEntry = Object.entries(playerColors).find(([color, userId]) => userId === user.id);
+    //     // userEntry will be like ['blue', 'user123'] or undefined if not found
+    //     return userEntry ? userEntry[0] : null; // Return the color (first element) or null
+    // };
 
+     const HandleskipTurn = () => {
+        dispatch(setActivePlayer());
+        dispatch(resetTimer());
+      }
 
     const movePlayer = (color, steps) => {
         console.log(currentPlayer)
@@ -498,14 +515,14 @@ export default function Bases() {
 
     const enterNewSoldierHandler = (color) => {
         if (connected) {
-            const soldierOwner = playerColors[currentPlayer.color]
+            const soldierOwner = playerColors[color]
             console.log(user)
             if (soldierOwner === user.id) {
                 console.log("You are the owner of this soldier")
                 sendMoveUpdate({
                     type: 'enterNewSoldier',
                     payload: {
-                        color: currentPlayer.color,
+                        color: color,
                     },
                 });
             }
