@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,39 +12,66 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import { MaterialIcons } from '@expo/vector-icons';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
-import { fetchMatches, createMatch, joinMatch } from '../assets/store/dbSlice.jsx';
+import { fetchMatches, createMatch, joinMatch, fetchCurrentMatch, updateMatch } from '../assets/store/dbSlice.jsx';
 import { setOnlineModus } from '../assets/store/gameSlice.jsx';
 
 
 const MatchListPage = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
-  
+
   const dispatch = useDispatch();
   const theme = useSelector(state => state.theme.current);
   const systemLang = useSelector(state => state.language.systemLang);
   const matches = useSelector(state => state.auth.matches);
   const loading = useSelector(state => state.auth.loading);
   const error = useSelector(state => state.auth.error);
-  
+  const timeoutRef = useRef(null);
+
   // Load matches when component mounts
   useEffect(() => {
     dispatch(fetchMatches());
   }, [dispatch]);
-  
+
   // Handle pull-to-refresh
   const onRefresh = () => {
     setRefreshing(true);
     dispatch(fetchMatches()).finally(() => setRefreshing(false));
   };
 
-  
+  useEffect(() => {
+    // Return the cleanup function that runs when the component unmounts
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        console.log("Cleared createMatch fetch timeout on unmount.");
+      }
+    };
+  }, []);
+
+  const fetchCurrentMatchData = (id) => {
+    console.log("fetchCurrentMatch", id)
+    dispatch(fetchCurrentMatch(id))
+      .unwrap() // Extract the Promise from the Thunk
+      .then(result => {
+        console.log("Match data fetched:", result);
+        // Update the match data in the store
+        dispatch(updateMatch(result));
+      })
+      .catch(error => {
+        console.error("Error refreshing match data:", error);
+      })
+      .finally(() => {
+        console.log("Refresh operation complete");
+      });
+  }
+
 
   const handleJoinMatch = (matchId) => {
     dispatch(joinMatch(matchId)).unwrap()
       .then(() => {
-
+        fetchCurrentMatchData(matchId, true)
         dispatch(setOnlineModus(true));
-        navigation.navigate('WaitingRoom', { matchId });
+        navigation.navigate('WaitingRoom', { join: true });
       })
       .catch(err => {
         Alert.alert(
@@ -54,15 +81,26 @@ const MatchListPage = ({ navigation }) => {
       });
   };
 
-  
+
   // Handle create new match
   const handleCreateMatch = () => {
     dispatch(createMatch()).unwrap()
       .then((createdMatch) => {
-        // Navigate to waiting room instead of directly to game
-        navigation.navigate('WaitingRoom', { matchId: createdMatch.id });
         dispatch(setOnlineModus(true));
+        navigation.navigate('WaitingRoom', { join: false });
+        // Clear any potentially existing timeout before setting a new one
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+
+        // Store the new timeout ID in the ref
+        timeoutRef.current = setTimeout(() => {
+          console.log("Executing delayed fetch for created match:", createdMatch.id);
+          fetchCurrentMatchData(createdMatch.id, false);
+          timeoutRef.current = null; // Clear the ref after execution
+        }, 1000); // Fetch match data after 1 second
       })
+
       .catch(err => {
         Alert.alert(
           uiStrings[systemLang].error || 'Error',
@@ -72,7 +110,7 @@ const MatchListPage = ({ navigation }) => {
   };
   // Render each match item
   const renderMatchItem = ({ item }) => (
-    <Pressable 
+    <Pressable
       style={[styles.matchItem, { backgroundColor: theme.colors.card }]}
       onPress={() => handleJoinMatch(item.id)}
     >
@@ -84,20 +122,20 @@ const MatchListPage = ({ navigation }) => {
           {uiStrings[systemLang][item.status] || item.status}
         </Text>
       </View>
-      
+
       <View style={styles.matchPlayers}>
         <Text style={[styles.playersCount, { color: theme.colors.textSecondary }]}>
           {item.users?.length || 0}/4
         </Text>
-        <MaterialIcons 
-          name="arrow-forward" 
-          size={20} 
-          color={theme.colors.primary} 
+        <MaterialIcons
+          name="arrow-forward"
+          size={20}
+          color={theme.colors.primary}
         />
       </View>
     </Pressable>
   );
-  
+
   // Loading indicator
   if (loading && !refreshing && matches.length === 0) {
     return (
@@ -109,12 +147,12 @@ const MatchListPage = ({ navigation }) => {
       </View>
     );
   }
-  
+
   return (
     <View style={[styles.container, { backgroundColor: "white" }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable 
+        <Pressable
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
@@ -124,12 +162,12 @@ const MatchListPage = ({ navigation }) => {
           {uiStrings[systemLang].availableMatches || 'Available Matches'}
         </Text>
       </View>
-      
+
       {/* Error message */}
       {error && (
         <View style={styles.errorContainer}>
           <Text style={[styles.errorText, { color: theme.colors.error }]}>{error}</Text>
-          <Pressable 
+          <Pressable
             style={[styles.retryButton, { backgroundColor: theme.colors.button }]}
             onPress={() => dispatch(fetchMatches())}
           >
@@ -139,7 +177,7 @@ const MatchListPage = ({ navigation }) => {
           </Pressable>
         </View>
       )}
-      
+
       {/* Match list */}
       <FlatList
         data={matches}
@@ -168,13 +206,13 @@ const MatchListPage = ({ navigation }) => {
           ) : null
         }
       />
-      
+
       {/* Create match button */}
       <View style={styles.footer}>
-        <Pressable 
+        <Pressable
           style={[
-            styles.createButton, 
-            { 
+            styles.createButton,
+            {
               backgroundColor: loading ? theme.colors.disabled : theme.colors.button,
               opacity: loading ? 0.7 : 1
             }

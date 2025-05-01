@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchCurrentMatch, updateMatch, updateMatchStatus } from '../assets/store/dbSlice.jsx';
+import { fetchCurrentMatch, updateMatch, deleteMatch } from '../assets/store/dbSlice.jsx';
 import { setOnlineModus, setPlayerColors } from '../assets/store/gameSlice.jsx';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 import { useWebSocket } from '../assets/shared/SimpleWebSocketConnection.jsx';
@@ -24,69 +24,51 @@ const WaitingRoom = ({ navigation, route }) => {
   const loading = useSelector(state => state.auth.loading);
 
   const [refreshing, setRefreshing] = useState(false);
+  const [matchDeleted, setMatchDeleted] = useState(false);
   const { connected, subscribe, sendMessage } = useWebSocket();
+ 
+  const join = route.params?.join || false;
 
-
-  // useEffect(() => {
-  //   if (currentMatch?.id) {
-  //     // const pollingInterval = setInterval(() => {
-  //     //   updateMatchData()
-  //     // }, 2000); // Poll every 5 seconds
-  //     // return () => clearInterval(pollingInterval);
-  //   }
-  // }, [currentMatch?.id, dispatch]);
-
-
-  // Check if we should show start button or auto-start the game
   useEffect(() => {
-    if (!currentMatch || !currentMatch.users) return;
-    dispatch(setOnlineModus(true));
-
+    if (!currentMatch) return;
+    console.log("WaitingRoom currentMatch", currentMatch)
     if (connected) {
       const subscription = subscribe(`/topic/gameStarted/${currentMatch.id}`, async (data) => {
 
         console.log('Game Started received:', data);
-        handleStartGame(data);
+        if(data.type === 'startGame') {
+          handleStartGame(currentMatch);
+        } else if(data.type === 'gotMatchData') {
+          refreshMatchData(data.match);
+        }
       });
-      const subscriptionMatchData = subscribe(`/topic/sessionData/${currentMatch.id}`, async (data) => {
-
-        console.log(data)
-        dispatch(fetchCurrentMatch(currentMatch.id))
-        .unwrap() // Extract the Promise from the Thunk
-        .then(result => {
-       
-          console.log("Match data refreshed:", result);
-          refreshMatchData(result)
-        })
-        .catch(error => {
-          console.error("Error refreshing match data:", error);
-        })
-        .finally(() => {
-          setRefreshing(false);
-          console.log("Refresh operation complete");
-
-        });
-      });
-
-      sendMatchData()
-
+   
       // Cleanup subscription when component unmounts
       return () => {
-        if (subscriptionMatchData) {
-          subscriptionMatchData.unsubscribe();
-        }
         if(subscription) {
           subscription.unsubscribe();
         }
       };
     }
-  }, [connected]);
+   
+  }, [subscribe, currentMatch, connected, matchDeleted]);
 
-  const sendMatchData = () => {
-
-    console.log("sendMatchData", currentMatch)
-    sendMessage(`/app/allPlayers.sendMatchData/${currentMatch.id}`, currentMatch);
+useEffect(() => {
+  console.log("WaitingRoom join", join)
+    if (join && currentMatch) {
+     sendMatchData(currentMatch);
+    }
   }
+  , [join,subscribe]);
+
+  const sendMatchData = (match) => {
+      if (!match || !match.id) return;
+      console.log("sendMatchData", match)
+      setTimeout(() => {
+        sendMessage(`/app/waitingRoom.gameStarted/${match.id}`, {type: "gotMatchData", match});
+      } , 1000);
+    }
+
   const checkInWaitingRoomPlayers = (players) => {
 
     console.log("checkInWaitingRoomPlayers", players)
@@ -103,6 +85,23 @@ const WaitingRoom = ({ navigation, route }) => {
     return currentMatch.users[0]?.id === user.id;
   };
 
+  // const fetchCurrentMatchData = (id) => {
+  //   console.log("fetchCurrentMatch", id)
+  //   dispatch(fetchCurrentMatch(id))
+  //     .unwrap() // Extract the Promise from the Thunk
+  //     .then(result => {
+  //       console.log("Match data fetched:", result);
+  //       sendMatchData(result)
+  //     })
+  //     .catch(error => {
+  //       console.error("Error refreshing match data:", error);
+  //     })
+  //     .finally(() => {
+  //       setRefreshing(false);
+  //       console.log("Refresh operation complete");
+  //     });
+  // }
+
   const refreshMatchData = (data) => {
     console.log("refreshMatchData", data)
     if (data?.users?.length > 0) {
@@ -115,18 +114,16 @@ const WaitingRoom = ({ navigation, route }) => {
     setRefreshing(true);
   };
 
-  const updateMatchDataStatus = async (status) => {
-      currentMatch.status = status
-      dispatch(updateMatchStatus(currentMatch))
+  const deleteMatchData = async (id) => {
+      dispatch(deleteMatch(id))
       .unwrap() // Extract the Promise from the Thunk
       .then(result => {
-        dispatch(updateMatch(result)); // Update the Redux store with the new match data
+        console.log("Match data deleted:");
       })
       .catch(error => {
         console.error("Error refreshing match data:", error);
       })
       .finally(() => {
-        setRefreshing(false);
         console.log("Refresh operation complete");
       });
   }
@@ -138,7 +135,8 @@ const WaitingRoom = ({ navigation, route }) => {
       console.log('Not enough players to start the game.');
       return;
     }
-    sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, currentMatch);
+    deleteMatchData(currentMatch.id)
+    sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, {type: 'startGame'});
     console.log('Sending player:');
 
   };
@@ -147,7 +145,6 @@ const WaitingRoom = ({ navigation, route }) => {
      // Update the match status to 'inProgress' or similar
      const players = data.users;
      console.log(players)
-    
       const playerColors = {
         blue: players[0].id,
         red: players[1].id,
@@ -155,9 +152,9 @@ const WaitingRoom = ({ navigation, route }) => {
         green: players[3] ? players[3].id : players[0].id
       }
   
+     
      dispatch(setPlayerColors(playerColors))
- 
-    navigation.navigate('Game', {
+     navigation.navigate('Game', {
       mode: 'multiplayer',
       matchId: data.id
     });

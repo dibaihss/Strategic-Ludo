@@ -1,8 +1,18 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'https://strategic-ludo-srping-boot.onrender.com/api';
+// const API_URL = 'https://strategic-ludo-srping-boot.onrender.com/api';
 
+// --- START: API URL Configuration ---
+const PRODUCTION_API_URL = 'https://strategic-ludo-srping-boot.onrender.com/api';
+// Replace with your actual local IP address if testing on a physical device,
+// otherwise 'localhost' or '10.0.2.2' (for Android emulator) might work.
+const LOCALHOST_API_URL = 'http://localhost:8080/api'; // Or your local backend port
+
+const API_URL = __DEV__ ? LOCALHOST_API_URL : PRODUCTION_API_URL;
+
+console.log(`Using API URL: ${API_URL}`); // Optional: Log which URL is being used
+// --- END: API URL Configuration ---
 
 
 // Register user thunk
@@ -293,6 +303,33 @@ export const updateMatchStatus = createAsyncThunk(
     } catch (error) {
       console.error('Error updating match status:', error);
       return rejectWithValue('Network error while updating match status');
+    }
+  }
+);
+export const deleteMatch = createAsyncThunk(
+  'auth/deleteMatch',
+  async (matchId, { rejectWithValue, getState }) => {
+    try {
+ 
+      console.log("Deleting match with ID:", matchId);
+      const state = getState();
+      const token = state.auth.token;
+      
+      // Delete match
+      const response = await fetch(`${API_URL}/sessions/${matchId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+      });
+      
+      if (!response.ok) return rejectWithValue('Failed to delete match');
+      const match = await response.json();
+      
+      return match;
+    } catch (error) {
+      return rejectWithValue('Network error');
     }
   }
 );
