@@ -21,32 +21,32 @@ export default function AppNavigator() {
 
   // Load stored user on startup
   useEffect(() => {
-    const checkStoredUser = async () => {
-      try {
-        // Check if user data exists in AsyncStorage
-        const storedUserData = await AsyncStorage.getItem('user');
+    // const checkStoredUser = async () => {
+    //   try {
+    //     // Check if user data exists in AsyncStorage
+    //     const storedUserData = await AsyncStorage.getItem('user');
         
-        console.log('Stored user data:', storedUserData); // Debugging line
-        if (storedUserData) {
-          const userData = JSON.parse(storedUserData);
+    //     console.log('Stored user data:', storedUserData); // Debugging line
+    //     if (storedUserData) {
+    //       const userData = JSON.parse(storedUserData);
           
-          // Dispatch actions to set user data and login state
-          // Use the appropriate actions from your dbSlice
-          dispatch(setUser(userData)); // Assuming you have a setUser action
-          dispatch(setLoggedIn(true)); // Assuming you have a setLoggedIn action
+    //       // Dispatch actions to set user data and login state
+    //       // Use the appropriate actions from your dbSlice
+    //       dispatch(setUser(userData)); // Assuming you have a setUser action
+    //       dispatch(setLoggedIn(true)); // Assuming you have a setLoggedIn action
           
-          console.log('User found in storage, auto-login successful');
-        } else {
-          console.log('No stored user found, staying on login screen');
-        }
-      } catch (error) {
-        console.error('Error checking stored user:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    //       console.log('User found in storage, auto-login successful');
+    //     } else {
+    //       console.log('No stored user found, staying on login screen');
+    //     }
+    //   } catch (error) {
+    //     console.error('Error checking stored user:', error);
+    //   } finally {
+    //     setIsLoading(false);
+    //   }
+    // };
 
-    checkStoredUser();
+    // checkStoredUser();
   }, [dispatch]);
 
   if (isLoading) {
