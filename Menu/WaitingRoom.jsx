@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchCurrentMatch, updateMatch, deleteMatch } from '../assets/store/dbSlice.jsx';
+import { fetchCurrentMatch, updateMatch, deleteMatch, setCurrentUserPage } from '../assets/store/dbSlice.jsx';
 import { setPlayerColors } from '../assets/store/gameSlice.jsx';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 import { useWebSocket } from '../assets/shared/SimpleWebSocketConnection.jsx';
@@ -36,13 +36,11 @@ const WaitingRoom = ({ navigation, route }) => {
   const [showCountdown, setShowCountdown] = useState(false);
 
 
-  const join = route.params?.join || false;
+  // const join = route.params?.join || false;
 
-  // Modify this useEffect to only start countdown when showCountdown becomes true
+
   useEffect(() => {
-    // Only start countdown if showCountdown is true
     if (showCountdown) {
-      // Reset count when starting countdown
       setCount(3);
 
       // Start the countdown
@@ -100,6 +98,7 @@ const WaitingRoom = ({ navigation, route }) => {
 
   // Ensure we have the latest data when the component mounts
   useEffect(() => {
+    setCurrentUserPage("WaitingRoom")
     if (currentMatch?.id) {
       fetchCurrentMatchData(currentMatch.id);
     }

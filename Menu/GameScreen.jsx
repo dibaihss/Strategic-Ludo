@@ -9,6 +9,8 @@ import { View, Text, StyleSheet, Pressable, Dimensions, Platform, ActivityIndica
 import { setActivePlayer, resetTimer, setOnlineModus } from '../assets/store/gameSlice.jsx';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 import { useWebSocket } from '../assets/shared/SimpleWebSocketConnection.jsx';
+import { saveGameState, loadGameState } from '../assets/store/gameSlice.jsx';
+
 
 export default function GameScreen({ route, navigation }) {
   const dispatch = useDispatch();
@@ -22,6 +24,9 @@ export default function GameScreen({ route, navigation }) {
   const playerColors = useSelector(state => state.game.playerColors);
   const activePlayer = useSelector(state => state.game.activePlayer);
 
+  const gameState = useSelector(state => state.game);
+
+
   const [gameIsStarted, setGameIsStarted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showExitModal, setShowExitModal] = useState(false); // <-- Add this state
@@ -29,6 +34,31 @@ export default function GameScreen({ route, navigation }) {
   // Get the game mode from navigation params
   const { mode, matchId } = route.params || { mode: 'local', matchId: 1 };
   const { connected, sendMessage } = useWebSocket();
+
+  useEffect(() => {
+    dispatch(loadGameState());
+  }, [dispatch]);
+  
+  // Save game state automatically every 5 seconds
+  useEffect(() => {
+    const saveInterval = setInterval(() => {
+      dispatch(saveGameState());
+    }, 3000); // Save every 5 seconds
+    
+    return () => {
+      clearInterval(saveInterval);
+      // Save one last time when component unmounts
+      dispatch(saveGameState());
+    };
+  }, [dispatch]);
+  
+  // Save when crucial game state changes
+  useEffect(() => {
+    dispatch(saveGameState());
+  }, [
+    gameState.activePlayer,
+    currentMatch,
+  ]);
 
   useEffect(() => {
     console.log(playerColors)

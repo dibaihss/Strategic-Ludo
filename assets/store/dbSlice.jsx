@@ -353,6 +353,7 @@ const authSlice = createSlice({
     error: null,
     matches: [],
     currentMatch: null,
+    currentUserPage: null,
     loading: false
   },
   reducers: {
@@ -381,7 +382,10 @@ const authSlice = createSlice({
     },
     setLoggedIn: (state, action) => {
         state.isLoggedIn = action.payload;
-    }
+    },
+    setCurrentUserPage: (state, action) => {
+      state.currentUserPage = action.payload;
+    },
   },
   extraReducers: (builder) => {
         builder
@@ -487,7 +491,7 @@ const authSlice = createSlice({
   }
 });
 
-export const { updateMatch, clearAuth, setUser, setLoggedIn } = authSlice.actions;
+export const { updateMatch, clearAuth, setUser, setLoggedIn, setCurrentUserPage } = authSlice.actions;
 
 // Simple selectors
 export const selectUser = (state) => state.auth.user;

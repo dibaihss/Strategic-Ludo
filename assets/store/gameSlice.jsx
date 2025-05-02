@@ -3,7 +3,8 @@ import { playerType } from "../shared/hardCodedData.js";
 
 import { startingPositions } from "../shared/hardCodedData.js";
 import { setBoxesPosition } from './animationSlice.jsx'
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { updateMatch } from './dbSlice.jsx';
 
 const initialState = {
     currentPlayer: null,
@@ -74,6 +75,67 @@ const initialState = {
         { id: 24, used: false, value: 6 }
     ]
 };
+
+export const saveGameState = createAsyncThunk(
+    'game/saveGameState',
+    async (_, { getState }) => {
+      try {
+        const state = getState();
+        
+        // Extract only the needed parts of the game state
+        const gameStateToSave = {
+          playerColors: state.game.playerColors,
+          activePlayer: state.game.activePlayer,
+          currentPlayer: state.game.currentPlayer,
+          blueSoldiers: state.game.blueSoldiers,
+          redSoldiers: state.game.redSoldiers,
+          yellowSoldiers: state.game.yellowSoldiers,
+          greenSoldiers: state.game.greenSoldiers,
+          isTimerRunning: state.game.isTimerRunning,
+          timeRemaining: state.game.timeRemaining,
+          // Include currentMatch from auth slice
+          currentMatch: state.auth.currentMatch,
+          timestamp: new Date().toISOString()
+        };
+        
+        // Save to AsyncStorage
+        await AsyncStorage.setItem('gameState', JSON.stringify(gameStateToSave));
+        console.log('Game state saved successfully');
+        
+        return gameStateToSave;
+      } catch (error) {
+        console.error('Failed to save game state:', error);
+        throw error;
+      }
+    }
+  );
+  // Add this thunk to load saved game state
+export const loadGameState = createAsyncThunk(
+    'game/loadGameState',
+    async (_, { dispatch }) => {
+      try {
+        const savedState = await AsyncStorage.getItem('gameState');
+        
+        if (savedState) {
+          const parsedState = JSON.parse(savedState);
+          console.log('Loaded saved game state from:', parsedState.timestamp);
+          
+          // Update match in auth slice if needed
+          if (parsedState.currentMatch) {
+            dispatch(updateMatch(parsedState.currentMatch));
+          }
+          
+          return parsedState;
+        }
+        
+        return null;
+      } catch (error) {
+        console.error('Failed to load game state:', error);
+        return null;
+      }
+    }
+  );
+
 const getNextPlayerType = (currentPlayerType) => {
     const currentIndex = playerType.indexOf(currentPlayerType);
     const nextIndex = (currentIndex + 1) % playerType.length;
@@ -325,8 +387,6 @@ export const gameSlice = createSlice({
                     break;
             }
         },
-
-
         updateTimer: (state, action) => {
             state.timeRemaining = action.payload;
         },
@@ -373,13 +433,11 @@ export const gameSlice = createSlice({
                     }));
                     break;
             }
-        },
-        
+        },       
         setActivePlayerDirect: (state, action) => {
             // Directly set the active player without cycling
             state.activePlayer = action.payload;
-        },
-        
+        },     
         updateAllSoldiers: (state, action) => {
             // action.payload should be an object with color keys and arrays of soldier objects
             const { blue, red, yellow, green } = action.payload;
@@ -411,8 +469,7 @@ export const gameSlice = createSlice({
                     ...s
                 }));
             }
-        },
-        
+        },  
         updateAllCards: (state, action) => {
             // action.payload should be an object with color keys and arrays of card objects
             const { blue, red, yellow, green } = action.payload;
@@ -444,8 +501,7 @@ export const gameSlice = createSlice({
                     ...c
                 }));
             }
-        },
-        
+        },  
         resetSoldierUserIds: (state) => {
             // Reset all user_id values to null for soldiers
             state.blueSoldiers = state.blueSoldiers.map(soldier => ({
@@ -473,15 +529,36 @@ export const gameSlice = createSlice({
                 {user_id: null, color: null}
             ];
         },
-        
-        // Add a reset game state function for when a game ends or is abandoned
         resetGameState: (state) => {
             return {
                 ...initialState,
                 onlineModus: state.onlineModus // Preserve online mode status
             };
         }
-
+    }, 
+    extraReducers: (builder) => {
+        builder
+        .addCase(loadGameState.fulfilled, (state, action) => {
+            if (action.payload) {
+                console.log('Loaded saved game state:', action.payload);
+                // Restore saved state properties
+                state.playerColors = action.payload.playerColors;
+                state.activePlayer = action.payload.activePlayer;
+                state.currentPlayer = action.payload.currentPlayer;
+                state.blueSoldiers = action.payload.blueSoldiers;
+                state.redSoldiers = action.payload.redSoldiers;
+                state.yellowSoldiers = action.payload.yellowSoldiers;
+                state.greenSoldiers = action.payload.greenSoldiers;
+                state.isTimerRunning = action.payload.isTimerRunning;
+                state.timeRemaining = action.payload.timeRemaining;
+                state.onlineModus = action.payload.onlineModus; // Restore online mode status
+            }
+        })
+        // Optional: Add a case for saveGameState.fulfilled if you want to take action after saving
+        .addCase(saveGameState.fulfilled, (state, action) => {
+            // You could add a flag or timestamp for the last save if needed
+            console.log('Game state saved at:', action.payload.timestamp);
+        });
     }
 });
 
