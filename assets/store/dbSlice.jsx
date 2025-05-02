@@ -1,19 +1,28 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// const API_URL = 'https://strategic-ludo-srping-boot.onrender.com/api';
+import { Platform } from 'react-native'; // Import Platform
 
 // --- START: API URL Configuration ---
 const PRODUCTION_API_URL = 'https://strategic-ludo-srping-boot.onrender.com/api';
-// Replace with your actual local IP address if testing on a physical device,
-// otherwise 'localhost' or '10.0.2.2' (for Android emulator) might work.
-const LOCALHOST_API_URL = 'http://localhost:8080/api'; // Or your local backend port
 
-const API_URL = __DEV__ ? LOCALHOST_API_URL : PRODUCTION_API_URL;
+// URL options based on platform and environment
+const LOCALHOST_API_URL = 'http://localhost:8080/api'; // Default for iOS simulator
+const ANDROID_API_URL = 'http://192.168.178.130:8080/api'; // Android-specific URL with port
 
-console.log(`Using API URL: ${API_URL}`); // Optional: Log which URL is being used
+
+let API_URL;
+if (__DEV__) {
+  if (Platform.OS === 'android') {
+    API_URL = ANDROID_API_URL;
+  } else {
+    API_URL = LOCALHOST_API_URL;
+  }
+} else {
+  API_URL = PRODUCTION_API_URL;
+}
+
+console.log(`Using API URL: ${API_URL} on platform: ${Platform.OS}`); // Enhanced logging
 // --- END: API URL Configuration ---
-
 
 // Register user thunk
 export const registerUser = createAsyncThunk(
