@@ -1,7 +1,7 @@
-import { Provider, useDispatch } from 'react-redux';
+import { Provider } from 'react-redux';
 import { store } from './assets/store/store.jsx';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { WebSocketProvider } from './assets/shared/SimpleWebSocketConnection.jsx'; // Import useWebSocket
+import { WebSocketProvider } from './assets/shared/webSocketConnection.jsx'; // Import useWebSocket
 import AppNavigator from './AppNavigator.jsx';
 
 

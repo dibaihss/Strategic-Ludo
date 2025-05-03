@@ -1,19 +1,64 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// const API_URL = 'https://strategic-ludo-srping-boot.onrender.com/api';
+import { Platform } from 'react-native'; // Import Platform
 
 // --- START: API URL Configuration ---
 const PRODUCTION_API_URL = 'https://strategic-ludo-srping-boot.onrender.com/api';
-// Replace with your actual local IP address if testing on a physical device,
-// otherwise 'localhost' or '10.0.2.2' (for Android emulator) might work.
-const LOCALHOST_API_URL = 'http://localhost:8080/api'; // Or your local backend port
 
-const API_URL = __DEV__ ? LOCALHOST_API_URL : PRODUCTION_API_URL;
+// URL options based on platform and environment
+const LOCALHOST_API_URL = 'http://localhost:8080/api'; // Default for iOS simulator
+const ANDROID_API_URL = 'http://192.168.178.130:8080/api'; // Android-specific URL with port
 
-console.log(`Using API URL: ${API_URL}`); // Optional: Log which URL is being used
+
+let API_URL;
+if (__DEV__) {
+  if (Platform.OS === 'android') {
+    API_URL = ANDROID_API_URL;
+  } else {
+    API_URL = LOCALHOST_API_URL;
+  }
+} else {
+  API_URL = PRODUCTION_API_URL;
+}
+
+console.log(`Using API URL: ${API_URL} on platform: ${Platform.OS}`); // Enhanced logging
 // --- END: API URL Configuration ---
+// Add this thunk after your other API calls
+export const updateUserStatus = createAsyncThunk(
+  'auth/updateUserStatus',
+  async ( status , { getState, rejectWithValue }) => {
+    try {
+      const state = getState();
+      const token = state.auth.token;
+      let user = state.auth.user;
+      
+      console.log(`Updating user ${user.id} status to: ${status}`);
+      
+      // Make API request to update user status
+      const response = await fetch(`${API_URL}/users/${user.id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+        body: JSON.stringify({ status }),
+      });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to update user status:', errorText);
+        return rejectWithValue('Failed to update user status');
+      }
+
+      const updatedUser = await response.json();
+      console.log('User status updated successfully:', updatedUser);
+      return updatedUser;
+    } catch (error) {
+      console.error('Error updating user status:', error);
+      return rejectWithValue('Network error while updating user status');
+    }
+  }
+);
 
 // Register user thunk
 export const registerUser = createAsyncThunk(
@@ -27,7 +72,7 @@ export const registerUser = createAsyncThunk(
             name: userData.username, 
             email: userData.email,
             password: userData.password,
-            status: 'active' 
+            status: true 
           }),
         });
   
@@ -248,6 +293,42 @@ export const joinMatch = createAsyncThunk(
     }
   }
 );
+export const leaveMatch = createAsyncThunk(
+  'auth/leaveMatch',
+  async (matchId, { getState, rejectWithValue }) => {
+    try {
+      const state = getState();
+      const userId = state.auth.user?.id;
+      const token = state.auth.token;
+
+      if (!userId) {
+        return rejectWithValue('User is not logged in');
+      }
+
+      console.log(`User ${userId} leaving match ${matchId}`);
+
+      // Make API request to leave the match
+      const response = await fetch(`${API_URL}/sessions/${matchId}/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to leave match:', errorText);
+        return rejectWithValue('Failed to leave match');
+      }
+
+      return { matchId, userId };
+    } catch (error) {
+      console.error('Error leaving match:', error);
+      return rejectWithValue('Network error while leaving match');
+    }
+  }
+);
 export const fetchCurrentMatch = createAsyncThunk(
   'auth/fetchCurrentMatch',
   async (matchId, { getState, rejectWithValue }) => {
@@ -275,7 +356,7 @@ export const fetchCurrentMatch = createAsyncThunk(
     }
   }
 );
-
+// unused
 export const updateMatchStatus = createAsyncThunk(
   'auth/updateMatchStatus',
   async ({ session }, { getState, rejectWithValue }) => {
@@ -334,7 +415,6 @@ export const deleteMatch = createAsyncThunk(
   }
 );
 
-
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
@@ -344,6 +424,7 @@ const authSlice = createSlice({
     error: null,
     matches: [],
     currentMatch: null,
+    currentUserPage: null,
     loading: false
   },
   reducers: {
@@ -372,7 +453,10 @@ const authSlice = createSlice({
     },
     setLoggedIn: (state, action) => {
         state.isLoggedIn = action.payload;
-    }
+    },
+    setCurrentUserPage: (state, action) => {
+      state.currentUserPage = action.payload;
+    },
   },
   extraReducers: (builder) => {
         builder
@@ -474,11 +558,71 @@ const authSlice = createSlice({
       })
       .addCase(joinMatch.rejected, (state) => {
         state.loading = false;
+      })
+      .addCase(updateUserStatus.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(updateUserStatus.fulfilled, (state, action) => {
+        state.loading = false;
+      
+        // If it's the current user, update the user object
+        if (state.user && state.user.id === action.payload.id) {
+          state.user = {
+            ...state.user,
+            ...action.payload
+          };
+      
+          // Update local storage
+          AsyncStorage.setItem('user', JSON.stringify(state.user));
+        }
+      
+        // If the user is in the current match, update them there too
+        if (state.currentMatch?.users) {
+          const userIndex = state.currentMatch.users.findIndex(u => u.id === action.payload.id);
+          if (userIndex !== -1) {
+            state.currentMatch.users[userIndex] = {
+              ...state.currentMatch.users[userIndex],
+              ...action.payload
+            };
+          }
+        }
+      })
+      .addCase(updateUserStatus.rejected, (state) => {
+        state.loading = false;
+      })
+      .addCase(leaveMatch.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(leaveMatch.fulfilled, (state, action) => {
+        state.loading = false;
+  
+        const { matchId, userId } = action.payload;
+  
+        // Remove the user from the current match
+        if (state.currentMatch?.id === matchId) {
+          state.currentMatch.users = state.currentMatch.users.filter(user => user.id !== userId);
+  
+          // If the current user is leaving, clear the currentMatch
+          if (state.user?.id === userId) {
+            state.currentMatch = null;
+          }
+        }
+  
+        // Optionally, update the matches list
+        const matchIndex = state.matches.findIndex(match => match.id === matchId);
+        if (matchIndex !== -1) {
+          state.matches[matchIndex].users = state.matches[matchIndex].users.filter(user => user.id !== userId);
+        }
+      })
+      .addCase(leaveMatch.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
+      
   }
 });
 
-export const { updateMatch, clearAuth, setUser, setLoggedIn } = authSlice.actions;
+export const { updateMatch, clearAuth, setUser, setLoggedIn, setCurrentUserPage } = authSlice.actions;
 
 // Simple selectors
 export const selectUser = (state) => state.auth.user;

@@ -11,6 +11,7 @@ import RegisterPage from './Menu/Register.jsx';
 import MatchListPage from './Menu/MultiplayerMenu.jsx';
 import WaitingRoom from './Menu/WaitingRoom.jsx';
 import { setUser, setLoggedIn } from './assets/store/dbSlice.jsx';
+import { saveGameState, loadGameState } from './assets/store/gameSlice.jsx';
 
 const Stack = createNativeStackNavigator();
 
@@ -19,22 +20,26 @@ export default function AppNavigator() {
   const isLoggedIn = useSelector(state => state.auth.isLoggedIn);
   const [isLoading, setIsLoading] = useState(true);
 
+  const currentUserPage = useSelector(state => state.auth.currentUserPage);
+  const user = useSelector(state => state.auth.user);
+  const currentMatch = useSelector(state => state.auth.currentMatch);
+
   // Load stored user on startup
   useEffect(() => {
     const checkStoredUser = async () => {
       try {
         // Check if user data exists in AsyncStorage
         const storedUserData = await AsyncStorage.getItem('user');
-        
+
         console.log('Stored user data:', storedUserData); // Debugging line
         if (storedUserData) {
           const userData = JSON.parse(storedUserData);
-          
+
           // Dispatch actions to set user data and login state
           // Use the appropriate actions from your dbSlice
           dispatch(setUser(userData)); // Assuming you have a setUser action
           dispatch(setLoggedIn(true)); // Assuming you have a setLoggedIn action
-          
+
           console.log('User found in storage, auto-login successful');
         } else {
           console.log('No stored user found, staying on login screen');
@@ -46,9 +51,16 @@ export default function AppNavigator() {
       }
     };
 
-    // checkStoredUser();
-    setIsLoading(false); // For testing purposes, set loading to false immediately
+    checkStoredUser();
+    // setIsLoading(false); // For testing purposes, set loading to false immediately
   }, [dispatch]);
+
+  // useEffect(() => {
+  //   dispatch(loadGameState())
+  //     .then(() => {
+  //     })
+
+  // }, [dispatch]);
 
   if (isLoading) {
     return (
@@ -63,6 +75,15 @@ export default function AppNavigator() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isLoggedIn ? (
           <>
+            {/* {currentUserPage === "MatchList" ? (
+              <Stack.Screen name="MatchList" component={MatchListPage} />
+            ) : currentUserPage === "WaitingRoom" ? (
+              <Stack.Screen name="WaitingRoom" component={WaitingRoom} />
+            ) : currentUserPage === "Game" ? (
+              <Stack.Screen name="Game" component={GameScreen} />
+            ) : (
+              <Stack.Screen name="Home" component={HomeScreen} />
+            )} */}
             <Stack.Screen name="Home" component={HomeScreen} />
             <Stack.Screen name="Game" component={GameScreen} />
             <Stack.Screen name="MatchList" component={MatchListPage} />

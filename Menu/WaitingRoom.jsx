@@ -10,9 +10,12 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchCurrentMatch, updateMatch, deleteMatch } from '../assets/store/dbSlice.jsx';
-import { setPlayerColors } from '../assets/store/gameSlice.jsx';
+import { setPlayerColors} from '../assets/store/gameSlice.jsx';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
-import { useWebSocket } from '../assets/shared/SimpleWebSocketConnection.jsx';
+// import { useWebSocket } from '../assets/shared/SimpleWebSocketConnection.jsx';
+import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
+import Toast from 'react-native-toast-message';
+import GamePausedModal from './GamePausedModal.jsx';
 
 const WaitingRoom = ({ navigation, route }) => {
   const dispatch = useDispatch();
@@ -26,17 +29,18 @@ const WaitingRoom = ({ navigation, route }) => {
   const intervalRef = useRef(null);
 
   const [refreshing, setRefreshing] = useState(false);
-  const [matchDeleted, setMatchDeleted] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
+
+
   const { connected, subscribe, sendMessage } = useWebSocket();
-  const [showCountdown, setShowCountdown] = useState(false);
 
-  const join = route.params?.join || false;
+  const [showCountdown, setShowCountdown] = useState(false)
 
-  // Modify this useEffect to only start countdown when showCountdown becomes true
+  let join = route.params?.join || false;
+
+
   useEffect(() => {
-    // Only start countdown if showCountdown is true
     if (showCountdown) {
-      // Reset count when starting countdown
       setCount(3);
 
       // Start the countdown
@@ -45,7 +49,7 @@ const WaitingRoom = ({ navigation, route }) => {
           if (prevCount <= 1) {
             // When countdown reaches 0, clear interval and start game
             clearInterval(intervalRef.current);
-            if (isUserHost()) startGame();
+            handleStartGame();
             return 0;
           }
           return prevCount - 1;
@@ -62,20 +66,41 @@ const WaitingRoom = ({ navigation, route }) => {
   }, [showCountdown]); // Only re-run this effect when showCountdown changes
 
 
+  // Modify your WebSocket subscription effect
   useEffect(() => {
-    if (!currentMatch) return;
-    console.log("WaitingRoom currentMatch", currentMatch)
+    if (!currentMatch || !currentMatch.id) return;
+    console.log("WaitingRoom currentMatch", currentMatch);
+  
     if (connected) {
       const subscription = subscribe(`/topic/gameStarted/${currentMatch.id}`, async (data) => {
-
         console.log('Game Started received:', data);
+  
         if (data.type === 'startGame') {
-          handleStartGame(currentMatch);
-        } else if (data.type === 'gotMatchData') {
-          refreshMatchData(data.match);
+          console.log('Start Game:', data.userId);
+          setShowCountdown(true);
+        } 
+        if (data.type === 'userInactive') {
+          console.log('User inactive:', data.userId);
+          if (user.id !== data.userId) {
+            debounceHandleRefresh();
+          }
+        } else if (data.type === 'userBack') {
+          console.log('User back:', data.userId);
+          debounceHandleRefresh();
+        } else if (data.type === 'userJoined') {
+          console.log('User join:', data.userId);
+          debounceHandleRefresh();
+        } else if (data.type === 'userDisconnected') {
+          console.log('userDisconnected', data.userId);
+          debounceHandleRefresh();
         }
       });
-
+  
+      if (joinRef.current) {
+        joinRef.current = false;
+        sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userJoined', userId: user.id });
+      }
+  
       // Cleanup subscription when component unmounts
       return () => {
         if (subscription) {
@@ -83,55 +108,45 @@ const WaitingRoom = ({ navigation, route }) => {
         }
       };
     }
-
-  }, [subscribe, currentMatch, connected, matchDeleted]);
-
-  useEffect(() => {
-    console.log("WaitingRoom join", join)
-    if (join && currentMatch) {
-      sendMatchData(currentMatch);
+  }, [subscribe, currentMatch?.id, connected]);
+  
+  // Debounce handleRefresh
+  const debounceHandleRefresh = () => {
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current);
     }
-  }
-    , [join, subscribe]);
-
-  const sendMatchData = (match) => {
-    if (!match || !match.id) return;
-    console.log("sendMatchData", match)
-    setTimeout(() => {
-      sendMessage(`/app/waitingRoom.gameStarted/${match.id}`, { type: "gotMatchData", match });
-    }, 1000);
-  }
-
-  const checkInWaitingRoomPlayers = (players) => {
-    console.log("checkInWaitingRoomPlayers", players);
-
-    // If there are 4 players, start the countdown
-    if (players.length === 4 && !showCountdown) {
-      console.log("Starting countdown with 4 players");
-      setShowCountdown(true);
-    } else if (players.length < 4 && showCountdown) {
-      // If a player leaves during countdown (less than 4 players), cancel countdown
-      console.log("Cancelling countdown, player left");
-      setShowCountdown(false);
-    }
+    refreshTimeoutRef.current = setTimeout(() => {
+      handleRefresh();
+    }, 500); // Debounce interval (500ms)
   };
+  
+  // Ref for join
+  const joinRef = useRef(join);
+  const refreshTimeoutRef = useRef(null);
+
+
+  // const checkInWaitingRoomPlayers = (players) => {
+  //   // If there are 4 players, start the countdown
+  //   if (players.length === 4 && !showCountdown) {
+  //     setShowCountdown(true);
+  //   } else if (players.length < 4 && showCountdown) {
+  //     // If a player leaves during countdown (less than 4 players), cancel countdown
+  //     setShowCountdown(false);
+  //   }
+  // };
 
   const isUserHost = () => {
     if (!currentMatch || !user) return false;
 
+    console.log("isUserHost", currentMatch, user)
     // Assuming the first user in the array is the host
     return currentMatch.users[0]?.id === user.id;
   };
 
-  const refreshMatchData = (data) => {
-    console.log("refreshMatchData", data)
-    if (data?.users?.length > 0) {
-      dispatch(updateMatch(data))
-      checkInWaitingRoomPlayers(data.users)
-    }
-  }
   const handleRefresh = () => {
+    if (isFetching) return;
     if (!currentMatch?.id) return;
+    console.log("handleRefresh", user)
     const id = currentMatch.id;
     setRefreshing(true);
     fetchCurrentMatchData(id);
@@ -139,35 +154,42 @@ const WaitingRoom = ({ navigation, route }) => {
 
   const fetchCurrentMatchData = (id) => {
     console.log("fetchCurrentMatch", id)
-    dispatch(fetchCurrentMatch(id))
+    setTimeout(() => {
+
+      dispatch(fetchCurrentMatch(id))
       .unwrap() // Extract the Promise from the Thunk
       .then(result => {
         console.log("Match data fetched:", result);
         // Update the match data in the store
         setRefreshing(false);
         dispatch(updateMatch(result));
+        setIsFetching(false);
       })
       .catch(error => {
         console.error("Error refreshing match data:", error);
+        setIsFetching(false);
       })
       .finally(() => {
         console.log("Refresh operation complete");
+        setIsFetching(false);
       });
+    }, 1000);
+
   }
 
-  const deleteMatchData = async (id) => {
-    dispatch(deleteMatch(id))
-      .unwrap() // Extract the Promise from the Thunk
-      .then(result => {
-        console.log("Match data deleted:");
-      })
-      .catch(error => {
-        console.error("Error refreshing match data:", error);
-      })
-      .finally(() => {
-        console.log("Refresh operation complete");
-      });
-  }
+  // const deleteMatchData = async (id) => {
+  //   dispatch(deleteMatch(id))
+  //     .unwrap() // Extract the Promise from the Thunk
+  //     .then(result => {
+  //       console.log("Match data deleted:");
+  //     })
+  //     .catch(error => {
+  //       console.error("Error refreshing match data:", error);
+  //     })
+  //     .finally(() => {
+  //       console.log("Refresh operation complete");
+  //     });
+  // }
 
 
   const startGame = () => {
@@ -176,15 +198,15 @@ const WaitingRoom = ({ navigation, route }) => {
       console.log('Not enough players to start the game.');
       return;
     }
-    deleteMatchData(currentMatch.id)
+    // deleteMatchData(currentMatch.id)
     sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'startGame' });
     console.log('Sending player:');
 
   };
 
-  const handleStartGame = (data) => {
+  const handleStartGame = () => {
     // Update the match status to 'inProgress' or similar
-    const players = data.users;
+    const players = currentMatch.users;
     console.log(players)
     const playerColors = {
       blue: players[0].id,
@@ -197,7 +219,7 @@ const WaitingRoom = ({ navigation, route }) => {
     dispatch(setPlayerColors(playerColors))
     navigation.navigate('Game', {
       mode: 'multiplayer',
-      matchId: data.id
+      matchId: currentMatch.id,
     });
   };
 
@@ -339,7 +361,7 @@ const WaitingRoom = ({ navigation, route }) => {
             <Text style={[styles.joinInfoText, { color: theme.colors.textSecondary }]}>
               {currentMatch.users?.length === 1
                 ? uiStrings[systemLang].needMorePlayers || 'Need at least one more player to start'
-                : uiStrings[systemLang].gameStartsWith4 || 'Game will start automatically with 4 players'}
+                : null }
             </Text>
           </View>
         }
@@ -369,6 +391,8 @@ const WaitingRoom = ({ navigation, route }) => {
           </Text>
         </Pressable>
       </View>
+      <GamePausedModal />
+      <Toast />
     </View>
   );
 };

@@ -12,7 +12,7 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import { MaterialIcons } from '@expo/vector-icons';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
-import { fetchMatches, createMatch, joinMatch, fetchCurrentMatch, updateMatch } from '../assets/store/dbSlice.jsx';
+import { fetchMatches, createMatch, joinMatch, fetchCurrentMatch, updateMatch, setCurrentUserPage } from '../assets/store/dbSlice.jsx';
 import { setOnlineModus } from '../assets/store/gameSlice.jsx';
 
 
@@ -29,6 +29,7 @@ const MatchListPage = ({ navigation }) => {
 
   // Load matches when component mounts
   useEffect(() => {
+    setCurrentUserPage("MatchList")
     dispatch(fetchMatches());
   }, [dispatch]);
 

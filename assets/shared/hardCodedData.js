@@ -181,6 +181,11 @@ const uiStrings = {
         gameStartingIn: 'Game starting in',
         gameStartingSoon: 'Game starting soon...',
         startingAutomatically: 'Starting automatically...',
+        gamePaused: 'Game Paused',
+        waitingForPlayers: 'Waiting for players to return...',
+        inactivePlayers: 'Inactive Players',
+        noInactivePlayers: 'No inactive players found',
+        gameResumeAutomatically: 'The game will resume automatically when all players return.'
     },
     ar: {
         timer: '{time} :الوقت',
@@ -244,6 +249,11 @@ const uiStrings = {
         gameStartingIn: 'تبدأ اللعبة في',
         gameStartingSoon: 'ستبدأ اللعبة قريبًا...',
         startingAutomatically: 'يبدأ تلقائيًا...',
+        gamePaused: 'توقفت اللعبة',
+        waitingForPlayers: 'بانتظار عودة اللاعبين...',
+        inactivePlayers: 'اللاعبون غير النشطين',
+        noInactivePlayers: 'لا يوجد لاعبين غير نشطين',
+        gameResumeAutomatically: 'سيستأنف اللعب تلقائيًا عند عودة جميع اللاعبين.'
     },
     de: {
         timer: 'Zeit: {time}s',
@@ -307,6 +317,11 @@ const uiStrings = {
         gameStartingIn: 'Spiel startet in',
         gameStartingSoon: 'Spiel startet bald...',
         startingAutomatically: 'Startet automatisch...',
+        gamePaused: 'Spiel pausiert',
+        waitingForPlayers: 'Warte auf Rückkehr der Spieler...',
+        inactivePlayers: 'Inaktive Spieler',
+        noInactivePlayers: 'Keine inaktiven Spieler gefunden',
+        gameResumeAutomatically: 'Das Spiel wird automatisch fortgesetzt, wenn alle Spieler zurückkehren.'
     }
 };
 
