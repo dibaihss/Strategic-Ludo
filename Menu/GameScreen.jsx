@@ -11,7 +11,7 @@ import { uiStrings } from '../assets/shared/hardCodedData.js';
 
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx'; // Import useWebSocket
 import { setCurrentUserPage } from '../assets/store/dbSlice.jsx';
-
+import { activateKeepAwake, deactivateKeepAwake } from 'expo-keep-awake';
 
 export default function GameScreen({ route, navigation }) {
   const dispatch = useDispatch();
@@ -42,6 +42,16 @@ export default function GameScreen({ route, navigation }) {
     // dispatch(loadGameState());
     
   }, [dispatch]);
+  
+  useEffect(() => {
+    // Keep the device awake when the user is on the GameScreen
+    activateKeepAwake();
+
+    return () => {
+      // Deactivate keep awake when leaving the GameScreen
+      deactivateKeepAwake();
+    };
+  }, []);
   
   // Save game state automatically every 5 seconds
   // useEffect(() => {
