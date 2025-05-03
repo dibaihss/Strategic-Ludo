@@ -20,6 +20,7 @@ const initialState = {
         yellow: 2,
         green: 1
     },
+    currentPlayerColor: null,
     blueSoldiers: [
         { id: 1, position: '1a', color: "blue", initialPosition: '1blue', onBoard: true, isOut: false},
         { id: 2, position: '2blue', color: "blue", initialPosition: '2blue', onBoard: false, isOut: false},
@@ -78,39 +79,39 @@ const initialState = {
     ]
 };
 
-export const saveGameState = createAsyncThunk(
-    'game/saveGameState',
-    async (_, { getState }) => {
-      try {
-        const state = getState();
+// export const saveGameState = createAsyncThunk(
+//     'game/saveGameState',
+//     async (_, { getState }) => {
+//       try {
+//         const state = getState();
         
-        // Extract only the needed parts of the game state
-        const gameStateToSave = {
-          playerColors: state.game.playerColors,
-          activePlayer: state.game.activePlayer,
-          currentPlayer: state.game.currentPlayer,
-          blueSoldiers: state.game.blueSoldiers,
-          redSoldiers: state.game.redSoldiers,
-          yellowSoldiers: state.game.yellowSoldiers,
-          greenSoldiers: state.game.greenSoldiers,
-          isTimerRunning: state.game.isTimerRunning,
-          timeRemaining: state.game.timeRemaining,
-          // Include currentMatch from auth slice
-          currentMatch: state.auth.currentMatch,
-          timestamp: new Date().toISOString()
-        };
+//         // Extract only the needed parts of the game state
+//         const gameStateToSave = {
+//           playerColors: state.game.playerColors,
+//           activePlayer: state.game.activePlayer,
+//           currentPlayer: state.game.currentPlayer,
+//           blueSoldiers: state.game.blueSoldiers,
+//           redSoldiers: state.game.redSoldiers,
+//           yellowSoldiers: state.game.yellowSoldiers,
+//           greenSoldiers: state.game.greenSoldiers,
+//           isTimerRunning: state.game.isTimerRunning,
+//           timeRemaining: state.game.timeRemaining,
+//           // Include currentMatch from auth slice
+//           currentMatch: state.auth.currentMatch,
+//           timestamp: new Date().toISOString()
+//         };
         
-        // Save to AsyncStorage
-        await AsyncStorage.setItem('gameState', JSON.stringify(gameStateToSave));
-        // console.log('Game state saved successfully');
+//         // Save to AsyncStorage
+//         await AsyncStorage.setItem('gameState', JSON.stringify(gameStateToSave));
+//         // console.log('Game state saved successfully');
         
-        return gameStateToSave;
-      } catch (error) {
-        console.error('Failed to save game state:', error);
-        throw error;
-      }
-    }
-  );
+//         return gameStateToSave;
+//       } catch (error) {
+//         console.error('Failed to save game state:', error);
+//         throw error;
+//       }
+//     }
+//   );
   // Add this thunk to load saved game state
 export const loadGameState = createAsyncThunk(
     'game/loadGameState',
@@ -306,6 +307,9 @@ export const gameSlice = createSlice({
             if (firstAvailableSoldier) {
                 state.currentPlayer = firstAvailableSoldier;
             }
+        },
+        setCurrentPlayerColor: (state, action) => {
+        state.currentPlayerColor = action.payload;
         },
         updateBlueCards: (state, action) => {
             const { used, value, updateAll } = action.payload;
@@ -560,10 +564,10 @@ export const gameSlice = createSlice({
             }
         })
         // Optional: Add a case for saveGameState.fulfilled if you want to take action after saving
-        .addCase(saveGameState.fulfilled, (state, action) => {
-            // You could add a flag or timestamp for the last save if needed
-            console.log('Game state saved at:', action.payload.timestamp);
-        });
+        // .addCase(saveGameState.fulfilled, (state, action) => {
+        //     // You could add a flag or timestamp for the last save if needed
+        //     console.log('Game state saved at:', action.payload.timestamp);
+        // });
     }
 });
 
@@ -586,7 +590,8 @@ export const {
     updateAllCards, 
     resetGameState, 
     setActivePlayerDirect, 
-    setPausedGame
+    setPausedGame,
+    setCurrentPlayerColor
 } = gameSlice.actions;
 
 export default gameSlice.reducer;

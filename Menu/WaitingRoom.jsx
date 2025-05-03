@@ -6,7 +6,6 @@ import {
   Pressable,
   ActivityIndicator,
   FlatList,
-  AppState
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useDispatch, useSelector } from 'react-redux';
@@ -30,7 +29,6 @@ const WaitingRoom = ({ navigation, route }) => {
   const intervalRef = useRef(null);
 
   const [refreshing, setRefreshing] = useState(false);
-  const [matchDeleted, setMatchDeleted] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
 
 
@@ -51,7 +49,7 @@ const WaitingRoom = ({ navigation, route }) => {
           if (prevCount <= 1) {
             // When countdown reaches 0, clear interval and start game
             clearInterval(intervalRef.current);
-            if (isUserHost()) startGame();
+            handleStartGame();
             return 0;
           }
           return prevCount - 1;
@@ -77,6 +75,10 @@ const WaitingRoom = ({ navigation, route }) => {
       const subscription = subscribe(`/topic/gameStarted/${currentMatch.id}`, async (data) => {
         console.log('Game Started received:', data);
   
+        if (data.type === 'startGame') {
+          console.log('Start Game:', data.userId);
+          setShowCountdown(true);
+        } 
         if (data.type === 'userInactive') {
           console.log('User inactive:', data.userId);
           if (user.id !== data.userId) {
@@ -123,15 +125,15 @@ const WaitingRoom = ({ navigation, route }) => {
   const refreshTimeoutRef = useRef(null);
 
 
-  const checkInWaitingRoomPlayers = (players) => {
-    // If there are 4 players, start the countdown
-    if (players.length === 4 && !showCountdown) {
-      setShowCountdown(true);
-    } else if (players.length < 4 && showCountdown) {
-      // If a player leaves during countdown (less than 4 players), cancel countdown
-      setShowCountdown(false);
-    }
-  };
+  // const checkInWaitingRoomPlayers = (players) => {
+  //   // If there are 4 players, start the countdown
+  //   if (players.length === 4 && !showCountdown) {
+  //     setShowCountdown(true);
+  //   } else if (players.length < 4 && showCountdown) {
+  //     // If a player leaves during countdown (less than 4 players), cancel countdown
+  //     setShowCountdown(false);
+  //   }
+  // };
 
   const isUserHost = () => {
     if (!currentMatch || !user) return false;
@@ -141,13 +143,6 @@ const WaitingRoom = ({ navigation, route }) => {
     return currentMatch.users[0]?.id === user.id;
   };
 
-  const refreshMatchDataLocal = (data) => {
-    console.log("refreshMatchDataLocal", data)
-    if (data?.users?.length > 0) {
-      dispatch(updateMatch(data))
-      checkInWaitingRoomPlayers(data.users)
-    }
-  }
   const handleRefresh = () => {
     if (isFetching) return;
     if (!currentMatch?.id) return;
@@ -182,19 +177,19 @@ const WaitingRoom = ({ navigation, route }) => {
 
   }
 
-  const deleteMatchData = async (id) => {
-    dispatch(deleteMatch(id))
-      .unwrap() // Extract the Promise from the Thunk
-      .then(result => {
-        console.log("Match data deleted:");
-      })
-      .catch(error => {
-        console.error("Error refreshing match data:", error);
-      })
-      .finally(() => {
-        console.log("Refresh operation complete");
-      });
-  }
+  // const deleteMatchData = async (id) => {
+  //   dispatch(deleteMatch(id))
+  //     .unwrap() // Extract the Promise from the Thunk
+  //     .then(result => {
+  //       console.log("Match data deleted:");
+  //     })
+  //     .catch(error => {
+  //       console.error("Error refreshing match data:", error);
+  //     })
+  //     .finally(() => {
+  //       console.log("Refresh operation complete");
+  //     });
+  // }
 
 
   const startGame = () => {
@@ -203,15 +198,15 @@ const WaitingRoom = ({ navigation, route }) => {
       console.log('Not enough players to start the game.');
       return;
     }
-    deleteMatchData(currentMatch.id)
+    // deleteMatchData(currentMatch.id)
     sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'startGame' });
     console.log('Sending player:');
 
   };
 
-  const handleStartGame = (data) => {
+  const handleStartGame = () => {
     // Update the match status to 'inProgress' or similar
-    const players = data.users;
+    const players = currentMatch.users;
     console.log(players)
     const playerColors = {
       blue: players[0].id,
@@ -224,7 +219,7 @@ const WaitingRoom = ({ navigation, route }) => {
     dispatch(setPlayerColors(playerColors))
     navigation.navigate('Game', {
       mode: 'multiplayer',
-      matchId: data.id
+      matchId: currentMatch.id,
     });
   };
 
@@ -366,7 +361,7 @@ const WaitingRoom = ({ navigation, route }) => {
             <Text style={[styles.joinInfoText, { color: theme.colors.textSecondary }]}>
               {currentMatch.users?.length === 1
                 ? uiStrings[systemLang].needMorePlayers || 'Need at least one more player to start'
-                : uiStrings[systemLang].gameStartsWith4 || 'Game will start automatically with 4 players'}
+                : null }
             </Text>
           </View>
         }

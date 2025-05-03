@@ -29,6 +29,7 @@ export default function SmalBoard() {
     const theme = useSelector(state => state.theme.current);
     const user = useSelector(state => state.auth.user);
     const currentMatch = useSelector(state => state.auth.currentMatch);
+    const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
 
     const { connected, subscribe, sendMessage } = useWebSocket();
 
@@ -38,11 +39,11 @@ export default function SmalBoard() {
 
     const currentSelectedPlayer = (selectedPlayer) => {
         if (connected) {
-
-            const soldierOwner = playerColors[selectedPlayer.color]
-            console.log(user)
-            if (soldierOwner === user.id) {
-                console.log("You are the owner of this soldier")
+            if (currentPlayerColor === selectedPlayer.color) {
+                handlePlayerMove(selectedPlayer)
+            }else if(currentPlayerColor[0] === selectedPlayer.color){
+                handlePlayerMove(selectedPlayer)
+            } else if (currentPlayerColor[1] === selectedPlayer.color) {
                 handlePlayerMove(selectedPlayer)
             }
         } else {
@@ -54,7 +55,6 @@ export default function SmalBoard() {
             // Subscribe to receive board updates
             const subscription = subscribe(`/topic/currentPlayer/${currentMatch.id}`, (data) => {
                 // Update your component state or dispatch Redux actions
-                console.log('SelectedPlayer update received:', data);
                 dispatch(setCurrentPlayer(data));
                 // Example: dispatch(updateBoard(data));
             });
@@ -67,12 +67,10 @@ export default function SmalBoard() {
             };
         }
 
-
     }, [connected, subscribe]);
 
     const handlePlayerMove = (player) => {
         // Send player move through WebSocket
-        console.log('Sending player:', player);
         sendMessage(`/app/player.getPlayer/${currentMatch.id}`, player);
     };
 

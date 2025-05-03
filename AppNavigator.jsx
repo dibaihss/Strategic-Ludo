@@ -51,16 +51,16 @@ export default function AppNavigator() {
       }
     };
 
-    // checkStoredUser();
-    setIsLoading(false); // For testing purposes, set loading to false immediately
+    checkStoredUser();
+    // setIsLoading(false); // For testing purposes, set loading to false immediately
   }, [dispatch]);
 
-  useEffect(() => {
-    dispatch(loadGameState())
-      .then(() => {
-      })
+  // useEffect(() => {
+  //   dispatch(loadGameState())
+  //     .then(() => {
+  //     })
 
-  }, [dispatch]);
+  // }, [dispatch]);
 
   if (isLoading) {
     return (

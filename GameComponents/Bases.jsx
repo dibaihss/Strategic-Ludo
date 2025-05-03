@@ -33,7 +33,7 @@ export default function Bases() {
     const systemLang = useSelector(state => state.language.systemLang);
     const user = useSelector(state => state.auth.user);
     const currentMatch = useSelector(state => state.auth.currentMatch);
-    const playerColors = useSelector(state => state.game.playerColors);
+    const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
 
     const { connected, subscribe, sendMessage } = useWebSocket();
 
@@ -207,7 +207,6 @@ export default function Bases() {
                 const parsedData = JSON.parse(data);
 
                 if (parsedData.type === 'movePlayer') {
-                    console.log("Received data:", parsedData);
                     const { color, steps } = parsedData.payload;
                     movePlayer(color, steps);
                 } else if (parsedData.type === 'enterNewSoldier') {
@@ -224,7 +223,6 @@ export default function Bases() {
             };
         }
     }, [connected, subscribe, currentMatch, user, currentPlayer]);
-
 
     const handleEnterNewSoldier = (color) => {
         if (activePlayer !== color) {
@@ -245,11 +243,8 @@ export default function Bases() {
     const sendMoveUpdate = (message) => {
         if (connected) {
             sendMessage(`/app/player.Move/${currentMatch.id}`, JSON.stringify(message));
-        } else {
-            console.log("WebSocket not connected. Message not sent:", message);
         }
     };
-
     // const findUserColor = () => {
     //     if (!user || !user.id || !playerColors) {
     //         return null; // Return null if user or playerColors aren't available
@@ -264,9 +259,7 @@ export default function Bases() {
         dispatch(setActivePlayer());
         dispatch(resetTimer());
       }
-
     const movePlayer = (color, steps) => {
-        console.log(currentPlayer)
         if (!currentPlayer || currentPlayer.isOut) {
             const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
             Toast.show({
@@ -301,11 +294,7 @@ export default function Bases() {
             });
             return;
         }
-
-
-
         dispatch(checkIfCardUsed({ color, steps }));
-
         const newPosition = calculateNewPosition(currentPlayer, steps);
 
         if (newPosition === "") {
@@ -317,7 +306,6 @@ export default function Bases() {
         } else {
             getXStepsYSteps(currentPlayer.position, newPosition)
         }
-
     };
 
     const getXStepsYSteps = (sourcePos, targetPos) => {
@@ -492,14 +480,26 @@ export default function Bases() {
                 return "arrow-forward-ios";
         }
     };
-
     // Mutliplayer Functions
     const movePlayerHanlder = (color, steps) => {
         if (connected) {
-            const soldierOwner = playerColors[currentPlayer.color]
-            console.log(user)
-            if (soldierOwner === user.id) {
-                console.log("You are the owner of this soldier")
+            if (currentPlayerColor === color) {
+                sendMoveUpdate({
+                    type: 'movePlayer',
+                    payload: {
+                        color: currentPlayer.color,
+                        steps
+                    },
+                });
+            }else if(currentPlayerColor[0] === color){
+                sendMoveUpdate({
+                    type: 'movePlayer',
+                    payload: {
+                        color: currentPlayer.color,
+                        steps
+                    },
+                });
+            } else if (currentPlayerColor[1] === color) {
                 sendMoveUpdate({
                     type: 'movePlayer',
                     payload: {
@@ -515,10 +515,21 @@ export default function Bases() {
 
     const enterNewSoldierHandler = (color) => {
         if (connected) {
-            const soldierOwner = playerColors[color]
-            console.log(user)
-            if (soldierOwner === user.id) {
-                console.log("You are the owner of this soldier")
+            if (currentPlayerColor === color) {
+                sendMoveUpdate({
+                    type: 'enterNewSoldier',
+                    payload: {
+                        color: color,
+                    },
+                });
+            }else if(currentPlayerColor[0] === color){
+                sendMoveUpdate({
+                    type: 'enterNewSoldier',
+                    payload: {
+                        color: color,
+                    },
+                });
+            } else if (currentPlayerColor[1] === color) {
                 sendMoveUpdate({
                     type: 'enterNewSoldier',
                     payload: {
@@ -531,7 +542,6 @@ export default function Bases() {
             handleEnterNewSoldier(color);
         }
     }
-
     const renderInCirclePlayers = (j, playerType, i) => (
         <>
             {[
@@ -551,8 +561,6 @@ export default function Bases() {
             ))}
         </>
     );
-
-
     return (
         <>
             {playerType.map((color, i) => (

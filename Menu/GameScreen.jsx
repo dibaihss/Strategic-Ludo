@@ -6,9 +6,9 @@ import Timer from '../GameComponents/Timer.jsx';
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { View, Text, StyleSheet, Pressable, Dimensions, Platform, ActivityIndicator, Modal, Alert } from 'react-native';
-import { setActivePlayer, resetTimer, setOnlineModus, saveGameState, loadGameState } from '../assets/store/gameSlice.jsx';
+import { setActivePlayer, resetTimer, setOnlineModus, saveGameState, loadGameState, setCurrentPlayerColor } from '../assets/store/gameSlice.jsx';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
-// import { useWebSocket } from '../assets/shared/SimpleWebSocketConnection.jsx';
+
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx'; // Import useWebSocket
 import { setCurrentUserPage } from '../assets/store/dbSlice.jsx';
 
@@ -24,6 +24,7 @@ export default function GameScreen({ route, navigation }) {
   const user = useSelector(state => state.auth.user);
   const playerColors = useSelector(state => state.game.playerColors);
   const activePlayer = useSelector(state => state.game.activePlayer);
+  const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
 
   const gameState = useSelector(state => state.game);
 
@@ -38,29 +39,30 @@ export default function GameScreen({ route, navigation }) {
 
   useEffect(() => {
     setCurrentUserPage('Game');
-    dispatch(loadGameState());
+    // dispatch(loadGameState());
+    
   }, [dispatch]);
   
   // Save game state automatically every 5 seconds
-  useEffect(() => {
-    const saveInterval = setInterval(() => {
-      dispatch(saveGameState());
-    }, 3000); // Save every 5 seconds
+  // useEffect(() => {
+  //   const saveInterval = setInterval(() => {
+  //     dispatch(saveGameState());
+  //   }, 3000); // Save every 5 seconds
     
-    return () => {
-      clearInterval(saveInterval);
-      // Save one last time when component unmounts
-      dispatch(saveGameState());
-    };
-  }, [dispatch]);
+  //   return () => {
+  //     clearInterval(saveInterval);
+  //     // Save one last time when component unmounts
+  //     dispatch(saveGameState());
+  //   };
+  // }, [dispatch]);
   
   // Save when crucial game state changes
-  useEffect(() => {
-    dispatch(saveGameState());
-  }, [
-    gameState.activePlayer,
-    currentMatch,
-  ]);
+  // useEffect(() => {
+  //   dispatch(saveGameState());
+  // }, [
+  //   gameState.activePlayer,
+  //   currentMatch,
+  // ]);
 
   useEffect(() => {
     console.log(playerColors)
@@ -74,12 +76,10 @@ export default function GameScreen({ route, navigation }) {
   useEffect(() => {
     if (mode === 'multiplayer' && currentMatch && currentMatch.users) {
       const players = currentMatch.users;
-
+     
       if (players.length >= 2) {
-
-        // Set online mode and assign players to colors
+        dispatch(setCurrentPlayerColor(findUserColors())) 
         dispatch(setOnlineModus(true));
-
         setGameIsStarted(true);
       }
     }
@@ -101,6 +101,16 @@ export default function GameScreen({ route, navigation }) {
     console.log(userEntry)
     return userEntry ? userEntry[0] : null; // Return the color (first element) or null
   };
+  const findUserColors = () => {
+    if (!user || !user.id || !playerColors) {
+      return []; // Return an empty array if user or playerColors aren't available
+    }
+  
+    // Find all colors controlled by the user
+    const userEntries = Object.entries(playerColors).filter(([color, userId]) => userId === user.id);
+    // userEntries will be like [['blue', 'user123'], ['red', 'user123']] if the user controls two colors
+    return userEntries.map(([color]) => color); // Return an array of colors
+  };
 
   const skipTurn = () => {
     if (connected) {
@@ -118,6 +128,7 @@ export default function GameScreen({ route, navigation }) {
 
   const handleExitGame = () => {
     // Show the confirmation modal instead of navigating directly
+    console.log(currentPlayerColor)
     setShowExitModal(true);
   };
 
