@@ -28,12 +28,11 @@ const GamePausedModal = () => {
       if (hasInactivePlayers !== gamePaused) {
         dispatch(setPausedGame(hasInactivePlayers));
         // dispatch(saveGameState())
-        dispatch(setTimerRunning(false))
       }else{
         // If all players are active, resume the game
         // dispatch(loadGameState())
-        dispatch(setTimerRunning(true))
       }
+      gamePaused ? dispatch(setTimerRunning(false))  : dispatch(setTimerRunning(true))
     }
   }, [currentMatch, dispatch, gamePaused]);
 

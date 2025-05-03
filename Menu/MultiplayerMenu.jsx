@@ -82,6 +82,7 @@ const MatchListPage = ({ navigation }) => {
       });
   };
 
+  const filteredMatches = matches.filter(match => match.status !== 'started');
 
   // Handle create new match
   const handleCreateMatch = () => {
@@ -138,7 +139,7 @@ const MatchListPage = ({ navigation }) => {
   );
 
   // Loading indicator
-  if (loading && !refreshing && matches.length === 0) {
+  if (loading && !refreshing && filteredMatches.length === 0) {
     return (
       <View style={[styles.container, styles.centered, { backgroundColor: theme.colors.background }]}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -193,7 +194,7 @@ const MatchListPage = ({ navigation }) => {
 
       {/* Match list */}
       <FlatList
-        data={matches}
+        data={filteredMatches}
         renderItem={renderMatchItem}
         keyExtractor={item => item.id.toString()}
         contentContainerStyle={styles.listContent}

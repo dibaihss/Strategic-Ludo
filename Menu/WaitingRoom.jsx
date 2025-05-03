@@ -9,14 +9,13 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchCurrentMatch, updateMatch, deleteMatch } from '../assets/store/dbSlice.jsx';
+import { fetchCurrentMatch, updateMatch, deleteMatch, updateMatchStatus } from '../assets/store/dbSlice.jsx';
 import { loadGameState, saveGameState, setPlayerColors } from '../assets/store/gameSlice.jsx';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 // import { useWebSocket } from '../assets/shared/SimpleWebSocketConnection.jsx';
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
 import Toast from 'react-native-toast-message';
 import GamePausedModal from './GamePausedModal.jsx';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { activateKeepAwake, deactivateKeepAwake } from 'expo-keep-awake';
 
 const WaitingRoom = ({ navigation, route }) => {
@@ -188,7 +187,6 @@ const WaitingRoom = ({ navigation, route }) => {
   };
 
   const handleStartGame = () => {
-    // Update the match status to 'inProgress' or similar
     const players = currentMatch.users;
     console.log(players)
     const playerColors = {
@@ -197,8 +195,20 @@ const WaitingRoom = ({ navigation, route }) => {
       yellow: players[2] ? players[2].id : players[1].id,
       green: players[3] ? players[3].id : players[0].id
     }
-
-
+    if (currentMatch && currentMatch.status !== 'started') {
+      const updatedMatch = {
+        ...currentMatch,
+        status: 'started',
+      };
+      dispatch(updateMatchStatus(updatedMatch))
+        .unwrap()
+        .then(updatedMatch => {
+          console.log('Match status updated successfully:', updatedMatch);
+        })
+        .catch(error => {
+          console.error('Failed to update match status:', error);
+        });
+      }
     dispatch(setPlayerColors(playerColors))
     navigation.navigate('Game', {
       mode: 'multiplayer',
