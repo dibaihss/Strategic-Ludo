@@ -51,8 +51,8 @@ export default function AppNavigator() {
       }
     };
 
-    checkStoredUser();
-    // setIsLoading(false); // For testing purposes, set loading to false immediately
+    // checkStoredUser();
+    setIsLoading(false); // For testing purposes, set loading to false immediately
   }, [dispatch]);
 
   // useEffect(() => {

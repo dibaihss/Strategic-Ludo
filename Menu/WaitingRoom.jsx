@@ -10,12 +10,14 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchCurrentMatch, updateMatch, deleteMatch } from '../assets/store/dbSlice.jsx';
-import { setPlayerColors} from '../assets/store/gameSlice.jsx';
+import { loadGameState, saveGameState, setPlayerColors } from '../assets/store/gameSlice.jsx';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 // import { useWebSocket } from '../assets/shared/SimpleWebSocketConnection.jsx';
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
 import Toast from 'react-native-toast-message';
 import GamePausedModal from './GamePausedModal.jsx';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { activateKeepAwake, deactivateKeepAwake } from 'expo-keep-awake';
 
 const WaitingRoom = ({ navigation, route }) => {
   const dispatch = useDispatch();
@@ -38,6 +40,15 @@ const WaitingRoom = ({ navigation, route }) => {
 
   let join = route.params?.join || false;
 
+  useEffect(() => {
+    // Keep the device awake when the user is in the WaitingRoom
+    activateKeepAwake();
+
+    return () => {
+      // Deactivate keep awake when leaving the WaitingRoom
+      deactivateKeepAwake();
+    };
+  }, []);
 
   useEffect(() => {
     if (showCountdown) {
@@ -70,15 +81,15 @@ const WaitingRoom = ({ navigation, route }) => {
   useEffect(() => {
     if (!currentMatch || !currentMatch.id) return;
     console.log("WaitingRoom currentMatch", currentMatch);
-  
+
     if (connected) {
       const subscription = subscribe(`/topic/gameStarted/${currentMatch.id}`, async (data) => {
         console.log('Game Started received:', data);
-  
+
         if (data.type === 'startGame') {
           console.log('Start Game:', data.userId);
           setShowCountdown(true);
-        } 
+        }
         if (data.type === 'userInactive') {
           console.log('User inactive:', data.userId);
           if (user.id !== data.userId) {
@@ -94,13 +105,13 @@ const WaitingRoom = ({ navigation, route }) => {
           console.log('userDisconnected', data.userId);
           debounceHandleRefresh();
         }
+
       });
-  
+
       if (joinRef.current) {
         joinRef.current = false;
         sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userJoined', userId: user.id });
       }
-  
       // Cleanup subscription when component unmounts
       return () => {
         if (subscription) {
@@ -109,7 +120,7 @@ const WaitingRoom = ({ navigation, route }) => {
       };
     }
   }, [subscribe, currentMatch?.id, connected]);
-  
+
   // Debounce handleRefresh
   const debounceHandleRefresh = () => {
     if (refreshTimeoutRef.current) {
@@ -119,21 +130,10 @@ const WaitingRoom = ({ navigation, route }) => {
       handleRefresh();
     }, 500); // Debounce interval (500ms)
   };
-  
+
   // Ref for join
   const joinRef = useRef(join);
   const refreshTimeoutRef = useRef(null);
-
-
-  // const checkInWaitingRoomPlayers = (players) => {
-  //   // If there are 4 players, start the countdown
-  //   if (players.length === 4 && !showCountdown) {
-  //     setShowCountdown(true);
-  //   } else if (players.length < 4 && showCountdown) {
-  //     // If a player leaves during countdown (less than 4 players), cancel countdown
-  //     setShowCountdown(false);
-  //   }
-  // };
 
   const isUserHost = () => {
     if (!currentMatch || !user) return false;
@@ -155,42 +155,25 @@ const WaitingRoom = ({ navigation, route }) => {
   const fetchCurrentMatchData = (id) => {
     console.log("fetchCurrentMatch", id)
     setTimeout(() => {
-
       dispatch(fetchCurrentMatch(id))
-      .unwrap() // Extract the Promise from the Thunk
-      .then(result => {
-        console.log("Match data fetched:", result);
-        // Update the match data in the store
-        setRefreshing(false);
-        dispatch(updateMatch(result));
-        setIsFetching(false);
-      })
-      .catch(error => {
-        console.error("Error refreshing match data:", error);
-        setIsFetching(false);
-      })
-      .finally(() => {
-        console.log("Refresh operation complete");
-        setIsFetching(false);
-      });
+        .unwrap() // Extract the Promise from the Thunk
+        .then(result => {
+          console.log("Match data fetched:", result);
+          // Update the match data in the store
+          setRefreshing(false);
+          dispatch(updateMatch(result));
+          setIsFetching(false);
+        })
+        .catch(error => {
+          console.error("Error refreshing match data:", error);
+          setIsFetching(false);
+        })
+        .finally(() => {
+          console.log("Refresh operation complete");
+          setIsFetching(false);
+        });
     }, 1000);
-
   }
-
-  // const deleteMatchData = async (id) => {
-  //   dispatch(deleteMatch(id))
-  //     .unwrap() // Extract the Promise from the Thunk
-  //     .then(result => {
-  //       console.log("Match data deleted:");
-  //     })
-  //     .catch(error => {
-  //       console.error("Error refreshing match data:", error);
-  //     })
-  //     .finally(() => {
-  //       console.log("Refresh operation complete");
-  //     });
-  // }
-
 
   const startGame = () => {
     if (!currentMatch || !currentMatch.id) return;
@@ -361,7 +344,7 @@ const WaitingRoom = ({ navigation, route }) => {
             <Text style={[styles.joinInfoText, { color: theme.colors.textSecondary }]}>
               {currentMatch.users?.length === 1
                 ? uiStrings[systemLang].needMorePlayers || 'Need at least one more player to start'
-                : null }
+                : null}
             </Text>
           </View>
         }

@@ -3,7 +3,7 @@ import { Modal, View, Text, StyleSheet, FlatList } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { MaterialIcons } from '@expo/vector-icons';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
-import {setPausedGame} from '../assets/store/gameSlice.jsx';
+import {setPausedGame, saveGameState, loadGameState, setTimerRunning} from '../assets/store/gameSlice.jsx';
 /**
  * Modal component that displays when the game is paused and shows a list of inactive players
  * @returns {JSX.Element} The GamePausedModal component
@@ -27,6 +27,12 @@ const GamePausedModal = () => {
       // Only dispatch if there's a change needed to prevent loops
       if (hasInactivePlayers !== gamePaused) {
         dispatch(setPausedGame(hasInactivePlayers));
+        // dispatch(saveGameState())
+        dispatch(setTimerRunning(false))
+      }else{
+        // If all players are active, resume the game
+        // dispatch(loadGameState())
+        dispatch(setTimerRunning(true))
       }
     }
   }, [currentMatch, dispatch, gamePaused]);
