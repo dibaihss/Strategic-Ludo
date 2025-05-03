@@ -359,14 +359,15 @@ export const fetchCurrentMatch = createAsyncThunk(
 // unused
 export const updateMatchStatus = createAsyncThunk(
   'auth/updateMatchStatus',
-  async ({ session }, { getState, rejectWithValue }) => {
+  async ( session, { getState, rejectWithValue }) => {
     try {
       const state = getState();
       const token = state.auth.token;
-      
+     
+
       // Make API request to update session status
-      const response = await fetch(`${API_URL}/sessions/${session.sessionId}`, {
-        method: 'PATCH',
+      const response = await fetch(`${API_URL}/sessions/${session.id}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': token ? `Bearer ${token}` : '',
