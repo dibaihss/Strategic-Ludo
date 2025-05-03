@@ -12,7 +12,7 @@ import {
 } from '../assets/store/gameSlice.jsx';
 import { Feather } from '@expo/vector-icons';
 import Entypo from '@expo/vector-icons/Entypo';
-import { useWebSocket } from '../assets/shared/SimpleWebSocketConnection.jsx';
+import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
 
 
 

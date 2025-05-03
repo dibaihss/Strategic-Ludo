@@ -6,10 +6,11 @@ import Timer from '../GameComponents/Timer.jsx';
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { View, Text, StyleSheet, Pressable, Dimensions, Platform, ActivityIndicator, Modal, Alert } from 'react-native';
-import { setActivePlayer, resetTimer, setOnlineModus } from '../assets/store/gameSlice.jsx';
+import { setActivePlayer, resetTimer, setOnlineModus, saveGameState, loadGameState } from '../assets/store/gameSlice.jsx';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
-import { useWebSocket } from '../assets/shared/SimpleWebSocketConnection.jsx';
-import { saveGameState, loadGameState } from '../assets/store/gameSlice.jsx';
+// import { useWebSocket } from '../assets/shared/SimpleWebSocketConnection.jsx';
+import { useWebSocket } from '../assets/shared/webSocketConnection.jsx'; // Import useWebSocket
+import { setCurrentUserPage } from '../assets/store/dbSlice.jsx';
 
 
 export default function GameScreen({ route, navigation }) {
@@ -36,6 +37,7 @@ export default function GameScreen({ route, navigation }) {
   const { connected, sendMessage } = useWebSocket();
 
   useEffect(() => {
+    setCurrentUserPage('Game');
     dispatch(loadGameState());
   }, [dispatch]);
   

@@ -20,7 +20,7 @@ export default function AppNavigator() {
   const isLoggedIn = useSelector(state => state.auth.isLoggedIn);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [currentPage, setCurrentPage] = useState("");
+  const currentUserPage = useSelector(state => state.auth.currentUserPage);
   const user = useSelector(state => state.auth.user);
   const currentMatch = useSelector(state => state.auth.currentMatch);
 
@@ -75,19 +75,19 @@ export default function AppNavigator() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isLoggedIn ? (
           <>
-            {currentPage === "MatchList" ? (
+            {/* {currentUserPage === "MatchList" ? (
               <Stack.Screen name="MatchList" component={MatchListPage} />
-            ) : currentPage === "WaitingRoom" ? (
+            ) : currentUserPage === "WaitingRoom" ? (
               <Stack.Screen name="WaitingRoom" component={WaitingRoom} />
-            ) : currentPage === "Game" ? (
+            ) : currentUserPage === "Game" ? (
               <Stack.Screen name="Game" component={GameScreen} />
             ) : (
               <Stack.Screen name="Home" component={HomeScreen} />
-            )}
-            {/* <Stack.Screen name="Home" component={HomeScreen} />
+            )} */}
+            <Stack.Screen name="Home" component={HomeScreen} />
             <Stack.Screen name="Game" component={GameScreen} />
             <Stack.Screen name="MatchList" component={MatchListPage} />
-            <Stack.Screen name="WaitingRoom" component={WaitingRoom} /> */}
+            <Stack.Screen name="WaitingRoom" component={WaitingRoom} />
           </>
         ) : (
           <>

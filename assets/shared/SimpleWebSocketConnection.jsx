@@ -4,6 +4,8 @@ import SockJs from 'sockjs-client';
 import { useSelector, useDispatch } from 'react-redux';
 import { AppState, Platform } from 'react-native';
 import Toast from 'react-native-toast-message'; // Import Toast
+import { updateCurrentUserStatus} from '../store/dbSlice.jsx'; // Import the action to update user status
+
 
 // --- WebSocket URL Configuration ---
 const PRODUCTION_WS_URL = 'https://strategic-ludo-srping-boot.onrender.com/ws';
@@ -30,17 +32,19 @@ const WebSocketContext = createContext(null);
 
 // Create a provider component
 export const WebSocketProvider = ({ children }) => {
+  const dispatch = useDispatch();
   const [stompClient, setStompClient] = useState(null);
   const [connected, setConnected] = useState(false);
   const [messages, setMessages] = useState({});
   const onlineModus = useSelector(state => state.game.onlineModus);
   const user = useSelector(state => state.auth.user);
-  
+  const currentMatch = useSelector(state => state.auth.currentMatch);
+
   // Platform-specific app state tracking
   const appState = useRef(Platform.OS === 'web' ? 'active' : AppState.currentState);
   const [appStateVisible, setAppStateVisible] = useState(appState.current);
   const activeSubscriptions = useRef(new Map());
-  
+
   // Handle visibility change for web
   useEffect(() => {
     if (Platform.OS === 'web') {
@@ -48,19 +52,28 @@ export const WebSocketProvider = ({ children }) => {
       const handleVisibilityChange = () => {
         const nextAppState = document.hidden ? 'background' : 'active';
         console.log('Web visibility changed:', nextAppState);
+        if(nextAppState === 'background'){
+          dispatch(updateCurrentUserStatus(false));
+        } 
+          
+        if(nextAppState === 'active' && !user.status){
+          dispatch(updateCurrentUserStatus(true));
+        } 
+             
         appState.current = nextAppState;
         setAppStateVisible(nextAppState);
-        
+
         if (nextAppState === 'active' && onlineModus) {
           if (!connected && stompClient) {
+            
             console.log('Web page became visible, reconnecting WebSocket...');
             reconnectWebSocket();
           }
         }
       };
-      
+
       document.addEventListener('visibilitychange', handleVisibilityChange);
-      
+
       return () => {
         document.removeEventListener('visibilitychange', handleVisibilityChange);
       };
@@ -70,7 +83,9 @@ export const WebSocketProvider = ({ children }) => {
         console.log('App state changed:', nextAppState);
         appState.current = nextAppState;
         setAppStateVisible(nextAppState);
-        
+        if(nextAppState === 'background') dispatch(updateCurrentUserStatus(false));
+        if(nextAppState === 'active') dispatch(updateCurrentUserStatus(true));
+             
         if (nextAppState === 'active' && onlineModus) {
           if (!connected && stompClient) {
             console.log('App became active, reconnecting WebSocket...');
@@ -127,7 +142,7 @@ export const WebSocketProvider = ({ children }) => {
       onConnect: () => {
         console.log('Connected to WebSocket');
         setConnected(true);
-        
+
         // Resubscribe to previous topics when reconnecting
         if (activeSubscriptions.current.size > 0) {
           console.log('Resubscribing to topics after reconnection...');
@@ -168,77 +183,74 @@ export const WebSocketProvider = ({ children }) => {
 
   const subscribe = (topic, callback) => {
     console.log(`Subscribing to ${topic}`);
-    
+
     if (stompClient && stompClient.connected) {
       // Store the callback for this topic to reuse on reconnection
       activeSubscriptions.current.set(topic, callback);
-      
+
       // When subscribing, notify other users that this user joined
       if (user && user.id && topic.startsWith('/topic/gameStarted/')) {
         const matchId = topic.split('/').pop();
         console.log("User joined the match!", appState.current);
-        if(appState.current === 'active') {
+        if (appState.current === 'active') {
           sendMessage(`/app/waitingRoom.notifications/${matchId}`, {
             type: 'userJoined',
             userId: user.id,
             username: user.name || user.email || user.username || 'User',
             timestamp: new Date().toISOString(),
-            platform: Platform.OS // Add platform information
+            platform: Platform.OS, // Add platform information
           });
-        }else if(appState.current === 'background'){ 
+        } else if (appState.current === 'background') {
+          console.log("User left the match!", appState.current);
+
           sendMessage(`/app/waitingRoom.notifications/${matchId}`, {
             type: 'userLeft',
             userId: user.id,
             username: user.name || user.email || user.username || 'User',
             timestamp: new Date().toISOString(),
-            platform: Platform.OS // Add platform information
+            platform: Platform.OS, // Add platform information,,
           });
-        
-    }
-  }
+
+        }
+      }
       const subscription = stompClient.subscribe(topic, (message) => {
         try {
           const data = JSON.parse(message.body);
           console.log(`Received message from ${topic}:`, data);
-          
+
           // Handle notification messages
           if (data.type === 'userLeft' || data.type === 'userJoined' || data.type === 'userAFK') {
-            // Don't show notifications for the current user's own actions
             if (user && data.userId !== user.id) {
               Toast.show({
                 type: data.type === 'userJoined' ? 'success' : 'info',
-                text1: data.type === 'userJoined' 
-                  ? 'Player joined' 
+                text1: data.type === 'userJoined'
+                  ? 'Player joined'
                   : (data.type === 'userAFK' ? 'Player is AFK' : 'Player left'),
-                text2: `${data.username} ${data.type === 'userJoined' 
-                  ? 'has joined the match' 
+                text2: `${data.username} ${data.type === 'userJoined'
+                  ? 'has joined the match'
                   : (data.type === 'userAFK' ? 'is away from keyboard' : 'has left the match')}`,
                 position: 'bottom',
                 visibilityTime: 4000,
               });
             }
+
           }
-          
+
           // Call the callback if provided
           if (callback) callback(data);
         } catch (error) {
           console.error(`Error processing message from ${topic}:`, error);
         }
       });
-      
+
       // Return an enhanced subscription object
       return {
         unsubscribe: () => {
-          console.log(`Unsubscribing from ${topic}`);
-          
-          // When unsubscribing, notify other users that this user is leaving/AFK
           if (user && user.id && topic.startsWith('/topic/gameStarted/')) {
             const matchId = topic.split('/').pop();
-           
+
             // Check if the app is in background or inactive
             const isBackground = appStateVisible !== 'active';
-            console.log("User going AFK or leaving!", appStateVisible);
-            
             sendMessage(`/app/waitingRoom.notifications/${matchId}`, {
               type: isBackground ? 'userAFK' : 'userLeft',
               userId: user.id,
@@ -247,13 +259,12 @@ export const WebSocketProvider = ({ children }) => {
               platform: Platform.OS // Add platform information
             });
           }
-          
           activeSubscriptions.current.delete(topic);
           subscription.unsubscribe();
         }
       };
     }
-    
+
     console.warn(`Failed to subscribe to ${topic}: Client not connected`);
     return {
       unsubscribe: () => console.log(`No need to unsubscribe from ${topic}, was never subscribed`)
@@ -263,12 +274,12 @@ export const WebSocketProvider = ({ children }) => {
   // Send a message with better error handling
   const sendMessage = (destination, body) => {
     console.log(`Attempting to send message to ${destination}`);
-    
+
     if (!stompClient) {
       console.error('Cannot send message: STOMP client is null');
       return false;
     }
-    
+
     if (!stompClient.connected) {
       console.error('Cannot send message: STOMP client not connected');
       // Try to reconnect if we're in online mode
@@ -278,7 +289,7 @@ export const WebSocketProvider = ({ children }) => {
       }
       return false;
     }
-    
+
     try {
       stompClient.publish({
         destination,
@@ -300,7 +311,7 @@ export const WebSocketProvider = ({ children }) => {
     }
     return connected;
   };
-
+ 
   // The value that will be provided to consumers of this context
   const value = {
     stompClient,

@@ -13,7 +13,7 @@ import Toast from 'react-native-toast-message';
 import { boxes, categories, directions, playerType, uiStrings, getLocalizedColor } from "../assets/shared/hardCodedData.js";
 import { MaterialIcons } from '@expo/vector-icons';
 import Feather from '@expo/vector-icons/Feather';
-import { useWebSocket } from '../assets/shared/SimpleWebSocketConnection.jsx';
+import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
 
 export default function Bases() {
 

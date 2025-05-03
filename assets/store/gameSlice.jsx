@@ -12,6 +12,8 @@ const initialState = {
     onlineModus: false,
     timeRemaining: 35,
     isTimerRunning: false,
+    unActivePlayers: [],
+    gamePaused: false,
     playerColors: {
         blue: 1,
         red: 2,
@@ -100,7 +102,7 @@ export const saveGameState = createAsyncThunk(
         
         // Save to AsyncStorage
         await AsyncStorage.setItem('gameState', JSON.stringify(gameStateToSave));
-        console.log('Game state saved successfully');
+        // console.log('Game state saved successfully');
         
         return gameStateToSave;
       } catch (error) {
@@ -534,6 +536,9 @@ export const gameSlice = createSlice({
                 ...initialState,
                 onlineModus: state.onlineModus // Preserve online mode status
             };
+        },
+        setPausedGame : (state, action) => {
+            state.gamePaused = action.payload;
         }
     }, 
     extraReducers: (builder) => {
@@ -574,13 +579,14 @@ export const {
     updateTimer,
     setTimerRunning,
     resetTimer,
-    setSoldierUserIds,  // Add these new exports
+    setSoldierUserIds,  
     resetSoldierUserIds,
     setPlayerColors,
-    updateAllSoldiers, // New
-    updateAllCards, // New
-    resetGameState, // New
-    setActivePlayerDirect, // New
+    updateAllSoldiers, 
+    updateAllCards, 
+    resetGameState, 
+    setActivePlayerDirect, 
+    setPausedGame
 } = gameSlice.actions;
 
 export default gameSlice.reducer;

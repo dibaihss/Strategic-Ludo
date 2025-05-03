@@ -6,15 +6,17 @@ import {
   Pressable,
   ActivityIndicator,
   FlatList,
-  AppState 
+  AppState
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchCurrentMatch, updateMatch, deleteMatch, setCurrentUserPage } from '../assets/store/dbSlice.jsx';
-import { setPlayerColors } from '../assets/store/gameSlice.jsx';
+import { fetchCurrentMatch, updateMatch, deleteMatch } from '../assets/store/dbSlice.jsx';
+import { setPlayerColors} from '../assets/store/gameSlice.jsx';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
-import { useWebSocket } from '../assets/shared/SimpleWebSocketConnection.jsx';
-import Toast from 'react-native-toast-message'; 
+// import { useWebSocket } from '../assets/shared/SimpleWebSocketConnection.jsx';
+import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
+import Toast from 'react-native-toast-message';
+import GamePausedModal from './GamePausedModal.jsx';
 
 const WaitingRoom = ({ navigation, route }) => {
   const dispatch = useDispatch();
@@ -29,14 +31,14 @@ const WaitingRoom = ({ navigation, route }) => {
 
   const [refreshing, setRefreshing] = useState(false);
   const [matchDeleted, setMatchDeleted] = useState(false);
-
-  const { connected, subscribe, sendMessage, checkConnection, reconnect } = useWebSocket();
-  const appStateRef = useRef(AppState.currentState);
-
-  const [showCountdown, setShowCountdown] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
 
 
-  // const join = route.params?.join || false;
+  const { connected, subscribe, sendMessage } = useWebSocket();
+
+  const [showCountdown, setShowCountdown] = useState(false)
+
+  let join = route.params?.join || false;
 
 
   useEffect(() => {
@@ -66,114 +68,67 @@ const WaitingRoom = ({ navigation, route }) => {
   }, [showCountdown]); // Only re-run this effect when showCountdown changes
 
 
-  // Add this effect to handle app state changes
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', nextAppState => {
-      if (
-        appStateRef.current.match(/inactive|background/) &&
-        nextAppState === 'active'
-      ) {
-        console.log('App has come to the foreground!');
-        // Check connection and refresh data when app becomes active
-        checkConnection();
-
-        if (currentMatch?.id) {
-          console.log('Refreshing match data after returning to foreground');
-          fetchCurrentMatchData(currentMatch.id);
-        }
-      }
-      // else if (nextAppState === 'background') {
-      //   console.log('App has gone to the background!');
-      //   // Optionally, you can handle any cleanup or state saving here
-      //   sendMatchData(currentMatch,nextAppState)
-      // }
-
-      appStateRef.current = nextAppState;
-    });
-
-    return () => {
-      subscription.remove();
-    };
-  }, [currentMatch]);
-
-  // Ensure we have the latest data when the component mounts
-  useEffect(() => {
-    setCurrentUserPage("WaitingRoom")
-    if (currentMatch?.id) {
-      fetchCurrentMatchData(currentMatch.id);
-    }
-  }, []);
-
   // Modify your WebSocket subscription effect
   useEffect(() => {
     if (!currentMatch || !currentMatch.id) return;
-    console.log("WaitingRoom currentMatch", currentMatch)
-
+    console.log("WaitingRoom currentMatch", currentMatch);
+  
     if (connected) {
-      // Ensure we're connected before subscribing
-      console.log(`Subscribing to /topic/gameStarted/${currentMatch.id}`);
-
       const subscription = subscribe(`/topic/gameStarted/${currentMatch.id}`, async (data) => {
         console.log('Game Started received:', data);
-
-        // Add timestamp for debugging
-        const receivedAt = new Date().toISOString();
-        console.log(`Message received at ${receivedAt}`);
-
-        if (data.type === 'startGame') {
-          handleStartGame(currentMatch);
-        } else if (data.type === 'gotMatchData') {
-          refreshMatchData(data.match);
-        } else if (data.type === 'userLeft') {
-          console.log("User left", data)
-
+  
+        if (data.type === 'userInactive') {
+          console.log('User inactive:', data.userId);
+          if (user.id !== data.userId) {
+            debounceHandleRefresh();
+          }
+        } else if (data.type === 'userBack') {
+          console.log('User back:', data.userId);
+          debounceHandleRefresh();
+        } else if (data.type === 'userJoined') {
+          console.log('User join:', data.userId);
+          debounceHandleRefresh();
+        } else if (data.type === 'userDisconnected') {
+          console.log('userDisconnected', data.userId);
+          debounceHandleRefresh();
         }
-
       });
-
+  
+      if (joinRef.current) {
+        joinRef.current = false;
+        sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userJoined', userId: user.id });
+      }
+  
       // Cleanup subscription when component unmounts
       return () => {
         if (subscription) {
           subscription.unsubscribe();
         }
       };
-    } else {
-      console.log('Not connected to WebSocket, trying to reconnect...');
-      reconnect();
     }
-  }, [subscribe, currentMatch, connected, matchDeleted]);
-
-  // useEffect(() => {
-  //   console.log("WaitingRoom join", join)
-  //   if (join && currentMatch) {
-  //     sendMatchData(currentMatch);
-  //   }
-  // }
-  //   , [join, connected]);
-
-  // const sendMatchData = (match, nextAppState) => {
+  }, [subscribe, currentMatch?.id, connected]);
   
-  //   console.log("sendMatchData", match, nextAppState)
-  //   // if(nextAppState === "background")
+  // Debounce handleRefresh
+  const debounceHandleRefresh = () => {
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current);
+    }
+    refreshTimeoutRef.current = setTimeout(() => {
+      handleRefresh();
+    }, 500); // Debounce interval (500ms)
+  };
+  
+  // Ref for join
+  const joinRef = useRef(join);
+  const refreshTimeoutRef = useRef(null);
 
-
-  //   // if (!match || !match.id) return;
-  //   // console.log("sendMatchData", match)
-  //   // setTimeout(() => {
-  //   //   sendMessage(`/app/waitingRoom.gameStarted/${match.id}`, { type: "gotMatchData", match });
-  //   // }, 1000);
-  // }
 
   const checkInWaitingRoomPlayers = (players) => {
-    console.log("checkInWaitingRoomPlayers", players);
-
     // If there are 4 players, start the countdown
     if (players.length === 4 && !showCountdown) {
-      console.log("Starting countdown with 4 players");
       setShowCountdown(true);
     } else if (players.length < 4 && showCountdown) {
       // If a player leaves during countdown (less than 4 players), cancel countdown
-      console.log("Cancelling countdown, player left");
       setShowCountdown(false);
     }
   };
@@ -181,19 +136,22 @@ const WaitingRoom = ({ navigation, route }) => {
   const isUserHost = () => {
     if (!currentMatch || !user) return false;
 
+    console.log("isUserHost", currentMatch, user)
     // Assuming the first user in the array is the host
     return currentMatch.users[0]?.id === user.id;
   };
 
-  const refreshMatchData = (data) => {
-    console.log("refreshMatchData", data)
+  const refreshMatchDataLocal = (data) => {
+    console.log("refreshMatchDataLocal", data)
     if (data?.users?.length > 0) {
       dispatch(updateMatch(data))
       checkInWaitingRoomPlayers(data.users)
     }
   }
   const handleRefresh = () => {
+    if (isFetching) return;
     if (!currentMatch?.id) return;
+    console.log("handleRefresh", user)
     const id = currentMatch.id;
     setRefreshing(true);
     fetchCurrentMatchData(id);
@@ -201,20 +159,27 @@ const WaitingRoom = ({ navigation, route }) => {
 
   const fetchCurrentMatchData = (id) => {
     console.log("fetchCurrentMatch", id)
-    dispatch(fetchCurrentMatch(id))
+    setTimeout(() => {
+
+      dispatch(fetchCurrentMatch(id))
       .unwrap() // Extract the Promise from the Thunk
       .then(result => {
         console.log("Match data fetched:", result);
         // Update the match data in the store
         setRefreshing(false);
         dispatch(updateMatch(result));
+        setIsFetching(false);
       })
       .catch(error => {
         console.error("Error refreshing match data:", error);
+        setIsFetching(false);
       })
       .finally(() => {
         console.log("Refresh operation complete");
+        setIsFetching(false);
       });
+    }, 1000);
+
   }
 
   const deleteMatchData = async (id) => {
@@ -431,6 +396,7 @@ const WaitingRoom = ({ navigation, route }) => {
           </Text>
         </Pressable>
       </View>
+      <GamePausedModal />
       <Toast />
     </View>
   );
