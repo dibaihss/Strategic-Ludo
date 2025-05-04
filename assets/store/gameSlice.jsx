@@ -262,7 +262,7 @@ export const canUserMoveSoldier = createAsyncThunk(
         };
     }
 );
-// New thunk to sync game state with server (for multiplayer)
+// New thunk to sync game state with server (for multipl
 export const syncGameWithServer = createAsyncThunk(
     'game/syncWithServer',
     async (gameData, { dispatch }) => {
