@@ -76,7 +76,6 @@ const WaitingRoom = ({ navigation, route }) => {
   }, [showCountdown]); // Only re-run this effect when showCountdown changes
 
 
-
   // Modify your WebSocket subscription effect
   useEffect(() => {
     if (!currentMatch || !currentMatch.id) return;
@@ -93,7 +92,7 @@ const WaitingRoom = ({ navigation, route }) => {
             debounceHandleRefresh();
           }
         } else if (data.type === 'userBack') {
-          debounceHandleRefresh();
+            debounceHandleRefresh();
         } else if (data.type === 'userJoined') {
           debounceHandleRefresh();
         } else if (data.type === 'userDisconnected') {
@@ -166,6 +165,7 @@ const WaitingRoom = ({ navigation, route }) => {
           // Update the match data in the store
           setRefreshing(false);
           dispatch(updateMatch(result));
+          checkIfUserInMatch(result);
           setIsFetching(false);
         })
         .catch(error => {
@@ -178,6 +178,16 @@ const WaitingRoom = ({ navigation, route }) => {
     }, 700);
   }
 
+  const checkIfUserInMatch = (match) => {
+    if(!match || !match.id) return;
+    const userInMatch = match.users.find(u => u.id === user.id);
+    console.log('User in match:', currentMatch.users, userInMatch);
+    if (!userInMatch) {
+      navigation.navigate('Home');
+      dispatch(updateMatch(null))
+      return;
+    }
+};
   const startGame = () => {
     if (!currentMatch || !currentMatch.id) return;
     if (currentMatch.users.length < 2) {

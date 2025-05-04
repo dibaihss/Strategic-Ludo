@@ -14,7 +14,7 @@ const GamePausedModal = ({ sendMessage }) => {
   const theme = useSelector(state => state.theme.current);
   const gamePaused = useSelector(state => state.game.gamePaused);
   const currentMatch = useSelector(state => state.auth.currentMatch);
-  const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
+
 
   const inactivePlayers = currentMatch?.users?.filter(user => user.status === false) || [];
 
@@ -35,7 +35,7 @@ const GamePausedModal = ({ sendMessage }) => {
     console.log(`Kicking player ${playerId}`);
     if (currentMatch && currentMatch.id) {
       console.log(`Kicking player ${playerId} from match ${currentMatch.id}`);
-      sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userKicked', userId: playerId, colors: currentPlayerColor });
+      sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userKicked', userId: playerId, colors: findUserColors(playerId) });
       dispatch(leaveMatch({ matchId: currentMatch.id, playerId }))
         .unwrap()
         .then(() => {
@@ -46,7 +46,13 @@ const GamePausedModal = ({ sendMessage }) => {
         });
     }
   };
-
+  const findUserColors = (userId) => {
+    if (!user || !user.id || !playerColors) {
+      return []; // Return an empty array if user or playerColors aren't available
+    }
+    const userEntries = Object.entries(playerColors).filter(([color, user_id]) => user_id === userId);
+    return userEntries.map(([color]) => color); // Return an array of colors
+  };
   if (!gamePaused) return null;
 
   return (
@@ -114,66 +120,73 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)', // Darker overlay for better focus
   },
   modalContainer: {
-    width: '80%',
+    width: '85%',
     maxWidth: 400,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 24,
     alignItems: 'center',
-    elevation: 5,
+    backgroundColor: '#2A2E35', // Modern dark background
+    elevation: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
   },
   icon: {
     marginBottom: 16,
   },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
-    marginBottom: 8,
-    textAlign: 'center'
+    marginBottom: 12,
+    textAlign: 'center',
+    color: '#FFFFFF', // White text for better contrast
   },
   subtitle: {
     fontSize: 16,
     marginBottom: 20,
-    textAlign: 'center'
+    textAlign: 'center',
+    color: '#A0A0A0', // Light gray for secondary text
   },
   listContainer: {
     width: '100%',
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: 12,
+    padding: 16,
     marginBottom: 16,
-    maxHeight: 200,
+    backgroundColor: '#3A3F47', // Slightly lighter background for the list
+    maxHeight: 250,
   },
   listTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 12,
+    color: '#FFFFFF', // White text for the title
   },
   playerItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)', // Subtle divider
   },
   playerName: {
     fontSize: 16,
     marginLeft: 12,
     flex: 1,
+    color: '#FFFFFF', // White text for player names
   },
   kickButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     borderRadius: 8,
+    backgroundColor: '#E63946', // Red for the kick button
   },
   kickButtonText: {
-    color: '#fff',
+    color: '#FFFFFF', // White text for the button
     fontWeight: 'bold',
     fontSize: 14,
   },
@@ -181,12 +194,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontStyle: 'italic',
     padding: 16,
+    color: '#A0A0A0', // Light gray for empty state text
   },
   infoText: {
     textAlign: 'center',
     fontSize: 14,
     fontStyle: 'italic',
-  }
+    color: '#A0A0A0', // Light gray for informational text
+  },
 });
 
 export default GamePausedModal;

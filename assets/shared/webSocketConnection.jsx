@@ -28,7 +28,7 @@ if (__DEV__) {
 const WebSocketContext = createContext(null);
 
 // Create a provider component
-export const WebSocketProvider = ({ children, navigation }) => {
+export const WebSocketProvider = ({ children }) => {
     const dispatch = useDispatch();
   const [stompClient, setStompClient] = useState(null);
   const [connected, setConnected] = useState(false);
@@ -39,15 +39,6 @@ export const WebSocketProvider = ({ children, navigation }) => {
   const user = useSelector(state => state.auth.user);
   const currentMatch = useSelector(state => state.auth.currentMatch);
 
-  const checkIfUserInMatch = (userId) => {
-    if(!currentMatch || !currentMatch.id) return;
-    const userInMatch = currentMatch.users.find(user => user.id === userId);
-    if (!userInMatch) {
-      navigation.navigate('Home');
-      dispatch(updateMatch(null))
-      return;
-    }
-};
 
   useEffect(() => {
     if (Platform.OS === 'web') {
@@ -58,13 +49,9 @@ export const WebSocketProvider = ({ children, navigation }) => {
         if(nextAppState === 'background' && user){
             dispatch(updateUserStatus(false));
           sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userInactive', userId: user.id })
-
         } 
         if(nextAppState === 'active' && user && user.status === false){
             dispatch(updateUserStatus(true));
-            if(currentMatch?.id){
-               checkIfUserInMatch() 
-              }
           sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userBack', userId: user.id })
         } 
              
