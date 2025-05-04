@@ -295,20 +295,20 @@ export const joinMatch = createAsyncThunk(
 );
 export const leaveMatch = createAsyncThunk(
   'auth/leaveMatch',
-  async (matchId, { getState, rejectWithValue }) => {
+  async (payload, { getState, rejectWithValue }) => {
     try {
       const state = getState();
       const userId = state.auth.user?.id;
       const token = state.auth.token;
-
       if (!userId) {
         return rejectWithValue('User is not logged in');
       }
 
-      console.log(`User ${userId} leaving match ${matchId}`);
-
+      if(!payload) {
+        return rejectWithValue('No match ID provided');
+      }
       // Make API request to leave the match
-      const response = await fetch(`${API_URL}/sessions/${matchId}/users/${userId}`, {
+      const response = await fetch(`${API_URL}/sessions/${payload.matchId}/users/${payload.playerId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -322,7 +322,7 @@ export const leaveMatch = createAsyncThunk(
         return rejectWithValue('Failed to leave match');
       }
 
-      return { matchId, userId };
+      return { matchId: payload.matchId, userId: payload.playerId };
     } catch (error) {
       console.error('Error leaving match:', error);
       return rejectWithValue('Network error while leaving match');

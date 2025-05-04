@@ -6,10 +6,10 @@ import { useSelector, useDispatch } from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import HomeScreen from './Menu/HomeScreen.jsx';
 import GameScreen from './Menu/GameScreen.jsx';
-import LoginPage from './Menu/login.jsx';
-import RegisterPage from './Menu/Register.jsx';
-import MatchListPage from './Menu/MultiplayerMenu.jsx';
-import WaitingRoom from './Menu/WaitingRoom.jsx';
+import LoginPage from './UserAuthentication/login.jsx';
+import RegisterPage from './UserAuthentication/Register.jsx';
+import MatchListPage from './LobbyMatchMaking/MultiplayerMenu.jsx';
+import WaitingRoom from './LobbyMatchMaking/WaitingRoom.jsx';
 import { setUser, setLoggedIn } from './assets/store/dbSlice.jsx';
 import { saveGameState, loadGameState } from './assets/store/gameSlice.jsx';
 

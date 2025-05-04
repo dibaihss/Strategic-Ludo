@@ -1,41 +1,49 @@
-import React, {useEffect} from 'react';
-import { Modal, View, Text, StyleSheet, FlatList } from 'react-native';
+import React, { useEffect } from 'react';
+import { Modal, View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { MaterialIcons } from '@expo/vector-icons';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
-import {setPausedGame, saveGameState, loadGameState, setTimerRunning} from '../assets/store/gameSlice.jsx';
-/**
- * Modal component that displays when the game is paused and shows a list of inactive players
- * @returns {JSX.Element} The GamePausedModal component
- */
+import { setPausedGame, setTimerRunning } from '../assets/store/gameSlice.jsx';
+import { leaveMatch } from '../assets/store/dbSlice.jsx';
+import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
+
+
 const GamePausedModal = () => {
   const dispatch = useDispatch();
   const systemLang = useSelector(state => state.language.systemLang);
   const theme = useSelector(state => state.theme.current);
   const gamePaused = useSelector(state => state.game.gamePaused);
-//   const unActivePlayers = useSelector(state => state.game.unActivePlayers);
   const currentMatch = useSelector(state => state.auth.currentMatch);
 
   const inactivePlayers = currentMatch?.users?.filter(user => user.status === false) || [];
-
+const { connected, subscribe, sendMessage } = useWebSocket();
   // Check for inactive players and update gamePaused status
   useEffect(() => {
     if (currentMatch?.users?.length > 0) {
-      // If any user has status === false, pause the game
       const hasInactivePlayers = currentMatch.users.some(user => user.status === false);
-      console.log("Inactive players: ", hasInactivePlayers, "Game paused: ", gamePaused);
-      // Only dispatch if there's a change needed to prevent loops
       if (hasInactivePlayers !== gamePaused) {
         dispatch(setPausedGame(hasInactivePlayers));
-        // dispatch(saveGameState())
-      }else{
-        // If all players are active, resume the game
-        // dispatch(loadGameState())
       }
-      gamePaused ? dispatch(setTimerRunning(false))  : dispatch(setTimerRunning(true))
+      gamePaused ? dispatch(setTimerRunning(false)) : dispatch(setTimerRunning(true));
     }
   }, [currentMatch, dispatch, gamePaused]);
 
+
+  // Handle kicking a player
+  const handleKickPlayer = (playerId) => {
+    if (currentMatch && currentMatch.id) {
+      console.log(`Kicking player ${playerId} from match ${currentMatch.id}`);
+      sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userKicked', userId: playerId });
+      dispatch(leaveMatch({matchId: currentMatch.id, playerId}))
+        .unwrap()
+        .then(() => {
+          console.log(`Player ${playerId} kicked successfully`);
+        })
+        .catch(error => {
+          console.error(`Failed to kick player ${playerId}:`, error);
+        });
+    }
+  };
 
   if (!gamePaused) return null;
 
@@ -46,7 +54,7 @@ const GamePausedModal = () => {
       visible={gamePaused}
     >
       <View style={styles.modalOverlay}>
-        <View style={[styles.modalContainer, { backgroundColor: theme.colors.card }]}>
+        <View style={[styles.modalContainer, { backgroundColor: "white" }]}>
           <MaterialIcons name="pause-circle-filled" size={48} color={theme.colors.warning} style={styles.icon} />
           
           <Text style={[styles.title, { color: theme.colors.text }]}>
@@ -72,6 +80,14 @@ const GamePausedModal = () => {
                     <Text style={[styles.playerName, { color: theme.colors.text }]}>
                       {item.name}
                     </Text>
+                    <Pressable
+                      style={[styles.kickButton, { backgroundColor: theme.colors.error }]}
+                      onPress={() => handleKickPlayer(item.id)}
+                    >
+                      <Text style={styles.kickButtonText}>
+                        {uiStrings[systemLang]?.kick || 'Kick'}
+                      </Text>
+                    </Pressable>
                   </View>
                 )}
               />
@@ -139,6 +155,7 @@ const styles = StyleSheet.create({
   playerItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0, 0, 0, 0.1)',
@@ -146,6 +163,17 @@ const styles = StyleSheet.create({
   playerName: {
     fontSize: 16,
     marginLeft: 12,
+    flex: 1,
+  },
+  kickButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  kickButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
   emptyText: {
     textAlign: 'center',
