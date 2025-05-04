@@ -9,13 +9,13 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchCurrentMatch, updateMatch, deleteMatch, updateMatchStatus, leaveMatch } from '../assets/store/dbSlice.jsx';
-import { loadGameState, saveGameState, setPlayerColors, updateSoldiersPosition, removeColorFromAvailableColors, setActivePlayer } from '../assets/store/gameSlice.jsx';
+import { fetchCurrentMatch, updateMatch, updateMatchStatus, leaveMatch } from '../assets/store/dbSlice.jsx';
+import { setPlayerColors, updateSoldiersPosition, removeColorFromAvailableColors, setActivePlayer } from '../assets/store/gameSlice.jsx';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 // import { useWebSocket } from '../assets/shared/SimpleWebSocketConnection.jsx';
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
 import Toast from 'react-native-toast-message';
-import GamePausedModal from './GamePausedModal.jsx';
+import GamePausedModal from '../Menu/GamePausedModal.jsx';
 import { activateKeepAwake, deactivateKeepAwake } from 'expo-keep-awake';
 
 const WaitingRoom = ({ navigation, route }) => {
@@ -25,7 +25,6 @@ const WaitingRoom = ({ navigation, route }) => {
   const currentMatch = useSelector(state => state.auth.currentMatch);
   const user = useSelector(state => state.auth.user);
   const loading = useSelector(state => state.auth.loading);
-  const availableTypes = useSelector(state => state.game.availableTypes);
 
   const [count, setCount] = useState(3);
   const intervalRef = useRef(null);
@@ -77,13 +76,15 @@ const WaitingRoom = ({ navigation, route }) => {
   }, [showCountdown]); // Only re-run this effect when showCountdown changes
 
 
+
   // Modify your WebSocket subscription effect
   useEffect(() => {
     if (!currentMatch || !currentMatch.id) return;
-
     if (connected) {
+      // Check if the user is already in the match
       const subscription = subscribe(`/topic/gameStarted/${currentMatch.id}`, async (data) => {
 
+        console.log("WebSocket data received:", data);
         if (data.type === 'startGame') {
           setShowCountdown(true);
         }
@@ -97,7 +98,8 @@ const WaitingRoom = ({ navigation, route }) => {
           debounceHandleRefresh();
         } else if (data.type === 'userDisconnected') {
           debounceHandleRefresh();
-        } else if (data.type === 'userLeft') {
+        } else if (data.type === 'userLeft' || data.type === 'userKicked') {
+          if(data.type === "userKicked") console.log("user kicked", data.userId)
           if (user.id !== data.userId) {
             debounceHandleRefresh();
             // remove player soldier and player turn
@@ -216,8 +218,7 @@ const WaitingRoom = ({ navigation, route }) => {
   const handleLeaveMatch = () => {
     navigation.navigate('Home');
     if (currentMatch && currentMatch.id) {
-
-      dispatch(leaveMatch(currentMatch.id))
+      dispatch(leaveMatch({matchId: currentMatch.id, playerId: user.id}))
         .unwrap()
         .then(() => {
           sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userLeft', userId: user.id })

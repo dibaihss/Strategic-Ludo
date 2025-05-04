@@ -4,6 +4,7 @@ import SockJs from 'sockjs-client';
 import { useSelector, useDispatch } from 'react-redux';
 import { updateUserStatus, leaveMatch} from '../store/dbSlice.jsx'; // Import the action to update user status
 import { AppState, Platform } from 'react-native';
+import { updateMatch } from '../store/dbSlice.jsx'; // Import the action to update match status
 
 // --- WebSocket URL Configuration ---
 const PRODUCTION_WS_URL = 'https://strategic-ludo-srping-boot.onrender.com/ws';
@@ -27,7 +28,7 @@ if (__DEV__) {
 const WebSocketContext = createContext(null);
 
 // Create a provider component
-export const WebSocketProvider = ({ children }) => {
+export const WebSocketProvider = ({ children, navigation }) => {
     const dispatch = useDispatch();
   const [stompClient, setStompClient] = useState(null);
   const [connected, setConnected] = useState(false);
@@ -37,6 +38,16 @@ export const WebSocketProvider = ({ children }) => {
   const [appStateVisible, setAppStateVisible] = useState(appState.current);
   const user = useSelector(state => state.auth.user);
   const currentMatch = useSelector(state => state.auth.currentMatch);
+
+  const checkIfUserInMatch = (userId) => {
+    if(!currentMatch || !currentMatch.id) return;
+    const userInMatch = currentMatch.users.find(user => user.id === userId);
+    if (!userInMatch) {
+      navigation.navigate('Home');
+      dispatch(updateMatch(null))
+      return;
+    }
+};
 
   useEffect(() => {
     if (Platform.OS === 'web') {
@@ -51,6 +62,9 @@ export const WebSocketProvider = ({ children }) => {
         } 
         if(nextAppState === 'active' && user && user.status === false){
             dispatch(updateUserStatus(true));
+            if(currentMatch?.id){
+               checkIfUserInMatch() 
+              }
           sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userBack', userId: user.id })
         } 
              
