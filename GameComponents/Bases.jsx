@@ -34,6 +34,7 @@ export default function Bases() {
     const user = useSelector(state => state.auth.user);
     const currentMatch = useSelector(state => state.auth.currentMatch);
     const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
+    
 
     const { connected, subscribe, sendMessage } = useWebSocket();
 
@@ -202,10 +203,10 @@ export default function Bases() {
 
     useEffect(() => {
         if (connected) {
+        if(!currentMatch || !currentMatch.id) return;
             const subscription = subscribe(`/topic/playerMove/${currentMatch.id}`, (data) => {
 
                 const parsedData = JSON.parse(data);
-
                 if (parsedData.type === 'movePlayer') {
                     const { color, steps } = parsedData.payload;
                     movePlayer(color, steps);
@@ -482,6 +483,7 @@ export default function Bases() {
     };
     // Mutliplayer Functions
     const movePlayerHanlder = (color, steps) => {
+     
         if (connected) {
             if (currentPlayerColor === color) {
                 sendMoveUpdate({

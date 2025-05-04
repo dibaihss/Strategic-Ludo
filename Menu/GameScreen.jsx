@@ -10,7 +10,7 @@ import { setActivePlayer, resetTimer, setOnlineModus, saveGameState, loadGameSta
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx'; // Import useWebSocket
-import { setCurrentUserPage } from '../assets/store/dbSlice.jsx';
+import { setCurrentUserPage, leaveMatch } from '../assets/store/dbSlice.jsx';
 import { activateKeepAwake, deactivateKeepAwake } from 'expo-keep-awake';
 
 export default function GameScreen({ route, navigation }) {
@@ -146,9 +146,23 @@ export default function GameScreen({ route, navigation }) {
     setShowExitModal(false); // Close the modal
     // Navigate back to home
     navigation.navigate('Home');
-    // Optional: Add logic here to notify backend if it's a multiplayer game
-    // e.g., sendMoveUpdate({ type: 'leaveGame' });
+    handleLeaveMatch(); // Call the function to leave the match
   };
+
+ const handleLeaveMatch = () => {
+      if (currentMatch && currentMatch.id) {
+        console.log("Leaving match", currentMatch.id)
+        dispatch(leaveMatch(currentMatch.id))
+          .unwrap()
+          .then(() => {
+            console.log('User left successfully');
+            sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userLeft', userId: user.id, colors: currentPlayerColor })
+          })
+          .catch(error => {
+            console.error('Failed to leave match:', error);
+          });
+      }
+    };
 
   const cancelExitGame = () => {
     setShowExitModal(false); // Close the modal

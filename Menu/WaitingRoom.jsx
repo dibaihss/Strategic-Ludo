@@ -9,8 +9,8 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchCurrentMatch, updateMatch, deleteMatch, updateMatchStatus } from '../assets/store/dbSlice.jsx';
-import { loadGameState, saveGameState, setPlayerColors } from '../assets/store/gameSlice.jsx';
+import { fetchCurrentMatch, updateMatch, deleteMatch, updateMatchStatus, leaveMatch } from '../assets/store/dbSlice.jsx';
+import { loadGameState, saveGameState, setPlayerColors, updateSoldiersPosition, removeColorFromAvailableColors, setActivePlayer } from '../assets/store/gameSlice.jsx';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 // import { useWebSocket } from '../assets/shared/SimpleWebSocketConnection.jsx';
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
@@ -25,6 +25,7 @@ const WaitingRoom = ({ navigation, route }) => {
   const currentMatch = useSelector(state => state.auth.currentMatch);
   const user = useSelector(state => state.auth.user);
   const loading = useSelector(state => state.auth.loading);
+  const availableTypes = useSelector(state => state.game.availableTypes);
 
   const [count, setCount] = useState(3);
   const intervalRef = useRef(null);
@@ -79,30 +80,34 @@ const WaitingRoom = ({ navigation, route }) => {
   // Modify your WebSocket subscription effect
   useEffect(() => {
     if (!currentMatch || !currentMatch.id) return;
-    console.log("WaitingRoom currentMatch", currentMatch);
 
     if (connected) {
       const subscription = subscribe(`/topic/gameStarted/${currentMatch.id}`, async (data) => {
-        console.log('Game Started received:', data);
 
         if (data.type === 'startGame') {
-          console.log('Start Game:', data.userId);
           setShowCountdown(true);
         }
         if (data.type === 'userInactive') {
-          console.log('User inactive:', data.userId);
           if (user.id !== data.userId) {
             debounceHandleRefresh();
           }
         } else if (data.type === 'userBack') {
-          console.log('User back:', data.userId);
           debounceHandleRefresh();
         } else if (data.type === 'userJoined') {
-          console.log('User join:', data.userId);
           debounceHandleRefresh();
         } else if (data.type === 'userDisconnected') {
-          console.log('userDisconnected', data.userId);
           debounceHandleRefresh();
+        } else if (data.type === 'userLeft') {
+          if (user.id !== data.userId) {
+            debounceHandleRefresh();
+            // remove player soldier and player turn
+            data.colors.forEach(color => {
+              dispatch(updateSoldiersPosition({ color, position: "" }));
+              dispatch(removeColorFromAvailableColors({ color }))
+              dispatch(setActivePlayer())
+             
+            });
+          }
         }
 
       });
@@ -137,7 +142,6 @@ const WaitingRoom = ({ navigation, route }) => {
   const isUserHost = () => {
     if (!currentMatch || !user) return false;
 
-    console.log("isUserHost", currentMatch, user)
     // Assuming the first user in the array is the host
     return currentMatch.users[0]?.id === user.id;
   };
@@ -145,19 +149,16 @@ const WaitingRoom = ({ navigation, route }) => {
   const handleRefresh = () => {
     if (isFetching) return;
     if (!currentMatch?.id) return;
-    console.log("handleRefresh", user)
     const id = currentMatch.id;
     setRefreshing(true);
     fetchCurrentMatchData(id);
   };
 
   const fetchCurrentMatchData = (id) => {
-    console.log("fetchCurrentMatch", id)
     setTimeout(() => {
       dispatch(fetchCurrentMatch(id))
         .unwrap() // Extract the Promise from the Thunk
         .then(result => {
-          console.log("Match data fetched:", result);
           // Update the match data in the store
           setRefreshing(false);
           dispatch(updateMatch(result));
@@ -168,7 +169,6 @@ const WaitingRoom = ({ navigation, route }) => {
           setIsFetching(false);
         })
         .finally(() => {
-          console.log("Refresh operation complete");
           setIsFetching(false);
         });
     }, 1000);
@@ -177,18 +177,15 @@ const WaitingRoom = ({ navigation, route }) => {
   const startGame = () => {
     if (!currentMatch || !currentMatch.id) return;
     if (currentMatch.users.length < 2) {
-      console.log('Not enough players to start the game.');
       return;
     }
     // deleteMatchData(currentMatch.id)
     sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'startGame' });
-    console.log('Sending player:');
 
   };
 
   const handleStartGame = () => {
     const players = currentMatch.users;
-    console.log(players)
     const playerColors = {
       blue: players[0].id,
       red: players[1].id,
@@ -203,12 +200,11 @@ const WaitingRoom = ({ navigation, route }) => {
       dispatch(updateMatchStatus(updatedMatch))
         .unwrap()
         .then(updatedMatch => {
-          console.log('Match status updated successfully:', updatedMatch);
         })
         .catch(error => {
           console.error('Failed to update match status:', error);
         });
-      }
+    }
     dispatch(setPlayerColors(playerColors))
     navigation.navigate('Game', {
       mode: 'multiplayer',
@@ -218,17 +214,26 @@ const WaitingRoom = ({ navigation, route }) => {
 
 
   const handleLeaveMatch = () => {
-    // Logic to leave the match (could be implemented in your dbSlice)
     navigation.navigate('Home');
+    if (currentMatch && currentMatch.id) {
+
+      dispatch(leaveMatch(currentMatch.id))
+        .unwrap()
+        .then(() => {
+          sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userLeft', userId: user.id })
+        })
+        .catch(error => {
+          console.error('Failed to delete match:', error);
+        });
+    }
   };
+
   const handleCountdownComplete = () => {
-    console.log("Countdown complete, starting game");
     setShowCountdown(false);
     startGame(); // Uncomment this line to actually start the game
   };
 
   const handleCountdownCancel = () => {
-    console.log("Countdown cancelled");
     setShowCountdown(false);
   };
 
