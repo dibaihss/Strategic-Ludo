@@ -171,7 +171,7 @@ const WaitingRoom = ({ navigation, route }) => {
         .finally(() => {
           setIsFetching(false);
         });
-    }, 1000);
+    }, 700);
   }
 
   const startGame = () => {
