@@ -5,18 +5,19 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 import { setPausedGame, setTimerRunning } from '../assets/store/gameSlice.jsx';
 import { leaveMatch } from '../assets/store/dbSlice.jsx';
-import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
 
 
-const GamePausedModal = () => {
+
+const GamePausedModal = ({ sendMessage }) => {
   const dispatch = useDispatch();
   const systemLang = useSelector(state => state.language.systemLang);
   const theme = useSelector(state => state.theme.current);
   const gamePaused = useSelector(state => state.game.gamePaused);
   const currentMatch = useSelector(state => state.auth.currentMatch);
+  const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
 
   const inactivePlayers = currentMatch?.users?.filter(user => user.status === false) || [];
-const { connected, subscribe, sendMessage } = useWebSocket();
+
   // Check for inactive players and update gamePaused status
   useEffect(() => {
     if (currentMatch?.users?.length > 0) {
@@ -31,10 +32,11 @@ const { connected, subscribe, sendMessage } = useWebSocket();
 
   // Handle kicking a player
   const handleKickPlayer = (playerId) => {
+    console.log(`Kicking player ${playerId}`);
     if (currentMatch && currentMatch.id) {
       console.log(`Kicking player ${playerId} from match ${currentMatch.id}`);
-      sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userKicked', userId: playerId });
-      dispatch(leaveMatch({matchId: currentMatch.id, playerId}))
+      sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userKicked', userId: playerId, colors: currentPlayerColor });
+      dispatch(leaveMatch({ matchId: currentMatch.id, playerId }))
         .unwrap()
         .then(() => {
           console.log(`Player ${playerId} kicked successfully`);
@@ -56,20 +58,20 @@ const { connected, subscribe, sendMessage } = useWebSocket();
       <View style={styles.modalOverlay}>
         <View style={[styles.modalContainer, { backgroundColor: "white" }]}>
           <MaterialIcons name="pause-circle-filled" size={48} color={theme.colors.warning} style={styles.icon} />
-          
+
           <Text style={[styles.title, { color: theme.colors.text }]}>
             {uiStrings[systemLang]?.gamePaused || 'Game Paused'}
           </Text>
-          
+
           <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
             {uiStrings[systemLang]?.waitingForPlayers || 'Waiting for players to return...'}
           </Text>
-          
+
           <View style={[styles.listContainer, { backgroundColor: theme.colors.background }]}>
             <Text style={[styles.listTitle, { color: theme.colors.textSecondary }]}>
               {uiStrings[systemLang]?.inactivePlayers || 'Inactive Players'}:
             </Text>
-            
+
             {inactivePlayers.length > 0 ? (
               <FlatList
                 data={inactivePlayers}
@@ -97,7 +99,7 @@ const { connected, subscribe, sendMessage } = useWebSocket();
               </Text>
             )}
           </View>
-          
+
           <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>
             {uiStrings[systemLang]?.gameResumeAutomatically || 'The game will resume automatically when all players return.'}
           </Text>

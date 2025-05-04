@@ -99,16 +99,18 @@ const WaitingRoom = ({ navigation, route }) => {
         } else if (data.type === 'userDisconnected') {
           debounceHandleRefresh();
         } else if (data.type === 'userLeft' || data.type === 'userKicked') {
-          if(data.type === "userKicked") console.log("user kicked", data.userId)
+          if (data.type === "userKicked") console.log("user kicked", data.userId)
           if (user.id !== data.userId) {
             debounceHandleRefresh();
             // remove player soldier and player turn
-            data.colors.forEach(color => {
-              dispatch(updateSoldiersPosition({ color, position: "" }));
-              dispatch(removeColorFromAvailableColors({ color }))
-              dispatch(setActivePlayer())
-             
-            });
+            if (data.colors) {
+              data.colors.forEach(color => {
+                dispatch(updateSoldiersPosition({ color, position: "" }));
+                dispatch(removeColorFromAvailableColors({ color }))
+                dispatch(setActivePlayer())
+
+              });
+            }
           }
         }
 
@@ -218,7 +220,7 @@ const WaitingRoom = ({ navigation, route }) => {
   const handleLeaveMatch = () => {
     navigation.navigate('Home');
     if (currentMatch && currentMatch.id) {
-      dispatch(leaveMatch({matchId: currentMatch.id, playerId: user.id}))
+      dispatch(leaveMatch({ matchId: currentMatch.id, playerId: user.id }))
         .unwrap()
         .then(() => {
           sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userLeft', userId: user.id })
@@ -390,7 +392,7 @@ const WaitingRoom = ({ navigation, route }) => {
           </Text>
         </Pressable>
       </View>
-      <GamePausedModal />
+      <GamePausedModal sendMessage={sendMessage} />
       <Toast />
     </View>
   );
