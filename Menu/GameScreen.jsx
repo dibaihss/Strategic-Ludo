@@ -152,11 +152,11 @@ export default function GameScreen({ route, navigation }) {
  const handleLeaveMatch = () => {
       if (currentMatch && currentMatch.id) {
         console.log("Leaving match", currentMatch.id)
+        sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userLeft', userId: user.id, colors: currentPlayerColor })
         dispatch(leaveMatch(currentMatch.id))
           .unwrap()
           .then(() => {
             console.log('User left successfully');
-            sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userLeft', userId: user.id, colors: currentPlayerColor })
           })
           .catch(error => {
             console.error('Failed to leave match:', error);
