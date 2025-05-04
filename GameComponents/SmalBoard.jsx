@@ -24,10 +24,8 @@ export default function SmalBoard() {
     const redSoldiers = useSelector(state => state.game.redSoldiers);
     const yellowSoldiers = useSelector(state => state.game.yellowSoldiers);
     const greenSoldiers = useSelector(state => state.game.greenSoldiers);
-    const playerColors = useSelector(state => state.game.playerColors);
     const boxSize = useSelector(state => state.animation.boxSize);
     const theme = useSelector(state => state.theme.current);
-    const user = useSelector(state => state.auth.user);
     const currentMatch = useSelector(state => state.auth.currentMatch);
     const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
 
@@ -52,6 +50,7 @@ export default function SmalBoard() {
     };
     useEffect(() => {
         if (connected) {
+            if(!currentMatch || !currentMatch.id) return;
             // Subscribe to receive board updates
             const subscription = subscribe(`/topic/currentPlayer/${currentMatch.id}`, (data) => {
                 // Update your component state or dispatch Redux actions

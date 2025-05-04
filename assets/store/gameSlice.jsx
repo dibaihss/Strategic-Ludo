@@ -14,36 +14,37 @@ const initialState = {
     isTimerRunning: false,
     unActivePlayers: [],
     gamePaused: false,
+    availableTypes: ["red", "yellow", "blue", "green"],
     playerColors: {
         blue: 1,
-        red: 2,
-        yellow: 2,
+        red: 1,
+        yellow: 1,
         green: 1
     },
     currentPlayerColor: null,
     blueSoldiers: [
-        { id: 1, position: '1a', color: "blue", initialPosition: '1blue', onBoard: true, isOut: false},
-        { id: 2, position: '2blue', color: "blue", initialPosition: '2blue', onBoard: false, isOut: false},
-        { id: 3, position: '3blue', color: "blue", initialPosition: '3blue', onBoard: false, isOut: false},
-        { id: 4, position: '4blue', color: "blue", initialPosition: '4blue', onBoard: false, isOut: false}
+        { id: 1, position: '1a', color: "blue", initialPosition: '1blue', onBoard: true, isOut: false },
+        { id: 2, position: '2blue', color: "blue", initialPosition: '2blue', onBoard: false, isOut: false },
+        { id: 3, position: '3blue', color: "blue", initialPosition: '3blue', onBoard: false, isOut: false },
+        { id: 4, position: '4blue', color: "blue", initialPosition: '4blue', onBoard: false, isOut: false }
     ],
     redSoldiers: [
-        { id: 5, position: '1b', color: "red", initialPosition: '1red', onBoard: true, isOut: false},
-        { id: 6, position: '2red', color: "red", initialPosition: '2red', onBoard: false, isOut: false},
-        { id: 7, position: '3red', color: "red", initialPosition: '3red', onBoard: false, isOut: false},
-        { id: 8, position: '4red', color: "red", initialPosition: '4red', onBoard: false, isOut: false}
+        { id: 5, position: '1b', color: "red", initialPosition: '1red', onBoard: true, isOut: false },
+        { id: 6, position: '2red', color: "red", initialPosition: '2red', onBoard: false, isOut: false },
+        { id: 7, position: '3red', color: "red", initialPosition: '3red', onBoard: false, isOut: false },
+        { id: 8, position: '4red', color: "red", initialPosition: '4red', onBoard: false, isOut: false }
     ],
     yellowSoldiers: [
-        { id: 9, position: '1c', color: "yellow", initialPosition: '1yellow', onBoard: true, isOut: false},
-        { id: 10, position: '2yellow', color: "yellow", initialPosition: '2yellow', onBoard: false, isOut: false},
-        { id: 11, position: '3yellow', color: "yellow", initialPosition: '3yellow', onBoard: false, isOut: false},
-        { id: 12, position: '4yellow', color: "yellow", initialPosition: '4yellow', onBoard: false, isOut: false}
+        { id: 9, position: '1c', color: "yellow", initialPosition: '1yellow', onBoard: true, isOut: false },
+        { id: 10, position: '2yellow', color: "yellow", initialPosition: '2yellow', onBoard: false, isOut: false },
+        { id: 11, position: '3yellow', color: "yellow", initialPosition: '3yellow', onBoard: false, isOut: false },
+        { id: 12, position: '4yellow', color: "yellow", initialPosition: '4yellow', onBoard: false, isOut: false }
     ],
     greenSoldiers: [
-        { id: 13, position: '1d', color: "green", initialPosition: '1green', onBoard: true, isOut: false},
-        { id: 14, position: '2green', color: "green", initialPosition: '2green', onBoard: false, isOut: false},
-        { id: 15, position: '3green', color: "green", initialPosition: '3green', onBoard: false, isOut: false},
-        { id: 16, position: '4green', color: "green", initialPosition: '4green', onBoard: false, isOut: false}
+        { id: 13, position: '1d', color: "green", initialPosition: '1green', onBoard: true, isOut: false },
+        { id: 14, position: '2green', color: "green", initialPosition: '2green', onBoard: false, isOut: false },
+        { id: 15, position: '3green', color: "green", initialPosition: '3green', onBoard: false, isOut: false },
+        { id: 16, position: '4green', color: "green", initialPosition: '4green', onBoard: false, isOut: false }
     ],
     blueCards: [
         { id: 1, used: false, value: 1 },
@@ -82,72 +83,67 @@ const initialState = {
 export const saveGameState = createAsyncThunk(
     'game/saveGameState',
     async (_, { getState }) => {
-      try {
-        const state = getState();
-        
-        // Extract only the needed parts of the game state
-        const gameStateToSave = {
-          playerColors: state.game.playerColors,
-          activePlayer: state.game.activePlayer,
-          currentPlayer: state.game.currentPlayer,
-          blueSoldiers: state.game.blueSoldiers,
-          redSoldiers: state.game.redSoldiers,
-          yellowSoldiers: state.game.yellowSoldiers,
-          greenSoldiers: state.game.greenSoldiers,
-          isTimerRunning: state.game.isTimerRunning,
-          timeRemaining: state.game.timeRemaining,
-          // Include currentMatch from auth slice
-          currentMatch: state.auth.currentMatch,
-          timestamp: new Date().toISOString()
-        };
-        
-        // Save to AsyncStorage
-        await AsyncStorage.setItem('gameState', JSON.stringify(gameStateToSave));
-        // console.log('Game state saved successfully');
-        
-        return gameStateToSave;
-      } catch (error) {
-        console.error('Failed to save game state:', error);
-        throw error;
-      }
+        try {
+            const state = getState();
+
+            // Extract only the needed parts of the game state
+            const gameStateToSave = {
+                playerColors: state.game.playerColors,
+                activePlayer: state.game.activePlayer,
+                currentPlayer: state.game.currentPlayer,
+                blueSoldiers: state.game.blueSoldiers,
+                redSoldiers: state.game.redSoldiers,
+                yellowSoldiers: state.game.yellowSoldiers,
+                greenSoldiers: state.game.greenSoldiers,
+                isTimerRunning: state.game.isTimerRunning,
+                timeRemaining: state.game.timeRemaining,
+                // Include currentMatch from auth slice
+                currentMatch: state.auth.currentMatch,
+                timestamp: new Date().toISOString()
+            };
+
+            // Save to AsyncStorage
+            await AsyncStorage.setItem('gameState', JSON.stringify(gameStateToSave));
+            // console.log('Game state saved successfully');
+
+            return gameStateToSave;
+        } catch (error) {
+            console.error('Failed to save game state:', error);
+            throw error;
+        }
     }
-  );
-  // Add this thunk to load saved game state
+);
+// Add this thunk to load saved game state
 export const loadGameState = createAsyncThunk(
     'game/loadGameState',
     async (_, { dispatch }) => {
-      try {
-        let savedState = null
-        // if(gameStateReveived) {
-        //     console.log('Game state received:', gameStateReveived);
-        //     savedState = gameStateReveived;
-        // }else{
-            savedState = await AsyncStorage.getItem('gameState');
-        // }
-        if (savedState) {
-          const parsedState = JSON.parse(savedState);
-          console.log('Loaded saved game state from:', parsedState.timestamp);
-          
-          // Update match in auth slice if needed
-          if (parsedState.currentMatch) {
-            // dispatch(updateMatch(parsedState.currentMatch));
-          }
-          
-          return parsedState;
-        }
-        
-        return null;
-      } catch (error) {
-        console.error('Failed to load game state:', error);
-        return null;
-      }
-    }
-  );
+        try {
 
-const getNextPlayerType = (currentPlayerType) => {
-    const currentIndex = playerType.indexOf(currentPlayerType);
-    const nextIndex = (currentIndex + 1) % playerType.length;
-    return playerType[nextIndex];
+            const savedState = await AsyncStorage.getItem('gameState');
+            if (savedState) {
+                const parsedState = JSON.parse(savedState);
+                console.log('Loaded saved game state from:', parsedState.timestamp);
+
+                // Update match in auth slice if needed
+                if (parsedState.currentMatch) {
+                    // dispatch(updateMatch(parsedState.currentMatch));
+                }
+
+                return parsedState;
+            }
+
+            return null;
+        } catch (error) {
+            console.error('Failed to load game state:', error);
+            return null;
+        }
+    }
+);
+
+const getNextPlayerType = (currentPlayerType, availableTypesPara) => {
+    const currentIndex = availableTypesPara.indexOf(currentPlayerType);
+    const nextIndex = (currentIndex + 1) % availableTypesPara.length;
+    return availableTypesPara[nextIndex];
 };
 
 
@@ -243,7 +239,7 @@ export const canUserMoveSoldier = createAsyncThunk(
     'game/canUserMoveSoldier',
     async ({ userId, soldierId }, { getState }) => {
         const state = getState().game;
-        
+
         // Check all soldier arrays
         const allSoldiers = [
             ...state.blueSoldiers,
@@ -251,16 +247,16 @@ export const canUserMoveSoldier = createAsyncThunk(
             ...state.yellowSoldiers,
             ...state.greenSoldiers
         ];
-        
+
         // Find the soldier
         const soldier = allSoldiers.find(s => s.id === soldierId);
-        
+
         // Check if the soldier belongs to the user and it's their turn
-        const canMove = soldier && 
-                        soldier.user_id === userId && 
-                        soldier.color === state.activePlayer;
-        
-        return { 
+        const canMove = soldier &&
+            soldier.user_id === userId &&
+            soldier.color === state.activePlayer;
+
+        return {
             canMove,
             soldier: soldier || null
         };
@@ -274,17 +270,17 @@ export const syncGameWithServer = createAsyncThunk(
         if (gameData.activePlayer) {
             dispatch(setActivePlayerDirect(gameData.activePlayer));
         }
-        
+
         // Update soldiers positions if provided
         if (gameData.soldiers) {
             dispatch(updateAllSoldiers(gameData.soldiers));
         }
-        
+
         // Update card states if provided
         if (gameData.cards) {
             dispatch(updateAllCards(gameData.cards));
         }
-        
+
         return gameData;
     }
 );
@@ -297,7 +293,7 @@ export const gameSlice = createSlice({
             state.currentPlayer = action.payload;
         },
         setActivePlayer: (state, action) => {
-            const newActivePlayer = getNextPlayerType(state.activePlayer);
+            const newActivePlayer = getNextPlayerType(state.activePlayer,state.availableTypes);
             state.activePlayer = newActivePlayer;
 
             // Set currentPlayer to the first non-out soldier of the new active player
@@ -313,8 +309,14 @@ export const gameSlice = createSlice({
                 state.currentPlayer = firstAvailableSoldier;
             }
         },
+        removeColorFromAvailableColors: (state, action) => {
+            const { color } = action.payload;
+            // Remove the specified type from availableTypes
+            state.availableTypes = state.availableTypes.filter(type => type !== color);
+
+        },
         setCurrentPlayerColor: (state, action) => {
-        state.currentPlayerColor = action.payload;
+            state.currentPlayerColor = action.payload;
         },
         updateBlueCards: (state, action) => {
             const { used, value, updateAll } = action.payload;
@@ -412,133 +414,108 @@ export const gameSlice = createSlice({
         },
         setPlayerColors: (state, action) => {
             console.log(action.payload)
-           state.playerColors = action.payload;   
-        },
-        setSoldierUserIds: (state, action) => {
-            const { color, userId } = action.payload;
-            
-            // Update all soldiers of the given color with the user ID
-            switch (color) {
-                case 'blue':
-                    state.blueSoldiers = state.blueSoldiers.map(soldier => ({
-                        ...soldier,
-                        user_id: userId
-                    }));
-                    break;
-                case 'red':
-                    state.redSoldiers = state.redSoldiers.map(soldier => ({
-                        ...soldier,
-                        user_id: userId
-                    }));
-                    break;
-                case 'yellow':
-                    state.yellowSoldiers = state.yellowSoldiers.map(soldier => ({
-                        ...soldier,
-                        user_id: userId
-                    }));
-                    break;
-                case 'green':
-                    state.greenSoldiers = state.greenSoldiers.map(soldier => ({
-                        ...soldier,
-                        user_id: userId
-                    }));
-                    break;
-            }
-        },       
+            state.playerColors = action.payload;
+        },   
         setActivePlayerDirect: (state, action) => {
-            // Directly set the active player without cycling
+            console.log(state.availableTypes)
             state.activePlayer = action.payload;
-        },     
+        },
         updateAllSoldiers: (state, action) => {
             // action.payload should be an object with color keys and arrays of soldier objects
             const { blue, red, yellow, green } = action.payload;
-            
+
             if (blue && Array.isArray(blue)) {
                 state.blueSoldiers = blue.map((s, i) => ({
                     ...state.blueSoldiers[i],
                     ...s
                 }));
             }
-            
+
             if (red && Array.isArray(red)) {
                 state.redSoldiers = red.map((s, i) => ({
                     ...state.redSoldiers[i],
                     ...s
                 }));
             }
-            
+
             if (yellow && Array.isArray(yellow)) {
                 state.yellowSoldiers = yellow.map((s, i) => ({
                     ...state.yellowSoldiers[i],
                     ...s
                 }));
             }
-            
+
             if (green && Array.isArray(green)) {
                 state.greenSoldiers = green.map((s, i) => ({
                     ...state.greenSoldiers[i],
                     ...s
                 }));
             }
-        },  
+        },
+        updateSoldiersPosition: (state, action) => {
+            const { color, position } = action.payload;
+
+            // Update the positions of soldiers based on the color
+            switch (color) {
+                case "blue":
+                    state.blueSoldiers = state.blueSoldiers.map(soldier => ({
+                        ...soldier,
+                        position: position,
+                    }));
+                    break;
+                case "red":
+                    state.redSoldiers = state.redSoldiers.map(soldier => ({
+                        ...soldier,
+                        position: position,
+                    }));
+                    break;
+                case "yellow":
+                    state.yellowSoldiers = state.yellowSoldiers.map(soldier => ({
+                        ...soldier,
+                        position: position,
+                    }));
+                    break;
+                case "green":
+                    state.greenSoldiers = state.greenSoldiers.map(soldier => ({
+                        ...soldier,
+                        position: position,
+                    }));
+                    break;
+                default:
+                    break;
+            }
+        },
         updateAllCards: (state, action) => {
             // action.payload should be an object with color keys and arrays of card objects
             const { blue, red, yellow, green } = action.payload;
-            
+
             if (blue && Array.isArray(blue)) {
                 state.blueCards = blue.map((c, i) => ({
                     ...state.blueCards[i],
                     ...c
                 }));
             }
-            
+
             if (red && Array.isArray(red)) {
                 state.redCards = red.map((c, i) => ({
                     ...state.redCards[i],
                     ...c
                 }));
             }
-            
+
             if (yellow && Array.isArray(yellow)) {
                 state.yellowCards = yellow.map((c, i) => ({
                     ...state.yellowCards[i],
                     ...c
                 }));
             }
-            
+
             if (green && Array.isArray(green)) {
                 state.greenCards = green.map((c, i) => ({
                     ...state.greenCards[i],
                     ...c
                 }));
             }
-        },  
-        resetSoldierUserIds: (state) => {
-            // Reset all user_id values to null for soldiers
-            state.blueSoldiers = state.blueSoldiers.map(soldier => ({
-                ...soldier,
-                user_id: null
-            }));
-            state.redSoldiers = state.redSoldiers.map(soldier => ({
-                ...soldier,
-                user_id: null
-            }));
-            state.yellowSoldiers = state.yellowSoldiers.map(soldier => ({
-                ...soldier,
-                user_id: null
-            }));
-            state.greenSoldiers = state.greenSoldiers.map(soldier => ({
-                ...soldier,
-                user_id: null
-            }));
-            
-            // Also reset the assignOwner array
-            state.assignOwner = [
-                {user_id: null, color: null},
-                {user_id: null, color: null},
-                {user_id: null, color: null},
-                {user_id: null, color: null}
-            ];
         },
         resetGameState: (state) => {
             return {
@@ -546,33 +523,33 @@ export const gameSlice = createSlice({
                 onlineModus: state.onlineModus // Preserve online mode status
             };
         },
-        setPausedGame : (state, action) => {
+        setPausedGame: (state, action) => {
             state.gamePaused = action.payload;
         }
-    }, 
+    },
     extraReducers: (builder) => {
         builder
-        .addCase(loadGameState.fulfilled, (state, action) => {
-            if (action.payload) {
-                console.log('Loaded saved game state:', action.payload);
-                // Restore saved state properties
-                state.playerColors = action.payload.playerColors;
-                state.activePlayer = action.payload.activePlayer;
-                state.currentPlayer = action.payload.currentPlayer;
-                state.blueSoldiers = action.payload.blueSoldiers;
-                state.redSoldiers = action.payload.redSoldiers;
-                state.yellowSoldiers = action.payload.yellowSoldiers;
-                state.greenSoldiers = action.payload.greenSoldiers;
-                state.isTimerRunning = action.payload.isTimerRunning;
-                state.timeRemaining = action.payload.timeRemaining;
-                state.onlineModus = action.payload.onlineModus; // Restore online mode status
-            }
-        })
-        // Optional: Add a case for saveGameState.fulfilled if you want to take action after saving
-        .addCase(saveGameState.fulfilled, (state, action) => {
-            // You could add a flag or timestamp for the last save if needed
-            console.log('Game state saved at:', action.payload.timestamp);
-        });
+            .addCase(loadGameState.fulfilled, (state, action) => {
+                if (action.payload) {
+                    console.log('Loaded saved game state:', action.payload);
+                    // Restore saved state properties
+                    state.playerColors = action.payload.playerColors;
+                    state.activePlayer = action.payload.activePlayer;
+                    state.currentPlayer = action.payload.currentPlayer;
+                    state.blueSoldiers = action.payload.blueSoldiers;
+                    state.redSoldiers = action.payload.redSoldiers;
+                    state.yellowSoldiers = action.payload.yellowSoldiers;
+                    state.greenSoldiers = action.payload.greenSoldiers;
+                    state.isTimerRunning = action.payload.isTimerRunning;
+                    state.timeRemaining = action.payload.timeRemaining;
+                    state.onlineModus = action.payload.onlineModus; // Restore online mode status
+                }
+            })
+            // Optional: Add a case for saveGameState.fulfilled if you want to take action after saving
+            .addCase(saveGameState.fulfilled, (state, action) => {
+                // You could add a flag or timestamp for the last save if needed
+                console.log('Game state saved at:', action.payload.timestamp);
+            });
     }
 });
 
@@ -588,15 +565,15 @@ export const {
     updateTimer,
     setTimerRunning,
     resetTimer,
-    setSoldierUserIds,  
-    resetSoldierUserIds,
     setPlayerColors,
-    updateAllSoldiers, 
-    updateAllCards, 
-    resetGameState, 
-    setActivePlayerDirect, 
+    updateAllSoldiers,
+    updateAllCards,
+    resetGameState,
+    setActivePlayerDirect,
     setPausedGame,
-    setCurrentPlayerColor
+    setCurrentPlayerColor,
+    updateSoldiersPosition,
+    removeColorFromAvailableColors
 } = gameSlice.actions;
 
 export default gameSlice.reducer;
