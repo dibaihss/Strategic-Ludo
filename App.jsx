@@ -9,7 +9,7 @@ import AppNavigator from './AppNavigator.jsx';
 export default function App() {
   return (
     <Provider store={store}>
-      <WebSocketProvider navigation={navigation}>
+      <WebSocketProvider>
         <GestureHandlerRootView style={{ flex: 1 }}>
           <AppNavigator />
         </GestureHandlerRootView>

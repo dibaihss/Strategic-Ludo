@@ -76,7 +76,6 @@ const WaitingRoom = ({ navigation, route }) => {
   }, [showCountdown]); // Only re-run this effect when showCountdown changes
 
 
-
   // Modify your WebSocket subscription effect
   useEffect(() => {
     if (!currentMatch || !currentMatch.id) return;
@@ -93,22 +92,24 @@ const WaitingRoom = ({ navigation, route }) => {
             debounceHandleRefresh();
           }
         } else if (data.type === 'userBack') {
-          debounceHandleRefresh();
+            debounceHandleRefresh();
         } else if (data.type === 'userJoined') {
           debounceHandleRefresh();
         } else if (data.type === 'userDisconnected') {
           debounceHandleRefresh();
         } else if (data.type === 'userLeft' || data.type === 'userKicked') {
-          if(data.type === "userKicked") console.log("user kicked", data.userId)
+          if (data.type === "userKicked") console.log("user kicked", data.userId)
           if (user.id !== data.userId) {
             debounceHandleRefresh();
             // remove player soldier and player turn
-            data.colors.forEach(color => {
-              dispatch(updateSoldiersPosition({ color, position: "" }));
-              dispatch(removeColorFromAvailableColors({ color }))
-              dispatch(setActivePlayer())
-             
-            });
+            if (data.colors) {
+              data.colors.forEach(color => {
+                dispatch(updateSoldiersPosition({ color, position: "" }));
+                dispatch(removeColorFromAvailableColors({ color }))
+                dispatch(setActivePlayer())
+
+              });
+            }
           }
         }
 
@@ -164,6 +165,7 @@ const WaitingRoom = ({ navigation, route }) => {
           // Update the match data in the store
           setRefreshing(false);
           dispatch(updateMatch(result));
+          checkIfUserInMatch(result);
           setIsFetching(false);
         })
         .catch(error => {
@@ -176,6 +178,16 @@ const WaitingRoom = ({ navigation, route }) => {
     }, 700);
   }
 
+  const checkIfUserInMatch = (match) => {
+    if(!match || !match.id) return;
+    const userInMatch = match.users.find(u => u.id === user.id);
+    console.log('User in match:', currentMatch.users, userInMatch);
+    if (!userInMatch) {
+      navigation.navigate('Home');
+      dispatch(updateMatch(null))
+      return;
+    }
+};
   const startGame = () => {
     if (!currentMatch || !currentMatch.id) return;
     if (currentMatch.users.length < 2) {
@@ -218,7 +230,7 @@ const WaitingRoom = ({ navigation, route }) => {
   const handleLeaveMatch = () => {
     navigation.navigate('Home');
     if (currentMatch && currentMatch.id) {
-      dispatch(leaveMatch({matchId: currentMatch.id, playerId: user.id}))
+      dispatch(leaveMatch({ matchId: currentMatch.id, playerId: user.id }))
         .unwrap()
         .then(() => {
           sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userLeft', userId: user.id })
@@ -390,7 +402,7 @@ const WaitingRoom = ({ navigation, route }) => {
           </Text>
         </Pressable>
       </View>
-      <GamePausedModal />
+      <GamePausedModal sendMessage={sendMessage} />
       <Toast />
     </View>
   );
