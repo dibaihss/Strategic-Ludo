@@ -162,6 +162,7 @@ const uiStrings = {
         points: 'Points',
         playLocal: 'Play Local',
         playMultiplayer: 'Multiplayer',
+        playOffline: 'Play Offline',
         developmentPhase: 'The game is in development phase',
         // --- Waiting Room Strings ---
         loadingMatch: 'Loading match details...',
@@ -230,6 +231,7 @@ const uiStrings = {
         points: 'نقاط',
         playLocal: 'لعب محلي',
         playMultiplayer: 'متعدد اللاعبين',
+        playOffline: 'لعب دون اتصال',
         developmentPhase: 'اللعبة في مرحلة التطوير',
         // --- Waiting Room Strings ---
         loadingMatch: 'جارٍ تحميل تفاصيل المباراة...',
@@ -298,6 +300,7 @@ const uiStrings = {
         points: 'Punkte',
         playLocal: 'Lokal spielen',
         playMultiplayer: 'Mehrspieler',
+        playOffline: 'Offline spielen',
         developmentPhase: 'Das Spiel befindet sich in der Entwicklungsphase',
         // --- Waiting Room Strings ---
         loadingMatch: 'Lade Matchdetails...',

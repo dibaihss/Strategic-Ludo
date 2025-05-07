@@ -5,8 +5,8 @@ import Bases from '../GameComponents/Bases.jsx';
 import Timer from '../GameComponents/Timer.jsx';
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { View, Text, StyleSheet, Pressable, Dimensions, Platform, ActivityIndicator, Modal, Alert } from 'react-native';
-import { setActivePlayer, resetTimer, setOnlineModus, saveGameState, loadGameState, setCurrentPlayerColor } from '../assets/store/gameSlice.jsx';
+import { View, Text, StyleSheet, Pressable, Dimensions, Platform, ActivityIndicator, Modal } from 'react-native';
+import { setActivePlayer, resetTimer, setOnlineModus, resetGameState, setCurrentPlayerColor } from '../assets/store/gameSlice.jsx';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx'; // Import useWebSocket
@@ -26,9 +26,6 @@ export default function GameScreen({ route, navigation }) {
   const activePlayer = useSelector(state => state.game.activePlayer);
   const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
 
-  const gameState = useSelector(state => state.game);
-
-
   const [gameIsStarted, setGameIsStarted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showExitModal, setShowExitModal] = useState(false); // <-- Add this state
@@ -38,12 +35,12 @@ export default function GameScreen({ route, navigation }) {
   const { connected, sendMessage } = useWebSocket();
 
   useEffect(() => {
+    if(mode === "local"){
+      setOnlineModus(false);
+    }
     setCurrentUserPage('Game');
-    // dispatch(loadGameState());
-    
-  }, [dispatch]);
-  
-  useEffect(() => {
+    dispatch(resetGameState());
+
     // Keep the device awake when the user is on the GameScreen
     activateKeepAwake();
 
@@ -53,40 +50,18 @@ export default function GameScreen({ route, navigation }) {
     };
   }, []);
   
-  // Save game state automatically every 5 seconds
-  // useEffect(() => {
-  //   const saveInterval = setInterval(() => {
-  //     dispatch(saveGameState());
-  //   }, 3000); // Save every 5 seconds
-    
-  //   return () => {
-  //     clearInterval(saveInterval);
-  //     // Save one last time when component unmounts
-  //     dispatch(saveGameState());
-  //   };
-  // }, [dispatch]);
-  
-  // Save when crucial game state changes
-  // useEffect(() => {
-  //   dispatch(saveGameState());
-  // }, [
-  //   gameState.activePlayer,
-  //   currentMatch,
-  // ]);
-
   useEffect(() => {
     console.log(playerColors)
 
       console.log(user)
       setGameIsStarted(true);
       setLoading(false);
-    // }
   }, [mode, matchId, dispatch]);
 
   useEffect(() => {
     if (mode === 'multiplayer' && currentMatch && currentMatch.users) {
       const players = currentMatch.users;
-     
+      setOnlineModus(true);
       if (players.length >= 2) {
         dispatch(setCurrentPlayerColor(findUserColors())) 
         dispatch(setOnlineModus(true));
@@ -94,8 +69,6 @@ export default function GameScreen({ route, navigation }) {
       }
     }
   }, [currentMatch?.users, mode, dispatch]);
-
- 
 
   const sendMoveUpdate = (message) => {
     sendMessage(`/app/player.Move/${currentMatch.id}`, JSON.stringify(message));
@@ -115,10 +88,7 @@ export default function GameScreen({ route, navigation }) {
     if (!user || !user.id || !playerColors) {
       return []; // Return an empty array if user or playerColors aren't available
     }
-  
-    // Find all colors controlled by the user
     const userEntries = Object.entries(playerColors).filter(([color, userId]) => userId === user.id);
-    // userEntries will be like [['blue', 'user123'], ['red', 'user123']] if the user controls two colors
     return userEntries.map(([color]) => color); // Return an array of colors
   };
 

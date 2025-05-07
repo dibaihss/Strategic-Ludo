@@ -1,10 +1,9 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { playerType } from "../shared/hardCodedData.js";
+
 
 import { startingPositions } from "../shared/hardCodedData.js";
 import { setBoxesPosition } from './animationSlice.jsx'
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { updateMatch } from './dbSlice.jsx';
 
 const initialState = {
     currentPlayer: null,
@@ -141,11 +140,11 @@ export const loadGameState = createAsyncThunk(
 );
 
 const getNextPlayerType = (currentPlayerType, availableTypesPara) => {
+    console.log(availableTypesPara)
     const currentIndex = availableTypesPara.indexOf(currentPlayerType);
     const nextIndex = (currentIndex + 1) % availableTypesPara.length;
     return availableTypesPara[nextIndex];
 };
-
 
 export const checkIfGotEnemy = ({ color, position }) => (dispatch, getState) => {
 
@@ -180,7 +179,6 @@ export const checkIfGotEnemy = ({ color, position }) => (dispatch, getState) => 
         dispatch(resetTimer());
     }
 };
-
 
 export const checkIfCardUsed = ({ color, steps }) => (dispatch, getState) => {
     const state = getState().game;
@@ -303,7 +301,7 @@ export const gameSlice = createSlice({
                 yellow: state.yellowSoldiers,
                 green: state.greenSoldiers
             }[newActivePlayer];
-
+ 
             const firstAvailableSoldier = soldiers.find(soldier => !soldier.isOut && soldier.onBoard);
             if (firstAvailableSoldier) {
                 state.currentPlayer = firstAvailableSoldier;
@@ -313,7 +311,6 @@ export const gameSlice = createSlice({
             const { color } = action.payload;
             // Remove the specified type from availableTypes
             state.availableTypes = state.availableTypes.filter(type => type !== color);
-
         },
         setCurrentPlayerColor: (state, action) => {
             state.currentPlayerColor = action.payload;
@@ -416,10 +413,6 @@ export const gameSlice = createSlice({
             console.log(action.payload)
             state.playerColors = action.payload;
         },   
-        setActivePlayerDirect: (state, action) => {
-            console.log(state.availableTypes)
-            state.activePlayer = action.payload;
-        },
         updateAllSoldiers: (state, action) => {
             // action.payload should be an object with color keys and arrays of soldier objects
             const { blue, red, yellow, green } = action.payload;
@@ -520,7 +513,7 @@ export const gameSlice = createSlice({
         resetGameState: (state) => {
             return {
                 ...initialState,
-                onlineModus: state.onlineModus // Preserve online mode status
+                availableTypes: ["red", "yellow", "blue", "green"]
             };
         },
         setPausedGame: (state, action) => {
