@@ -5,25 +5,17 @@ import {
   StyleSheet, 
   Pressable, 
   Image, 
-  Dimensions, 
   SafeAreaView 
 } from 'react-native';
 import { useSelector } from 'react-redux';
 import { MaterialIcons } from '@expo/vector-icons';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 
-
 const HomePage = ({ onStartLocalGame, onStartMultiplayerGame, onLogout }) => {
 
   const theme = useSelector(state => state.theme.current);
   const systemLang = useSelector(state => state.language.systemLang);
   const user = useSelector(state => state.auth.user);
-
-  
-  const windowWidth = Dimensions.get('window').width;
-  const windowHeight = Dimensions.get('window').height;
-  const isSmallScreen = windowWidth < 375 || windowHeight < 667;
-
 
   const handleLogout = () => {
     onLogout();

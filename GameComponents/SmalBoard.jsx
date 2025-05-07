@@ -28,6 +28,7 @@ export default function SmalBoard() {
     const theme = useSelector(state => state.theme.current);
     const currentMatch = useSelector(state => state.auth.currentMatch);
     const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
+    const availableTypes = useSelector(state => state.game.availableTypes);
 
     const { connected, subscribe, sendMessage } = useWebSocket();
 
@@ -36,6 +37,7 @@ export default function SmalBoard() {
     const isSmallScreen = windowWidth < 375 || windowHeight < 667;
 
     const currentSelectedPlayer = (selectedPlayer) => {
+        console.log(availableTypes)
         if (connected) {
             if (currentPlayerColor === selectedPlayer.color) {
                 handlePlayerMove(selectedPlayer)
