@@ -189,7 +189,7 @@ const WaitingRoom = ({ navigation, route }) => {
     }
 };
   const startGame = () => {
-    if (!currentMatch || !currentMatch.id) return;
+    // if (!currentMatch || !currentMatch.id) return;
     if (currentMatch.users.length < 2) {
       return;
     }
@@ -380,7 +380,7 @@ const WaitingRoom = ({ navigation, route }) => {
       </View>
 
       <View style={styles.footer}>
-        {(currentMatch?.users?.length >= 2 && isUserHost()) && (
+        {(currentMatch?.users?.length >= 2) && (
           <Pressable
             style={[styles.startButton, { backgroundColor: theme.colors.primary }]}
             onPress={startGame}
