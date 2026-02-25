@@ -7,21 +7,23 @@ import { AppState, Platform } from 'react-native';
 import { updateMatch } from '../store/dbSlice.jsx'; // Import the action to update match status
 
 // --- WebSocket URL Configuration ---
-const PRODUCTION_WS_URL = 'https://strategic-ludo-srping-boot.onrender.com/ws';
+// Priority: 1) env var `REACT_APP_WS_URL` 2) Expo `extra` config 3) existing platform-based defaults
+let ExpoConstants = null;
+try {
+  ExpoConstants = require('expo-constants');
+} catch (e) {
+  ExpoConstants = null;
+}
+
+const ENV_WS = (typeof process !== 'undefined' && process.env && process.env.REACT_APP_WS_URL) ||
+  (ExpoConstants && (ExpoConstants.manifest?.extra?.REACT_APP_WS_URL || ExpoConstants.expoConfig?.extra?.REACT_APP_WS_URL)) ||
+  null;
+
+const PRODUCTION_WS_URL = 'https://lowcostbackendapp-dze4chctcsevdybb.westeurope-01.azurewebsites.net/ws';
 const LOCALHOST_WS_URL = 'http://localhost:8080/ws'; // Default for iOS
 const ANDROID_WS_URL = 'http://192.168.178.130:8080/ws'; // Android-specific URL with port
 
-// Choose the appropriate WebSocket URL based on platform and environment
-let WEBSOCKET_URL;
-if (__DEV__) {
-  if (Platform.OS === 'android') {
-    WEBSOCKET_URL = ANDROID_WS_URL;
-  } else {
-    WEBSOCKET_URL = LOCALHOST_WS_URL;
-  }
-} else {
-  WEBSOCKET_URL = PRODUCTION_WS_URL;
-}
+let WEBSOCKET_URL = ENV_WS || ( __DEV__ ? (Platform.OS === 'android' ? ANDROID_WS_URL : LOCALHOST_WS_URL) : PRODUCTION_WS_URL );
 
 // --- END: WebSocket URL Configuration ---
 // Create the context

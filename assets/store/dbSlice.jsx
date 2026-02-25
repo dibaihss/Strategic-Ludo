@@ -3,23 +3,26 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native"; // Import Platform
 
 // --- START: API URL Configuration ---
-const PRODUCTION_API_URL =
-  "https://lowcostbackendapp-dze4chctcsevdybb.westeurope-01.azurewebsites.net/api";
+// Priority: 1) `process.env.REACT_APP_API_URL` 2) Expo `extra` config 3) platform-based defaults
+let ExpoConstants = null;
+try {
+  ExpoConstants = require('expo-constants');
+} catch (e) {
+  ExpoConstants = null;
+}
+
+const ENV_API = (typeof process !== 'undefined' && process.env && process.env.REACT_APP_API_URL) ||
+  (ExpoConstants && (ExpoConstants.manifest?.extra?.REACT_APP_API_URL || ExpoConstants.expoConfig?.extra?.REACT_APP_API_URL)) ||
+  null;
+
+const PRODUCTION_API_URL = (typeof process !== 'undefined' && process.env && process.env.REACT_APP_PRODUCTION_URL) ||
+  'https://lowcostbackendapp-dze4chctcsevdybb.westeurope-01.azurewebsites.net/api';
 
 // URL options based on platform and environment
-const LOCALHOST_API_URL = "http://localhost:8080/api"; // Default for iOS simulator
-const ANDROID_API_URL = "http://192.168.178.130:8080/api"; // Android-specific URL with port
+const LOCALHOST_API_URL = 'http://localhost:8080/api'; // Default for iOS simulator
+const ANDROID_API_URL = 'http://192.168.178.130:8080/api'; // Android-specific URL with port
 
-let API_URL;
-if (__DEV__) {
-  if (Platform.OS === "android") {
-    API_URL = ANDROID_API_URL;
-  } else {
-    API_URL = LOCALHOST_API_URL;
-  }
-} else {
-  API_URL = PRODUCTION_API_URL;
-}
+let API_URL = ENV_API || (__DEV__ ? (Platform.OS === 'android' ? ANDROID_API_URL : LOCALHOST_API_URL) : PRODUCTION_API_URL);
 
 console.log(`Using API URL: ${API_URL} on platform: ${Platform.OS}`); // Enhanced logging
 // --- END: API URL Configuration ---
