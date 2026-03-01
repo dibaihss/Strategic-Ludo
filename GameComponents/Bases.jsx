@@ -205,15 +205,14 @@ export default function Bases() {
         if (connected) {
         if(!currentMatch || !currentMatch.id) return;
             const subscription = subscribe(`/topic/playerMove/${currentMatch.id}`, (data) => {
-
-                const parsedData = JSON.parse(data);
-                if (parsedData.type === 'movePlayer') {
-                    const { color, steps } = parsedData.payload;
+                const parsedData = data;
+                if (parsedData?.type === 'movePlayer') {
+                    const { color, steps } = parsedData.payload || {};
                     movePlayer(color, steps);
-                } else if (parsedData.type === 'enterNewSoldier') {
-                    const { color } = parsedData.payload;
+                } else if (parsedData?.type === 'enterNewSoldier') {
+                    const { color } = parsedData.payload || {};
                     handleEnterNewSoldier(color);
-                } else if (parsedData.type === 'skipTurn') {
+                } else if (parsedData?.type === 'skipTurn') {
                         HandleskipTurn()                 
                 }
             });
@@ -243,7 +242,7 @@ export default function Bases() {
 
     const sendMoveUpdate = (message) => {
         if (connected) {
-            sendMessage(`/app/player.Move/${currentMatch.id}`, JSON.stringify(message));
+            sendMessage(`/app/player.Move/${currentMatch.id}`, message);
         }
     };
 

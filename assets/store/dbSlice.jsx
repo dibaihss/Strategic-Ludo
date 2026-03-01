@@ -19,7 +19,7 @@ const PRODUCTION_API_URL = (typeof process !== 'undefined' && process.env && pro
   'https://lowcostbackendapp-dze4chctcsevdybb.westeurope-01.azurewebsites.net/api';
 
 // URL options based on platform and environment
-const LOCALHOST_API_URL = 'http://localhost:8080/api'; // Default for iOS simulator
+const LOCALHOST_API_URL = 'https://lowcostbackendapp-dze4chctcsevdybb.westeurope-01.azurewebsites.net/api'; // Default for iOS simulator
 const ANDROID_API_URL = 'http://192.168.178.130:8080/api'; // Android-specific URL with port
 
 let API_URL = ENV_API || (__DEV__ ? (Platform.OS === 'android' ? ANDROID_API_URL : LOCALHOST_API_URL) : PRODUCTION_API_URL);

@@ -4,9 +4,13 @@ Environment variables and Expo setup
 This project reads runtime configuration from environment variables. Use `.env` for local development and `.env.example` as a template for required keys.
 
 Important keys
-- `REACT_APP_WS_URL` — WebSocket server URL (wss://... or https://.../ws)
-- `REACT_APP_API_URL` — Base API URL
-- `REACT_APP_PRODUCTION_URL` — Production API URL
+- `REACT_APP_WS_URL` - Legacy STOMP WebSocket URL (`wss://...` or `https://.../ws`)
+- `REACT_APP_SOCKET_URL` - Socket.IO server base URL (`https://...` or local `http://...`)
+- `REACT_APP_SOCKET_PATH` - Socket.IO path (default `/socket.io`)
+- `REACT_APP_SOCKET_AUTH_TOKEN` - Token sent in Socket.IO `auth` handshake
+- `REACT_APP_RT_TRANSPORT` - Realtime transport selector (`socketio` recommended)
+- `REACT_APP_API_URL` - Base API URL
+- `REACT_APP_PRODUCTION_URL` - Production API URL
 
 Local usage (node scripts / web)
 - Install `dotenv` (dev):
@@ -24,9 +28,9 @@ require('dotenv').config();
 
 Expo / React Native (recommended)
 
-Expo projects don't automatically load `.env` at runtime. Use one of these options:
+Expo projects do not automatically load `.env` at runtime. Use one of these options:
 
-1) Use `app.json` / `app.config.js` `extra` and `Constants.manifest.extra` (or `expo-constants`):
+1) Use `app.json` / `app.config.js` `extra` and `Constants.manifest.extra` (or `expo-constants`).
 
 Example `app.config.js` that reads from process.env when building:
 
@@ -38,6 +42,10 @@ export default ({ config }) => ({
   ...config,
   extra: {
     REACT_APP_WS_URL: process.env.REACT_APP_WS_URL || 'https://api.example.com/ws',
+    REACT_APP_SOCKET_URL: process.env.REACT_APP_SOCKET_URL || 'https://api.example.com',
+    REACT_APP_SOCKET_PATH: process.env.REACT_APP_SOCKET_PATH || '/socket.io',
+    REACT_APP_SOCKET_AUTH_TOKEN: process.env.REACT_APP_SOCKET_AUTH_TOKEN || '',
+    REACT_APP_RT_TRANSPORT: process.env.REACT_APP_RT_TRANSPORT || 'socketio',
     REACT_APP_API_URL: process.env.REACT_APP_API_URL || 'https://api.example.com'
   }
 });
@@ -47,16 +55,14 @@ In code you can read via `expo-constants`:
 
 ```js
 import Constants from 'expo-constants';
-const wsUrl = (Constants.manifest?.extra || Constants.expoConfig?.extra).REACT_APP_WS_URL;
+const extra = Constants.manifest?.extra || Constants.expoConfig?.extra;
+const wsUrl = extra?.REACT_APP_WS_URL;
+const socketUrl = extra?.REACT_APP_SOCKET_URL;
 ```
-
-2) Use a library such as `react-native-dotenv` or `babel-plugin-inline-dotenv` for compile-time injection (less recommended for Expo-managed apps).
 
 Security
 - Never commit secrets to the repository. `.env` is ignored by `.gitignore`; commit only `.env.example`.
 
 CI / Production
-- Configure your CI/CD to set the same environment variables (e.g., GitHub Actions secrets, Azure App Service settings, or Expo Application Services config). Ensure `REACT_APP_WS_URL` is set to the production WebSocket endpoint.
-
-Questions?
-- Tell me if you want me to add an `app.config.js` file with the example and wire a small script to print `REACT_APP_WS_URL` for verification.
+- Configure your CI/CD to set the same environment variables.
+- Use `REACT_APP_RT_TRANSPORT=socketio` and ensure `REACT_APP_SOCKET_PATH=/socket.io`.

@@ -71,7 +71,7 @@ export default function GameScreen({ route, navigation }) {
   }, [currentMatch?.users, mode, dispatch]);
 
   const sendMoveUpdate = (message) => {
-    sendMessage(`/app/player.Move/${currentMatch.id}`, JSON.stringify(message));
+    sendMessage(`/app/player.Move/${currentMatch.id}`, message);
   };
 
   const findUserColor = () => {

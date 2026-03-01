@@ -56,7 +56,8 @@ export default function SmalBoard() {
             // Subscribe to receive board updates
             const subscription = subscribe(`/topic/currentPlayer/${currentMatch.id}`, (data) => {
                 // Update your component state or dispatch Redux actions
-                dispatch(setCurrentPlayer(data));
+                const nextPlayer = data?.payload ? data.payload : data;
+                dispatch(setCurrentPlayer(nextPlayer));
                 // Example: dispatch(updateBoard(data));
             });
 
