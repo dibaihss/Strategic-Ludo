@@ -32,7 +32,7 @@ export default function GameScreen({ route, navigation }) {
 
   // Get the game mode from navigation params
   const { mode, matchId } = route.params || { mode: 'local', matchId: 1 };
-  const { connected, sendMessage } = useWebSocket();
+  const { connected, sendMessage, sendMatchCommand } = useWebSocket();
 
   useEffect(() => {
     if(mode === "local"){
@@ -71,6 +71,15 @@ export default function GameScreen({ route, navigation }) {
   }, [currentMatch?.users, mode, dispatch]);
 
   const sendMoveUpdate = (message) => {
+    if (connected && message?.type) {
+      sendMatchCommand({
+        type: message.type,
+        payload: message.payload || {},
+        matchId: currentMatch?.id,
+        playerId: user?.id,
+      });
+      return;
+    }
     sendMessage(`/app/player.Move/${currentMatch.id}`, message);
   };
 

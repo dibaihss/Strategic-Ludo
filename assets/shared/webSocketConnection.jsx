@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { updateUserStatus, leaveMatch } from '../store/dbSlice.jsx';
+import { updateUserStatus, leaveMatch, fetchMatchState, submitMatchCommand } from '../store/dbSlice.jsx';
+import { applyServerStateSnapshot } from '../store/gameSlice.jsx';
 import { AppState, Platform } from 'react-native';
 import { mapLegacySendToCanonical, mapLegacyTopicToCanonicalEvents, shouldDeliverLegacyTopicMessage, toLegacyPayload } from './realtime/mapping';
-import { normalizePayload } from './realtime/utils';
+import { createRequestId, normalizePayload } from './realtime/utils';
 import { SocketIoAdapter } from './realtime/SocketIoAdapter';
 
 // --- Realtime Socket.IO Configuration ---
@@ -36,6 +37,17 @@ const TRANSPORT = ((typeof process !== 'undefined' && process.env && process.env
 // --- END: Realtime Socket.IO Configuration ---
 // Create the context
 const WebSocketContext = createContext(null);
+
+const getLegacyDestinationForCommand = (type, matchId) => {
+  if (!matchId) return null;
+  const destinationByType = {
+    movePlayer: `/app/player.Move/${matchId}`,
+    enterNewSoldier: `/app/player.Move/${matchId}`,
+    skipTurn: `/app/player.Move/${matchId}`,
+    selectPlayer: `/app/player.getPlayer/${matchId}`,
+  };
+  return destinationByType[type] || `/app/player.Move/${matchId}`;
+};
 
 // Create a provider component
 export const WebSocketProvider = ({ children }) => {
@@ -154,7 +166,60 @@ export const WebSocketProvider = ({ children }) => {
 
     if (!connected || !currentMatch?.id) return;
     joinMatch(currentMatch.id);
+    dispatch(fetchMatchState(currentMatch.id))
+      .unwrap()
+      .then((snapshot) => {
+        if (snapshot) {
+          dispatch(applyServerStateSnapshot(snapshot));
+        }
+      })
+      .catch((error) => {
+        console.warn('Failed to recover match snapshot:', error);
+      });
   }, [connected, currentMatch?.id]);
+
+  useEffect(() => {
+    if (!connected || !currentMatch?.id) return;
+
+    const shouldHandleMatch = (payloadMatchId) => {
+      if (!payloadMatchId) return true;
+      return String(payloadMatchId) === String(currentMatch.id);
+    };
+
+    const handleSnapshot = (envelope) => {
+      const normalized = normalizePayload(envelope);
+      const payload = normalized?.payload || normalized;
+      const snapshot = payload?.state || payload;
+      const payloadMatchId = normalized?.matchId || payload?.matchId || payload?.sessionId;
+      if (!shouldHandleMatch(payloadMatchId)) return;
+      dispatch(applyServerStateSnapshot(snapshot));
+    };
+
+    const handleDelta = (envelope) => {
+      const normalized = normalizePayload(envelope);
+      const payload = normalized?.payload || normalized;
+      const delta = payload?.state || payload;
+      const payloadMatchId = normalized?.matchId || payload?.matchId || payload?.sessionId;
+      if (!shouldHandleMatch(payloadMatchId)) return;
+      dispatch(applyServerStateSnapshot(delta));
+    };
+
+    const handleCommandRejected = (envelope) => {
+      const normalized = normalizePayload(envelope);
+      const reasonCode = normalized?.reasonCode || normalized?.payload?.reasonCode || 'UNKNOWN_REASON';
+      console.warn(`Match command rejected: ${reasonCode}`, normalized);
+    };
+
+    on('match.state.snapshot', handleSnapshot);
+    on('match.state.delta', handleDelta);
+    on('match.command.rejected', handleCommandRejected);
+
+    return () => {
+      off('match.state.snapshot', handleSnapshot);
+      off('match.state.delta', handleDelta);
+      off('match.command.rejected', handleCommandRejected);
+    };
+  }, [connected, currentMatch?.id, dispatch]);
 
   useEffect(() => {
     if (!connected || !currentMatch?.id || !user?.id) return;
@@ -168,12 +233,19 @@ export const WebSocketProvider = ({ children }) => {
   const subscribe = (topic, callback) => {
     const adapter = adapterRef.current;
     if (!adapter || !connected) return null;
-    const { events } = mapLegacyTopicToCanonicalEvents(topic);
+    const isLegacyTopic = String(topic).startsWith('/topic/');
+    const { events } = isLegacyTopic
+      ? mapLegacyTopicToCanonicalEvents(topic)
+      : { events: [topic] };
     const handlers = events.map((eventName) => {
       const handler = (envelope) => {
         const normalized = normalizePayload(envelope);
-        if (!shouldDeliverLegacyTopicMessage(topic, normalized)) return;
-        callback?.(toLegacyPayload(normalized));
+        if (isLegacyTopic) {
+          if (!shouldDeliverLegacyTopicMessage(topic, normalized)) return;
+          callback?.(toLegacyPayload(normalized));
+          return;
+        }
+        callback?.(normalized);
       };
       adapter.on(eventName, handler);
       return { eventName, handler };
@@ -198,6 +270,52 @@ export const WebSocketProvider = ({ children }) => {
     return true;
   };
 
+  const sendMatchCommand = async ({
+    type,
+    payload = {},
+    matchId,
+    playerId,
+    requestId,
+    clientTs,
+    fallbackToSocket = true,
+  }) => {
+    const resolvedMatchId = matchId || currentMatch?.id;
+    const resolvedPlayerId = playerId || user?.id;
+    if (!resolvedMatchId || !type) {
+      return { ok: false, code: 'INVALID_COMMAND' };
+    }
+
+    const command = {
+      requestId: requestId || createRequestId(),
+      type,
+      payload,
+      playerId: resolvedPlayerId,
+      clientTs: clientTs || Date.now(),
+    };
+
+    try {
+      const response = await dispatch(submitMatchCommand({ matchId: resolvedMatchId, command })).unwrap();
+      return response || { ok: true, requestId: command.requestId };
+    } catch (error) {
+      if (!fallbackToSocket) {
+        return { ok: false, code: 'REST_COMMAND_FAILED', error };
+      }
+      const destination = getLegacyDestinationForCommand(type, resolvedMatchId);
+      const sent = sendMessage(destination, {
+        type,
+        payload,
+        meta: {
+          requestId: command.requestId,
+          clientTs: command.clientTs,
+          version: 1,
+        },
+      });
+      return sent
+        ? { ok: true, code: 'SOCKET_FALLBACK', requestId: command.requestId }
+        : { ok: false, code: 'SOCKET_FALLBACK_FAILED', error };
+    }
+  };
+
   // The value that will be provided to consumers of this context
   const value = {
     stompClient: adapterRef.current,
@@ -211,6 +329,7 @@ export const WebSocketProvider = ({ children }) => {
     off,
     subscribe,
     sendMessage,
+    sendMatchCommand,
     transport: TRANSPORT,
   };
 

@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const initialState = {
     currentPlayer: null,
     activePlayer: "blue",
+    stateVersion: null,
     onlineModus: false,
     timeRemaining: 35,
     isTimerRunning: false,
@@ -315,6 +316,44 @@ export const gameSlice = createSlice({
         setCurrentPlayerColor: (state, action) => {
             state.currentPlayerColor = action.payload;
         },
+        applyServerStateSnapshot: (state, action) => {
+            const snapshot = action.payload || {};
+            const soldiers = snapshot.soldiers || {};
+            const cards = snapshot.cards || {};
+
+            if (snapshot.activePlayer) {
+                state.activePlayer = snapshot.activePlayer;
+            }
+            if (snapshot.currentPlayer) {
+                state.currentPlayer = snapshot.currentPlayer;
+            }
+            if (typeof snapshot.timeRemaining === 'number') {
+                state.timeRemaining = snapshot.timeRemaining;
+            } else if (typeof snapshot.timer?.timeRemaining === 'number') {
+                state.timeRemaining = snapshot.timer.timeRemaining;
+            }
+            if (typeof snapshot.isTimerRunning === 'boolean') {
+                state.isTimerRunning = snapshot.isTimerRunning;
+            } else if (typeof snapshot.timer?.isRunning === 'boolean') {
+                state.isTimerRunning = snapshot.timer.isRunning;
+            }
+            if (typeof snapshot.stateVersion !== 'undefined') {
+                state.stateVersion = snapshot.stateVersion;
+            }
+            if (typeof snapshot.status === 'string') {
+                state.gamePaused = snapshot.status === 'paused';
+            }
+
+            if (Array.isArray(soldiers.blue)) state.blueSoldiers = soldiers.blue;
+            if (Array.isArray(soldiers.red)) state.redSoldiers = soldiers.red;
+            if (Array.isArray(soldiers.yellow)) state.yellowSoldiers = soldiers.yellow;
+            if (Array.isArray(soldiers.green)) state.greenSoldiers = soldiers.green;
+
+            if (Array.isArray(cards.blue)) state.blueCards = cards.blue;
+            if (Array.isArray(cards.red)) state.redCards = cards.red;
+            if (Array.isArray(cards.yellow)) state.yellowCards = cards.yellow;
+            if (Array.isArray(cards.green)) state.greenCards = cards.green;
+        },
         updateBlueCards: (state, action) => {
             const { used, value, updateAll } = action.payload;
             if (updateAll) {
@@ -565,6 +604,7 @@ export const {
     setActivePlayerDirect,
     setPausedGame,
     setCurrentPlayerColor,
+    applyServerStateSnapshot,
     updateSoldiersPosition,
     removeColorFromAvailableColors
 } = gameSlice.actions;

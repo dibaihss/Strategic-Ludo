@@ -112,6 +112,20 @@ So existing components can keep using `sendMessage()` and `subscribe()` while th
 - Backend broadcasts `server_message`
 - Topic filter routes to `/topic/gameStarted/{matchId}`
 
+### Match Recovery + Command API
+
+For multiplayer MVP reliability, the frontend now supports:
+
+- Snapshot recovery endpoint: `GET /sessions/{id}/state`
+- Idempotent command endpoint: `POST /sessions/{id}/commands`
+- Socket contracts: `match.state.snapshot`, `match.state.delta`, `match.command.rejected`
+
+Move commands use this flow:
+
+1. Submit command to REST with `requestId`.
+2. If REST fails, fallback to legacy Socket.IO emit.
+3. Apply incoming snapshot/delta events to Redux game state.
+
 ## Environment Variables
 
 Copy `.env.example` to `.env` and update values:
@@ -149,4 +163,3 @@ npm run ios
 - Backend must expose Socket.IO on `/socket.io`.
 - If backend event names change, update `assets/shared/realtime/mapping.js`.
 - Some old STOMP-related packages may still exist in `package.json`, but active realtime path is Socket.IO.
-

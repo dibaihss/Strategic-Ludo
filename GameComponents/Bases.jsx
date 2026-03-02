@@ -36,7 +36,7 @@ export default function Bases() {
     const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
     
 
-    const { connected, subscribe, sendMessage } = useWebSocket();
+    const { connected, subscribe, sendMessage, sendMatchCommand } = useWebSocket();
 
     const windowWidth = Dimensions.get('window').width;
     const windowHeight = Dimensions.get('window').height;
@@ -242,6 +242,15 @@ export default function Bases() {
 
     const sendMoveUpdate = (message) => {
         if (connected) {
+            if (message?.type) {
+                sendMatchCommand({
+                    type: message.type,
+                    payload: message.payload || {},
+                    matchId: currentMatch?.id,
+                    playerId: user?.id,
+                });
+                return;
+            }
             sendMessage(`/app/player.Move/${currentMatch.id}`, message);
         }
     };
