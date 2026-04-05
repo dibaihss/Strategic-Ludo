@@ -94,7 +94,7 @@ const LoginPage = ({ navigation }) => {
     navigation.navigate("Register");
   };
 
-  goDirectlyToGame = () => {
+  const goDirectlyToGame = () => {
    dispatch(setOfflineModus(true)); // Set offline mode in the store
     setTimeout(() => {
       console.log(offlineModus);
