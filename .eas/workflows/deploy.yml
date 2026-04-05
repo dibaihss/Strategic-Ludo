@@ -12,5 +12,3 @@ jobs:
     environment: production
     params:
       prod: true
-
-
