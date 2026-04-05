@@ -15,22 +15,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for SonarQube branch/blame analysis
 
       - name: SonarQube Cloud analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: "https://sonarcloud.io" # e.g. https://sonarcloud.io or your SonarQube Cloud URL
+          SONAR_HOST_URL: "https://sonarcloud.io"
         run: |
-          # Base properties
           SONAR_OPTS="
             -Dsonar.projectKey=${{ secrets.PROJECT_KEY }} \
             -Dsonar.organization=${{ secrets.ORGANIZATION_KEY }} \
             -Dsonar.sources=. \
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
-            -Dsonar.sourceEncoding=UTF-8
+            -Dsonar.sourceEncoding=UTF-8 \
+            -Dsonar.scm.provider=git
           "
 
-          # Branch / PR context
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             SONAR_OPTS="$SONAR_OPTS \
               -Dsonar.pullrequest.key=${{ github.event.pull_request.number }} \
@@ -43,6 +46,5 @@ jobs:
 
           npx sonar-scanner \
             -Dsonar.host.url="$SONAR_HOST_URL" \
-            -Dsonar.login="$SONAR_TOKEN" \
+            -Dsonar.token="$SONAR_TOKEN" \
             $SONAR_OPTS
-
