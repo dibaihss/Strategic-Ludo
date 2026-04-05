@@ -14,7 +14,26 @@ import { Feather } from '@expo/vector-icons';
 import Entypo from '@expo/vector-icons/Entypo';
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
 
+const canControlColor = (currentPlayerColor, selectedColor) => {
+    if (currentPlayerColor === selectedColor) return true;
+    if (Array.isArray(currentPlayerColor)) {
+        return currentPlayerColor[0] === selectedColor || currentPlayerColor[1] === selectedColor;
+    }
+    return false;
+};
 
+const renderSoldiersForBox = ({ soldiers, keyPrefix, number, currentPlayer, onSelect }) => (
+    soldiers.map((soldier) =>
+        soldier.position === number && (
+            <Player
+                key={`${keyPrefix}-${soldier.id}`}
+                isSelected={currentPlayer?.id === soldier.id}
+                onPress={() => onSelect(soldier)}
+                color={soldier.color}
+            />
+        )
+    )
+);
 
 export default function SmalBoard() {
 
@@ -36,14 +55,6 @@ export default function SmalBoard() {
     const windowHeight = Dimensions.get('window').height;
     const isSmallScreen = windowWidth < 375 || windowHeight < 667;
 
-    const canControlColor = (selectedColor) => {
-        if (currentPlayerColor === selectedColor) return true;
-        if (Array.isArray(currentPlayerColor)) {
-            return currentPlayerColor[0] === selectedColor || currentPlayerColor[1] === selectedColor;
-        }
-        return false;
-    };
-
     const currentSelectedPlayer = (selectedPlayer) => {
         console.log(availableTypes);
         if (!connected) {
@@ -51,7 +62,7 @@ export default function SmalBoard() {
             return;
         }
 
-        if (canControlColor(selectedPlayer.color)) {
+        if (canControlColor(currentPlayerColor, selectedPlayer.color)) {
             handlePlayerMove(selectedPlayer);
         }
     };
@@ -178,48 +189,10 @@ export default function SmalBoard() {
                   <Entypo name="arrow-bold-down" size={24} color="pink"  style={styles.arrow}/>
                 )} */}
 
-            {redSoldiers.map((soldier) =>
-                soldier.position === number && (
-                    <Player
-                        key={`red-${soldier.id}`}
-                        isSelected={currentPlayer?.id === soldier.id}
-                        onPress={() => currentSelectedPlayer(soldier)}
-                        color={soldier.color}
-                    />
-                )
-            )}
-
-            {blueSoldiers.map((soldier) =>
-                soldier.position === number && (
-                    <Player
-                        key={`blue-${soldier.id}`}
-                        isSelected={currentPlayer?.id === soldier.id}
-                        onPress={() => currentSelectedPlayer(soldier)}
-                        color={soldier.color}
-                    />
-                )
-            )}
-
-            {yellowSoldiers.map((soldier) =>
-                soldier.position === number && (
-                    <Player
-                        key={`yellow-${soldier.id}`}
-                        isSelected={currentPlayer?.id === soldier.id}
-                        onPress={() => currentSelectedPlayer(soldier)}
-                        color={soldier.color}
-                    />
-                )
-            )}
-            {greenSoldiers.map((soldier) =>
-                soldier.position === number && (
-                    <Player
-                        key={`green-${soldier.id}`}
-                        isSelected={currentPlayer?.id === soldier.id}
-                        onPress={() => currentSelectedPlayer(soldier)}
-                        color={soldier.color}
-                    />
-                )
-            )}
+            {renderSoldiersForBox({ soldiers: redSoldiers, keyPrefix: 'red', number, currentPlayer, onSelect: currentSelectedPlayer })}
+            {renderSoldiersForBox({ soldiers: blueSoldiers, keyPrefix: 'blue', number, currentPlayer, onSelect: currentSelectedPlayer })}
+            {renderSoldiersForBox({ soldiers: yellowSoldiers, keyPrefix: 'yellow', number, currentPlayer, onSelect: currentSelectedPlayer })}
+            {renderSoldiersForBox({ soldiers: greenSoldiers, keyPrefix: 'green', number, currentPlayer, onSelect: currentSelectedPlayer })}
         </View>
     );
 
