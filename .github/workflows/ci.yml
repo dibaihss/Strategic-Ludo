@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - feature/**
+  pull_request:
+    branches:
+      - main
+      - feature/**
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: SonarQube Cloud analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: "https://sonarcloud.io" # e.g. https://sonarcloud.io or your SonarQube Cloud URL
+        run: |
+          # Base properties
+          SONAR_OPTS="
+            -Dsonar.projectKey=${{ secrets.PROJECT_KEY }} \
+            -Dsonar.organization=${{ secrets.ORGANIZATION_KEY }} \
+            -Dsonar.sources=. \
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+            -Dsonar.sourceEncoding=UTF-8
+          "
+
+          # Branch / PR context
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            SONAR_OPTS="$SONAR_OPTS \
+              -Dsonar.pullrequest.key=${{ github.event.pull_request.number }} \
+              -Dsonar.pullrequest.branch=${{ github.head_ref }} \
+              -Dsonar.pullrequest.base=${{ github.base_ref }}"
+          else
+            SONAR_OPTS="$SONAR_OPTS \
+              -Dsonar.branch.name=${{ github.ref_name }}"
+          fi
+
+          npx sonar-scanner \
+            -Dsonar.host.url="$SONAR_HOST_URL" \
+            -Dsonar.login="$SONAR_TOKEN" \
+            $SONAR_OPTS
+
