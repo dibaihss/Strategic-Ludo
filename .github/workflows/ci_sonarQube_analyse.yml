@@ -24,6 +24,10 @@ jobs:
       - name: Install dependencies
         run: npm ci --omit=optional
 
+      - name: Security audit
+        run: npm audit --audit-level=high
+        continue-on-error: true  # Or fail the build if you want strict security  
+
       - name: Run unit tests (if configured)
         run: |
           if node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts.test ? 0 : 1)"; then
