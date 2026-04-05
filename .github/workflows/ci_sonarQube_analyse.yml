@@ -25,7 +25,7 @@ jobs:
         run: npm ci
 
       - name: Run tests
-        run: npm test -- --watch=false || echo "No tests configured"
+        run: npm test -- --watch=false --coverage  # generates coverage/lcov.info
 
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
@@ -44,6 +44,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: SonarQube Cloud analysis
+        if: success()   # skip Sonar if any previous step failed
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: "https://sonarcloud.io"
