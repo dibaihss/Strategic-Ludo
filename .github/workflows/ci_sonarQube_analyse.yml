@@ -38,11 +38,21 @@ jobs:
             printf "TN:\\n" > coverage/lcov.info
           fi
 
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps chromium
+      - name: Install Playwright Browsers (if E2E configured)
+        run: |
+          if node -e "const fs=require('fs'); const p=require('./package.json'); const hasScript=!!(p.scripts&&p.scripts['e2e:web']); const hasTests=fs.existsSync('e2e') || fs.existsSync('tests'); process.exit(hasScript && hasTests ? 0 : 1)"; then
+            npx playwright install --with-deps chromium
+          else
+            echo "E2E script or test files not found; skipping Playwright browser install"
+          fi
 
-      - name: Run web E2E tests
-        run: npm run e2e:web
+      - name: Run web E2E tests (if configured)
+        run: |
+          if node -e "const fs=require('fs'); const p=require('./package.json'); const hasScript=!!(p.scripts&&p.scripts['e2e:web']); const hasTests=fs.existsSync('e2e') || fs.existsSync('tests'); process.exit(hasScript && hasTests ? 0 : 1)"; then
+            npm run e2e:web
+          else
+            echo "E2E script or test files not found; skipping web E2E tests"
+          fi
 
       - name: Upload Playwright artifacts
         if: always()

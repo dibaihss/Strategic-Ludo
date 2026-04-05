@@ -6,7 +6,11 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "web:e2e": "cross-env EXPO_PUBLIC_E2E=true CI=1 expo start --web --port 19006",
+    "e2e:web": "playwright test",
+    "e2e:web:ui": "playwright test --ui",
+    "e2e:web:update": "playwright test --update-snapshots"
   },
   "dependencies": {
     "@expo/metro-runtime": "~4.0.1",
@@ -36,7 +40,9 @@
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
-    "dotenv": "^17.3.1"
+    "dotenv": "^17.3.1",
+    "@playwright/test": "^1.54.2",
+    "cross-env": "^7.0.3"
   },
   "private": true,
   "overrides": {
