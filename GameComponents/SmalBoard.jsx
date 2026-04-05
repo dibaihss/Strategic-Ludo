@@ -36,18 +36,23 @@ export default function SmalBoard() {
     const windowHeight = Dimensions.get('window').height;
     const isSmallScreen = windowWidth < 375 || windowHeight < 667;
 
+    const canControlColor = (selectedColor) => {
+        if (currentPlayerColor === selectedColor) return true;
+        if (Array.isArray(currentPlayerColor)) {
+            return currentPlayerColor[0] === selectedColor || currentPlayerColor[1] === selectedColor;
+        }
+        return false;
+    };
+
     const currentSelectedPlayer = (selectedPlayer) => {
-        console.log(availableTypes)
-        if (connected) {
-            if (currentPlayerColor === selectedPlayer.color) {
-                handlePlayerMove(selectedPlayer)
-            }else if(currentPlayerColor[0] === selectedPlayer.color){
-                handlePlayerMove(selectedPlayer)
-            } else if (currentPlayerColor[1] === selectedPlayer.color) {
-                handlePlayerMove(selectedPlayer)
-            }
-        } else {
+        console.log(availableTypes);
+        if (!connected) {
             dispatch(setCurrentPlayer(selectedPlayer));
+            return;
+        }
+
+        if (canControlColor(selectedPlayer.color)) {
+            handlePlayerMove(selectedPlayer);
         }
     };
     useEffect(() => {
