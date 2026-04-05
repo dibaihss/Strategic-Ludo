@@ -22,10 +22,6 @@ export default function AppNavigator() {
   const [isLoading, setIsLoading] = useState(true);
   const gameState = useSelector(state => state.game);
 
-  const currentUserPage = useSelector((state) => state.auth.currentUserPage);
-  const user = useSelector((state) => state.auth.user);
-  const currentMatch = useSelector((state) => state.auth.currentMatch);
-
   // Load stored user on startup
   useEffect(() => {
     console.log("Loading game state:", gameState); // Debugging line
@@ -55,16 +51,10 @@ export default function AppNavigator() {
       }
     };
 
-    // checkStoredUser();
     setIsLoading(false); // For testing purposes, set loading to false immediately
   }, [dispatch]);
 
-  // useEffect(() => {
-  //   dispatch(loadGameState())
-  //     .then(() => {
-  //     })
 
-  // }, [dispatch]);
 
   if (isLoading) {
     return (
