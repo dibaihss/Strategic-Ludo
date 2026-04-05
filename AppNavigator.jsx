@@ -22,10 +22,6 @@ export default function AppNavigator() {
   const [isLoading, setIsLoading] = useState(true);
   const gameState = useSelector(state => state.game);
 
-  const currentUserPage = useSelector((state) => state.auth.currentUserPage);
-  const user = useSelector((state) => state.auth.user);
-  const currentMatch = useSelector((state) => state.auth.currentMatch);
-
   // Load stored user on startup
   useEffect(() => {
     console.log("Loading game state:", gameState); // Debugging line
@@ -55,16 +51,10 @@ export default function AppNavigator() {
       }
     };
 
-    // checkStoredUser();
     setIsLoading(false); // For testing purposes, set loading to false immediately
   }, [dispatch]);
 
-  // useEffect(() => {
-  //   dispatch(loadGameState())
-  //     .then(() => {
-  //     })
 
-  // }, [dispatch]);
 
   if (isLoading) {
     return (
@@ -79,15 +69,6 @@ export default function AppNavigator() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isLoggedIn ? (
           <>
-            {/* {currentUserPage === "MatchList" ? (
-              <Stack.Screen name="MatchList" component={MatchListPage} />
-            ) : currentUserPage === "WaitingRoom" ? (
-              <Stack.Screen name="WaitingRoom" component={WaitingRoom} />
-            ) : currentUserPage === "Game" ? (
-              <Stack.Screen name="Game" component={GameScreen} />
-            ) : (
-              <Stack.Screen name="Home" component={HomeScreen} />
-            )} */}
             <Stack.Screen name="Home" component={HomeScreen} />
             <Stack.Screen name="Game" component={GameScreen} />
             <Stack.Screen name="MatchList" component={MatchListPage} />

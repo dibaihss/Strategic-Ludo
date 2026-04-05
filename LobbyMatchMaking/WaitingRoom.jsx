@@ -12,10 +12,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchCurrentMatch, updateMatch, updateMatchStatus, leaveMatch } from '../assets/store/dbSlice.jsx';
 import { setPlayerColors, updateSoldiersPosition, removeColorFromAvailableColors, setActivePlayer } from '../assets/store/gameSlice.jsx';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
-// import { useWebSocket } from '../assets/shared/SimpleWebSocketConnection.jsx';
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
 import Toast from 'react-native-toast-message';
-import GamePausedModal from '../Menu/GamePausedModal.jsx';
 import { activateKeepAwake, deactivateKeepAwake } from 'expo-keep-awake';
 
 const WaitingRoom = ({ navigation, route }) => {
@@ -189,13 +187,10 @@ const WaitingRoom = ({ navigation, route }) => {
     }
 };
   const startGame = () => {
-    // if (!currentMatch || !currentMatch.id) return;
     if (currentMatch.users.length < 2) {
       return;
     }
-    // deleteMatchData(currentMatch.id)
     sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'startGame' });
-
   };
 
   const handleStartGame = () => {
@@ -241,15 +236,6 @@ const WaitingRoom = ({ navigation, route }) => {
     }
   };
 
-  const handleCountdownComplete = () => {
-    setShowCountdown(false);
-    startGame(); // Uncomment this line to actually start the game
-  };
-
-  const handleCountdownCancel = () => {
-    setShowCountdown(false);
-  };
-
   if (loading && !currentMatch) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -260,7 +246,6 @@ const WaitingRoom = ({ navigation, route }) => {
       </View>
     );
   }
-
 
 
   if (!currentMatch) {
@@ -402,7 +387,6 @@ const WaitingRoom = ({ navigation, route }) => {
           </Text>
         </Pressable>
       </View>
-      <GamePausedModal sendMessage={sendMessage} />
       <Toast />
     </View>
   );

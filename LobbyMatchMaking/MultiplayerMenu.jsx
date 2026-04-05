@@ -70,7 +70,7 @@ const MatchListPage = ({ navigation }) => {
   const handleJoinMatch = (matchId) => {
     dispatch(joinMatch(matchId)).unwrap()
       .then(() => {
-        fetchCurrentMatchData(matchId, true)
+        fetchCurrentMatchData(matchId)
         dispatch(setOnlineModus(true));
         navigation.navigate('WaitingRoom', { join: true });
       })
@@ -98,7 +98,7 @@ const MatchListPage = ({ navigation }) => {
         // Store the new timeout ID in the ref
         timeoutRef.current = setTimeout(() => {
           console.log("Executing delayed fetch for created match:", createdMatch.id);
-          fetchCurrentMatchData(createdMatch.id, false);
+          fetchCurrentMatchData(createdMatch.id);
           timeoutRef.current = null; // Clear the ref after execution
         }, 1000); // Fetch match data after 1 second
       })
