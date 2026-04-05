@@ -277,7 +277,7 @@ export default function GameScreen({ route, navigation }) {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View testID="game-screen" style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {gameIsStarted ? (
         <>
           <Timer />
@@ -286,6 +286,7 @@ export default function GameScreen({ route, navigation }) {
           <Bases />
           <View style={[styles.controls, { backgroundColor: theme.colors.background }]}>
             <Pressable
+              testID="game-skip-turn-button"
               style={[styles.button, {
                 backgroundColor: theme.colors.button,
                 borderColor: theme.colors.buttonBorder
@@ -301,6 +302,7 @@ export default function GameScreen({ route, navigation }) {
             </Pressable>
 
             <Pressable
+              testID="game-exit-button"
               style={[styles.button, {
                 backgroundColor: theme.colors.button,
                 borderColor: theme.colors.buttonBorder

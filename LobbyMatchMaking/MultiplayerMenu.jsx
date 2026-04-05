@@ -113,6 +113,7 @@ const MatchListPage = ({ navigation }) => {
   // Render each match item
   const renderMatchItem = ({ item }) => (
     <Pressable
+      testID={`match-item-${item.id}`}
       style={[styles.matchItem, { backgroundColor: theme.colors.card }]}
       onPress={() => handleJoinMatch(item.id)}
     >
@@ -151,7 +152,7 @@ const MatchListPage = ({ navigation }) => {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: "white" }]}>
+    <View testID="match-list-screen" style={[styles.container, { backgroundColor: "white" }]}>
       {/* Header */}
       <View style={styles.header}>
         <Pressable
@@ -165,6 +166,7 @@ const MatchListPage = ({ navigation }) => {
         </Text>
         {/* Add Refresh Button Here */}
         <Pressable
+          testID="match-list-refresh-button"
           style={styles.refreshButtonHeader} // Add a new style for positioning
           onPress={onRefresh}
           disabled={refreshing || loading}
@@ -224,6 +226,7 @@ const MatchListPage = ({ navigation }) => {
       {/* Create match button */}
       <View style={styles.footer}>
         <Pressable
+          testID="match-list-create-button"
           style={[
             styles.createButton,
             {

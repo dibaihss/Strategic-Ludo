@@ -94,7 +94,7 @@ const LoginPage = ({ navigation }) => {
     navigation.navigate("Register");
   };
 
-  goDirectlyToGame = () => {
+  const goDirectlyToGame = () => {
    dispatch(setOfflineModus(true)); // Set offline mode in the store
     setTimeout(() => {
       console.log(offlineModus);
@@ -129,6 +129,7 @@ const LoginPage = ({ navigation }) => {
                 styles.inputWrapper,
                 { borderColor: theme.colors.border },
               ]}
+              testID="login-email-wrapper"
             >
               <MaterialIcons
                 name="email"
@@ -137,6 +138,7 @@ const LoginPage = ({ navigation }) => {
                 style={styles.inputIcon}
               />
               <TextInput
+                testID="login-email-input"
                 style={[styles.input, { color: theme.colors.text }]}
                 placeholder={uiStrings[systemLang].email}
                 placeholderTextColor={theme.colors.textSecondary}
@@ -154,6 +156,7 @@ const LoginPage = ({ navigation }) => {
                 styles.inputWrapper,
                 { borderColor: theme.colors.border },
               ]}
+              testID="login-password-wrapper"
             >
               <MaterialIcons
                 name="lock"
@@ -162,6 +165,7 @@ const LoginPage = ({ navigation }) => {
                 style={styles.inputIcon}
               />
               <TextInput
+                testID="login-password-input"
                 style={[styles.input, { color: theme.colors.text }]}
                 placeholder={uiStrings[systemLang].password}
                 placeholderTextColor={theme.colors.textSecondary}
@@ -182,6 +186,7 @@ const LoginPage = ({ navigation }) => {
 
           {/* Login Button */}
           <Pressable
+            testID="login-submit-button"
             style={[
               styles.button,
               {
@@ -258,6 +263,7 @@ const LoginPage = ({ navigation }) => {
           {/* Guest Login and Play Offline buttons in the same row */}
           <View style={styles.buttonsRow}>
             <Pressable
+              testID="login-guest-button"
               style={[
                 styles.buttonHalf,
                 {
@@ -289,6 +295,7 @@ const LoginPage = ({ navigation }) => {
             </Pressable>
 
             <Pressable
+              testID="login-offline-button"
               style={[
                 styles.buttonHalf,
                 {

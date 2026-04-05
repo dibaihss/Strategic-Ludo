@@ -26,6 +26,35 @@ let API_URL = ENV_API || (__DEV__ ? (Platform.OS === 'android' ? ANDROID_API_URL
 
 console.log(`Using API URL: ${API_URL} on platform: ${Platform.OS}`); // Enhanced logging
 // --- END: API URL Configuration ---
+
+const isE2EMode = (() => {
+  const envFlag = (typeof process !== "undefined" && process?.env?.EXPO_PUBLIC_E2E === "true") ||
+    (typeof process !== "undefined" && process?.env?.REACT_APP_E2E === "true");
+  const queryFlag = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("e2e") === "1";
+  return Boolean(envFlag || queryFlag);
+})();
+
+let e2eMatches = [
+  {
+    id: 5001,
+    name: "E2E Match 5001",
+    status: "waiting",
+    users: [{ id: 9001, name: "E2E Host", isGuest: true }],
+  },
+];
+
+const createE2EUser = () => ({
+  id: 9002,
+  name: "E2E Guest",
+  email: "e2e.guest@example.com",
+  isGuest: true,
+});
+
+const getE2EUser = async () => {
+  const stored = await AsyncStorage.getItem("user");
+  if (stored) return JSON.parse(stored);
+  return createE2EUser();
+};
 // Add this thunk after your other API calls
 export const updateUserStatus = createAsyncThunk(
   "auth/updateUserStatus",
@@ -115,6 +144,16 @@ export const loginUser = createAsyncThunk(
   "auth/loginUser",
   async (userData, { rejectWithValue }) => {
     try {
+      if (isE2EMode) {
+        const user = {
+          ...createE2EUser(),
+          email: userData.email || "e2e.user@example.com",
+          name: "E2E User",
+        };
+        await AsyncStorage.setItem("user", JSON.stringify(user));
+        return user;
+      }
+
       // Keep your existing API call
       const response = await fetch(`${API_URL}/users`, {
         method: "POST",
@@ -147,6 +186,12 @@ export const loginGuest = createAsyncThunk(
   "auth/loginGuest",
   async (_, { rejectWithValue }) => {
     try {
+      if (isE2EMode) {
+        const user = createE2EUser();
+        await AsyncStorage.setItem("user", JSON.stringify(user));
+        return user;
+      }
+
       const guestName = `Guest_${Math.floor(Math.random() * 10000)}`;
 
       const response = await fetch(`${API_URL}/guest-login`, {
@@ -224,6 +269,10 @@ export const fetchMatches = createAsyncThunk(
   "auth/fetchMatches",
   async (_, { rejectWithValue }) => {
     try {
+      if (isE2EMode) {
+        return e2eMatches;
+      }
+
       const response = await fetch(`${API_URL}/sessions`);
       if (!response.ok) return rejectWithValue("Failed to fetch matches");
       return await response.json();
@@ -238,6 +287,21 @@ export const createMatch = createAsyncThunk(
   "auth/createMatch",
   async (_, { rejectWithValue, getState }) => {
     try {
+      if (isE2EMode) {
+        const currentUser = await getE2EUser();
+        const createdMatch = {
+          id: Date.now(),
+          name: `E2E Match ${Math.floor(Math.random() * 1000)}`,
+          status: "waiting",
+          users: [
+            currentUser,
+            { id: 9003, name: "E2E Player 2", isGuest: true },
+          ],
+        };
+        e2eMatches = [createdMatch, ...e2eMatches];
+        return createdMatch;
+      }
+
       const { auth } = getState();
       const userId = auth.user?.id;
 
@@ -271,6 +335,19 @@ export const joinMatch = createAsyncThunk(
   "auth/joinMatch",
   async (matchId, { rejectWithValue, getState }) => {
     try {
+      if (isE2EMode) {
+        const currentUser = await getE2EUser();
+        const matchIdNumber = Number(matchId);
+        const targetMatch = e2eMatches.find(match => Number(match.id) === matchIdNumber);
+        if (!targetMatch) return rejectWithValue("Match not found");
+
+        const alreadyJoined = targetMatch.users.some(user => user.id === currentUser.id);
+        if (!alreadyJoined) {
+          targetMatch.users = [...targetMatch.users, currentUser];
+        }
+        return targetMatch;
+      }
+
       const { auth } = getState();
       const userId = auth.user?.id;
 
@@ -297,6 +374,17 @@ export const leaveMatch = createAsyncThunk(
   "auth/leaveMatch",
   async (payload, { getState, rejectWithValue }) => {
     try {
+      if (isE2EMode) {
+        e2eMatches = e2eMatches.map((match) => {
+          if (Number(match.id) !== Number(payload.matchId)) return match;
+          return {
+            ...match,
+            users: match.users.filter((user) => user.id !== payload.playerId),
+          };
+        });
+        return { matchId: payload.matchId, userId: payload.playerId };
+      }
+
       const state = getState();
       const userId = state.auth.user?.id;
       const token = state.auth.token;
@@ -336,6 +424,12 @@ export const fetchCurrentMatch = createAsyncThunk(
   "auth/fetchCurrentMatch",
   async (matchId, { getState, rejectWithValue }) => {
     try {
+      if (isE2EMode) {
+        const targetMatch = e2eMatches.find(match => Number(match.id) === Number(matchId));
+        if (!targetMatch) return rejectWithValue("Failed to fetch match data");
+        return targetMatch;
+      }
+
       const state = getState();
       const token = state.auth.token;
 
