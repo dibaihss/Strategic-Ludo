@@ -15,6 +15,101 @@ import { MaterialIcons } from '@expo/vector-icons';
 import Feather from '@expo/vector-icons/Feather';
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
 
+const getCategoryFromPosition = (position) => position.match(/[a-zA-Z]+/)[0];
+const getNumberFromPosition = (position) => parseInt(position.match(/\d+/)[0], 10);
+
+const canControlColor = (currentPlayerColor, color) => {
+    if (currentPlayerColor === color) return true;
+    if (Array.isArray(currentPlayerColor)) {
+        return currentPlayerColor[0] === color || currentPlayerColor[1] === color;
+    }
+    return false;
+};
+
+const getNextCategory = (currentCategory) => {
+    const currentIndex = categories.indexOf(currentCategory);
+    const nextIndex = (currentIndex + 1) % categories.length;
+    return categories[nextIndex];
+};
+
+const getInvolvedSteps = (band, sourcePos, targetPos) => {
+    const targetCategory = getCategoryFromPosition(targetPos);
+    const sourceCategory = getCategoryFromPosition(sourcePos);
+
+    if (targetCategory === getNextCategory(sourceCategory)) {
+        const maxBandNumber = Math.max(...band.map(item => getNumberFromPosition(item)));
+        return band.filter((box) => {
+            const boxCategory = getCategoryFromPosition(box);
+            if (boxCategory === targetCategory) {
+                return getNumberFromPosition(box) <= getNumberFromPosition(targetPos);
+            }
+            if (boxCategory === sourceCategory) {
+                return getNumberFromPosition(box) <= maxBandNumber && getNumberFromPosition(box) >= getNumberFromPosition(sourcePos);
+            }
+            return false;
+        });
+    }
+
+    return band.filter((box) => {
+        const boxCategory = getCategoryFromPosition(box);
+        if (boxCategory !== sourceCategory && boxCategory !== targetCategory) return false;
+        return getNumberFromPosition(box) <= getNumberFromPosition(targetPos) && getNumberFromPosition(box) > getNumberFromPosition(sourcePos);
+    });
+};
+
+const getMaxPositionNumber = (positions) => {
+    if (!positions.length) return 0;
+    return Math.max(...positions.map(item => getNumberFromPosition(item)));
+};
+
+const createStepMetrics = (sourcePos, targetPos) => {
+    const row2 = getInvolvedSteps(boxes.row2, sourcePos, targetPos);
+    const row1 = getInvolvedSteps(boxes.row1, sourcePos, targetPos);
+    const column2 = getInvolvedSteps(boxes.column2, sourcePos, targetPos);
+    const column1 = getInvolvedSteps(boxes.column1, sourcePos, targetPos);
+
+    const metrics = {
+        xSteps: 0,
+        xSteps2: 0,
+        ySteps: 0,
+        ySteps2: 0,
+        maxRow: 0,
+        maxCol: 0,
+        maxRow1: 0,
+        maxRow2: 0,
+        maxCol1: 0,
+        maxCol2: 0,
+    };
+
+    if (row1.length > 0 && row2.length > 0) {
+        metrics.maxRow1 = getMaxPositionNumber(row1);
+        metrics.maxRow2 = getMaxPositionNumber(row2);
+        const isFirstPathLarger = metrics.maxRow1 > metrics.maxRow2;
+        const primary = isFirstPathLarger ? row1.length : row2.length;
+        const secondary = isFirstPathLarger ? row2.length : row1.length;
+        metrics.xSteps = primary;
+        metrics.xSteps2 = secondary - 1;
+        return metrics;
+    }
+
+    if (column1.length > 0 && column2.length > 0) {
+        metrics.maxCol1 = getMaxPositionNumber(column1);
+        metrics.maxCol2 = getMaxPositionNumber(column2);
+        const isFirstPathLarger = metrics.maxCol1 > metrics.maxCol2;
+        const primary = isFirstPathLarger ? column1.length : column2.length;
+        const secondary = isFirstPathLarger ? column2.length : column1.length;
+        metrics.ySteps = primary;
+        metrics.ySteps2 = secondary - 1;
+        return metrics;
+    }
+
+    metrics.xSteps = row1.length + row2.length;
+    metrics.ySteps = column2.length + column1.length;
+    metrics.maxRow = Math.max(getMaxPositionNumber(row1), getMaxPositionNumber(row2));
+    metrics.maxCol = Math.max(getMaxPositionNumber(column1), getMaxPositionNumber(column2));
+    return metrics;
+};
+
 export default function Bases() {
 
     const dispatch = useDispatch();
@@ -36,7 +131,7 @@ export default function Bases() {
     const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
     
 
-    const { connected, subscribe, sendMessage } = useWebSocket();
+    const { connected, subscribe, sendMessage, sendMatchCommand } = useWebSocket();
 
     const windowWidth = Dimensions.get('window').width;
     const windowHeight = Dimensions.get('window').height;
@@ -205,15 +300,14 @@ export default function Bases() {
         if (connected) {
         if(!currentMatch || !currentMatch.id) return;
             const subscription = subscribe(`/topic/playerMove/${currentMatch.id}`, (data) => {
-
-                const parsedData = JSON.parse(data);
-                if (parsedData.type === 'movePlayer') {
-                    const { color, steps } = parsedData.payload;
+                const parsedData = data;
+                if (parsedData?.type === 'movePlayer') {
+                    const { color, steps } = parsedData.payload || {};
                     movePlayer(color, steps);
-                } else if (parsedData.type === 'enterNewSoldier') {
-                    const { color } = parsedData.payload;
+                } else if (parsedData?.type === 'enterNewSoldier') {
+                    const { color } = parsedData.payload || {};
                     handleEnterNewSoldier(color);
-                } else if (parsedData.type === 'skipTurn') {
+                } else if (parsedData?.type === 'skipTurn') {
                         HandleskipTurn()                 
                 }
             });
@@ -243,7 +337,16 @@ export default function Bases() {
 
     const sendMoveUpdate = (message) => {
         if (connected) {
-            sendMessage(`/app/player.Move/${currentMatch.id}`, JSON.stringify(message));
+            if (message?.type) {
+                sendMatchCommand({
+                    type: message.type,
+                    payload: message.payload || {},
+                    matchId: currentMatch?.id,
+                    playerId: user?.id,
+                });
+                return;
+            }
+            sendMessage(`/app/player.Move/${currentMatch.id}`, message);
         }
     };
 
@@ -252,151 +355,62 @@ export default function Bases() {
         dispatch(resetTimer());
       }
     const movePlayer = (color, steps) => {
-        if (!currentPlayer || currentPlayer.isOut) {
-            const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
+        const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
+        const showErrorToast = (text1, text2) => {
             Toast.show({
                 type: 'error',
-                text1: uiStrings[systemLang].selectPlayer.replace('{color}', localizedActivePlayer),
-                text2: uiStrings[systemLang].playerNotSelected,
+                text1,
+                text2,
                 position: 'bottom',
                 visibilityTime: 2000,
             });
+        };
+
+        const hasNoSelectablePlayer = !currentPlayer || currentPlayer.isOut;
+        if (hasNoSelectablePlayer) {
+            showErrorToast(
+                uiStrings[systemLang].selectPlayer.replace('{color}', localizedActivePlayer),
+                uiStrings[systemLang].playerNotSelected
+            );
             return;
         }
+
         if (showClone) return;
+
         if (currentPlayer.color !== color) {
-            const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
-            Toast.show({
-                type: 'error',
-                text1: uiStrings[systemLang].wrongColor,
-                text2: uiStrings[systemLang].wrongTurn.replaceAll('{color}', localizedActivePlayer),
-                position: 'bottom',
-                visibilityTime: 2000,
-            });
+            showErrorToast(
+                uiStrings[systemLang].wrongColor,
+                uiStrings[systemLang].wrongTurn.replaceAll('{color}', localizedActivePlayer)
+            );
             return;
         }
+
         if (activePlayer !== currentPlayer.color) {
-            const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
-            Toast.show({
-                type: 'error',
-                text1: uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer),
-                text2: uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer),
-                position: 'bottom',
-                visibilityTime: 2000,
-            });
+            showErrorToast(
+                uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer),
+                uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer)
+            );
             return;
         }
+
         dispatch(checkIfCardUsed({ color, steps }));
         const newPosition = calculateNewPosition(currentPlayer, steps);
 
         if (newPosition === "") {
-            if (currentPlayer.color === "red" || currentPlayer.color === "green") {
-                dispatch(setBoxesPosition({ ySteps: steps, newPosition: newPosition }))
-            } else {
-                dispatch(setBoxesPosition({ xSteps: steps, newPosition: newPosition }))
-            }
-        } else {
-            getXStepsYSteps(currentPlayer.position, newPosition)
+            const outOfBoardPayload = currentPlayer.color === "red" || currentPlayer.color === "green"
+                ? { ySteps: steps, newPosition: newPosition }
+                : { xSteps: steps, newPosition: newPosition };
+            dispatch(setBoxesPosition(outOfBoardPayload));
+            return;
         }
+
+        getXStepsYSteps(currentPlayer.position, newPosition);
     };
 
     const getXStepsYSteps = (sourcePos, targetPos) => {
-        let xSteps = 0;
-        let ySteps = 0;
-        let xSteps2 = 0;
-        let ySteps2 = 0;
-
-        let maxRow = 0;
-        let maxCol = 0;
-
-        let maxRow1 = 0
-        let maxRow2 = 0
-
-        let maxCol1 = 0
-        let maxCol2 = 0
-
-        const row2 = getInVolvedSteps(boxes.row2, sourcePos, targetPos)
-        const row1 = getInVolvedSteps(boxes.row1, sourcePos, targetPos)
-
-        const column2 = getInVolvedSteps(boxes.column2, sourcePos, targetPos)
-        const column1 = getInVolvedSteps(boxes.column1, sourcePos, targetPos)
-
-        if (row1.length > 0 && row2.length > 0) {
-
-            maxRow1 = Math.max(...row1.map(x => parseInt(x.match(/\d+/)[0])))
-            maxRow2 = Math.max(...row2.map(x => parseInt(x.match(/\d+/)[0])))
-
-            if (maxRow1 > maxRow2) {
-                xSteps += row1.length > 0 ? row1.length : 0
-                xSteps2 += row2.length > 0 ? row2.length : 0
-                xSteps2--
-            } else {
-                xSteps += row2.length > 0 ? row2.length : 0
-                xSteps2 += row1.length > 0 ? row1.length : 0
-                xSteps2--
-            }
-
-        } else if (column1.length > 0 && column2.length > 0) {
-            maxCol1 = Math.max(...column1.map(x => parseInt(x.match(/\d+/)[0])))
-            maxCol2 = Math.max(...column2.map(x => parseInt(x.match(/\d+/)[0])))
-
-            if (maxCol1 > maxCol2) {
-                ySteps += column1.length > 0 ? column1.length : 0
-                ySteps2 += column2.length > 0 ? column2.length : 0
-                ySteps2--
-            } else {
-                ySteps += column2.length > 0 ? column2.length : 0
-                ySteps2 += column1.length > 0 ? column1.length : 0
-                ySteps2--
-            }
-        }
-        else {
-            xSteps += row1.length > 0 ? row1.length : 0
-            xSteps += row2.length > 0 ? row2.length : 0
-
-            ySteps += column2.length > 0 ? column2.length : 0
-            ySteps += column1.length > 0 ? column1.length : 0
-
-            maxRow = Math.max(
-                row1.length > 0 ? Math.max(...row1.map(x => parseInt(x))) : 0,
-                row2.length > 0 ? Math.max(...row2.map(x => parseInt(x))) : 0
-            );
-
-            maxCol = Math.max(
-                column1.length > 0 ? Math.max(...column1.map(x => parseInt(x))) : 0,
-                column2.length > 0 ? Math.max(...column2.map(x => parseInt(x))) : 0
-            );
-        }
-
-        dispatch(setBoxesPosition({ xSteps, xSteps2, ySteps, maxRow, maxCol, newPosition: targetPos, maxRow1, maxRow2, maxCol1, maxCol2, ySteps2 }))
-
-    }
-
-    getInVolvedSteps = (band, sourcePos, targetPos) => {
-        let categorieTar = targetPos.match(/[a-zA-Z]+/)[0];
-        let categorieSou = sourcePos.match(/[a-zA-Z]+/)[0];
-
-        let elements
-        if (categorieTar === getNextCatergory(categorieSou)) {
-            elements = band.filter(box => {
-                let cateBox = box.match(/[a-zA-Z]+/)[0];
-                if (cateBox === categorieTar) {
-                    return parseInt(box) <= parseInt(targetPos)
-                } else if (cateBox === categorieSou) {
-                    return parseInt(box) <= Math.max(...band.map(x => parseInt(x.match(/\d+/)[0]))) && parseInt(box) >= parseInt(sourcePos)
-                }
-            }
-            );
-        } else {
-            elements = band.filter(box => {
-                let cateBox = box.match(/[a-zA-Z]+/)[0];
-                if (cateBox === categorieSou || cateBox === categorieTar) {
-                    return parseInt(box) <= parseInt(targetPos) && parseInt(box) > parseInt(sourcePos)
-                }
-            });
-        }
-        return elements
-    }
+        const metrics = createStepMetrics(sourcePos, targetPos);
+        dispatch(setBoxesPosition({ ...metrics, newPosition: targetPos }));
+    };
 
     calculateNewPosition = (player, steps) => {
         if (!player.position || player.isOut) return;
@@ -407,7 +421,7 @@ export default function Bases() {
 
         if (steps === 1) {
             numbers = numbers === 12 ? 1 : numbers + 1;
-            categorie = numbers === 1 ? getNextCatergory(categorie) : categorie;
+            categorie = numbers === 1 ? getNextCategory(categorie) : categorie;
             if (CheckOutOfBoardCondition(numbers + categorie)) {
                 return "";
             }
@@ -416,7 +430,7 @@ export default function Bases() {
 
         for (let i = 0; i < steps; i++) {
             numbers = numbers === 12 ? 1 : numbers + 1;
-            categorie = numbers === 1 ? getNextCatergory(categorie) : categorie;
+            categorie = numbers === 1 ? getNextCategory(categorie) : categorie;
 
             if (CheckOutOfBoardCondition(numbers + categorie)) {
                 return "";
@@ -424,12 +438,6 @@ export default function Bases() {
         }
         return numbers + categorie;
     }
-
-    const getNextCatergory = (currentCategory) => {
-        const currentIndex = categories.indexOf(currentCategory);
-        const nextIndex = (currentIndex + 1) % categories.length;
-        return categories[nextIndex];
-    };
 
     const CheckOutOfBoardCondition = (position) => {
 
@@ -474,67 +482,35 @@ export default function Bases() {
     };
     // Mutliplayer Functions
     const movePlayerHanlder = (color, steps) => {
-     
-        if (connected) {
-            if (currentPlayerColor === color) {
-                sendMoveUpdate({
-                    type: 'movePlayer',
-                    payload: {
-                        color: currentPlayer.color,
-                        steps
-                    },
-                });
-            }else if(currentPlayerColor[0] === color){
-                sendMoveUpdate({
-                    type: 'movePlayer',
-                    payload: {
-                        color: currentPlayer.color,
-                        steps
-                    },
-                });
-            } else if (currentPlayerColor[1] === color) {
-                sendMoveUpdate({
-                    type: 'movePlayer',
-                    payload: {
-                        color: currentPlayer.color,
-                        steps
-                    },
-                });
-            }
-        } else {
+        if (!connected) {
             movePlayer(color, steps);
+            return;
         }
-    }
+
+        if (!canControlColor(currentPlayerColor, color)) return;
+        sendMoveUpdate({
+            type: 'movePlayer',
+            payload: {
+                color: currentPlayer.color,
+                steps
+            },
+        });
+    };
 
     const enterNewSoldierHandler = (color) => {
-        if (connected) {
-            if (currentPlayerColor === color) {
-                sendMoveUpdate({
-                    type: 'enterNewSoldier',
-                    payload: {
-                        color: color,
-                    },
-                });
-            }else if(currentPlayerColor[0] === color){
-                sendMoveUpdate({
-                    type: 'enterNewSoldier',
-                    payload: {
-                        color: color,
-                    },
-                });
-            } else if (currentPlayerColor[1] === color) {
-                sendMoveUpdate({
-                    type: 'enterNewSoldier',
-                    payload: {
-                        color: color,
-                    },
-                });
-            }
-
-        } else {
+        if (!connected) {
             handleEnterNewSoldier(color);
+            return;
         }
-    }
+
+        if (!canControlColor(currentPlayerColor, color)) return;
+        sendMoveUpdate({
+            type: 'enterNewSoldier',
+            payload: {
+                color: color,
+            },
+        });
+    };
     const renderInCirclePlayers = (j, playerType, i) => (
         <>
             {[

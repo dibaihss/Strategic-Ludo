@@ -1,0 +1,6 @@
+{
+    "sonarlint.connectedMode.project": {
+        "connectionId": "test connection to sonar",
+        "projectKey": "dibaihss_Strategic-Ludo"
+    }
+}

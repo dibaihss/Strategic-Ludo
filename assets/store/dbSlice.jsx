@@ -19,7 +19,7 @@ const PRODUCTION_API_URL = (typeof process !== 'undefined' && process.env && pro
   'https://lowcostbackendapp-dze4chctcsevdybb.westeurope-01.azurewebsites.net/api';
 
 // URL options based on platform and environment
-const LOCALHOST_API_URL = 'http://localhost:8080/api'; // Default for iOS simulator
+const LOCALHOST_API_URL = 'https://lowcostbackendapp-dze4chctcsevdybb.westeurope-01.azurewebsites.net/api'; // Default for iOS simulator
 const ANDROID_API_URL = 'http://192.168.178.130:8080/api'; // Android-specific URL with port
 
 let API_URL = ENV_API || (__DEV__ ? (Platform.OS === 'android' ? ANDROID_API_URL : LOCALHOST_API_URL) : PRODUCTION_API_URL);
@@ -359,6 +359,60 @@ export const fetchCurrentMatch = createAsyncThunk(
     }
   }
 );
+
+export const fetchMatchState = createAsyncThunk(
+  "auth/fetchMatchState",
+  async (matchId, { getState, rejectWithValue }) => {
+    try {
+      const state = getState();
+      const token = state.auth.token;
+
+      const response = await fetch(`${API_URL}/sessions/${matchId}/state`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+      });
+
+      if (!response.ok) {
+        return rejectWithValue("Failed to fetch match state");
+      }
+
+      return await response.json();
+    } catch (error) {
+      return rejectWithValue("Network error while fetching match state");
+    }
+  }
+);
+
+export const submitMatchCommand = createAsyncThunk(
+  "auth/submitMatchCommand",
+  async ({ matchId, command }, { getState, rejectWithValue }) => {
+    try {
+      const state = getState();
+      const token = state.auth.token;
+
+      const response = await fetch(`${API_URL}/sessions/${matchId}/commands`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+        body: JSON.stringify(command),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return rejectWithValue(errorText || "Failed to submit match command");
+      }
+
+      return await response.json();
+    } catch (error) {
+      return rejectWithValue("Network error while submitting command");
+    }
+  }
+);
 // unused
 export const updateMatchStatus = createAsyncThunk(
   "auth/updateMatchStatus",
@@ -428,7 +482,10 @@ const authSlice = createSlice({
     error: null,
     matches: [],
     currentMatch: null,
+    currentMatchState: null,
     currentUserPage: null,
+    lastCommandAck: null,
+    commandError: null,
     loading: false,
     offlineModus: false,
   },
@@ -462,6 +519,13 @@ const authSlice = createSlice({
     },
     setOfflineModus: (state, action) => {
       state.offlineModus = action.payload;
+    },
+    setCurrentMatchState: (state, action) => {
+      state.currentMatchState = action.payload;
+    },
+    clearCommandStatus: (state) => {
+      state.lastCommandAck = null;
+      state.commandError = null;
     },
   },
   extraReducers: (builder) => {
@@ -564,6 +628,27 @@ const authSlice = createSlice({
       .addCase(joinMatch.rejected, (state) => {
         state.loading = false;
       })
+      .addCase(fetchMatchState.pending, (state) => {
+        state.loading = true;
+        state.commandError = null;
+      })
+      .addCase(fetchMatchState.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentMatchState = action.payload;
+      })
+      .addCase(fetchMatchState.rejected, (state, action) => {
+        state.loading = false;
+        state.commandError = action.payload;
+      })
+      .addCase(submitMatchCommand.pending, (state) => {
+        state.commandError = null;
+      })
+      .addCase(submitMatchCommand.fulfilled, (state, action) => {
+        state.lastCommandAck = action.payload;
+      })
+      .addCase(submitMatchCommand.rejected, (state, action) => {
+        state.commandError = action.payload;
+      })
       .addCase(updateUserStatus.pending, (state) => {
         state.loading = true;
       })
@@ -638,6 +723,8 @@ export const {
   setLoggedIn,
   setCurrentUserPage,
   setOfflineModus,
+  setCurrentMatchState,
+  clearCommandStatus,
 } = authSlice.actions;
 
 // Simple selectors
@@ -645,5 +732,8 @@ export const selectUser = (state) => state.auth.user;
 export const selectIsLoggedIn = (state) => state.auth.isLoggedIn;
 export const selectMatches = (state) => state.auth.matches;
 export const selectCurrentMatch = (state) => state.auth.currentMatch;
+export const selectCurrentMatchState = (state) => state.auth.currentMatchState;
+export const selectLastCommandAck = (state) => state.auth.lastCommandAck;
+export const selectCommandError = (state) => state.auth.commandError;
 
 export default authSlice.reducer;
