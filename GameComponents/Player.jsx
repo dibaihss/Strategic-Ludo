@@ -149,6 +149,71 @@ const buildMovementSequence = (boxesPosition, currentPlayer, boxSize) => {
     return movement;
 };
 
+const createPieceStyle = ({ isSelected, isSmallScreen, theme, color }) => ({
+    width: isSelected ? (isSmallScreen ? 10 : 30) : (isSmallScreen ? 3 : 25),
+    height: isSelected ? (isSmallScreen ? 10 : 30) : (isSmallScreen ? 3 : 25),
+    borderRadius: isSmallScreen ? 12 : 12.5,
+    backgroundColor: theme.colors[color],
+    borderWidth: isSelected ? (isSmallScreen ? 3 : 5) : (isSmallScreen ? 3 : 2),
+    borderColor: isSelected ? theme.colors.selected : '#ffffff',
+    padding: isSmallScreen ? 6.5 : 15,
+    elevation: isSmallScreen ? (isSelected ? 4 : 2) : 0,
+    shadowColor: isSelected ? (theme.colors.shadowColor ? theme.colors.shadowColor : "") : "",
+    shadowOffset: {
+        width: 0,
+        height: 0,
+    },
+    shadowOpacity: isSelected ? 0.7 : 0,
+    shadowRadius: isSelected ? 50 : 0,
+});
+
+const moveElementWithState = ({ boxesPosition, currentPlayer, dispatch }) => {
+    const { kickedPlayer, returenToBase, newPosition } = boxesPosition;
+    if (returenToBase) {
+        dispatch(moveSoldier({
+            color: kickedPlayer.color,
+            position: kickedPlayer.initialPosition,
+            soldierID: kickedPlayer.id,
+            returenToBase: returenToBase ? returenToBase : false
+        }));
+        dispatch(setActivePlayer());
+        dispatch(resetTimer());
+        return;
+    }
+
+    dispatch(moveSoldier({
+        color: currentPlayer.color,
+        position: newPosition,
+        soldierID: currentPlayer.id,
+        steps: 0,
+    }));
+
+    dispatch(setCurrentPlayer(null));
+    dispatch(checkIfGotEnemy({ color: currentPlayer.color, position: newPosition }));
+};
+
+const runAnimationSequence = ({ animatedValue, sequence, dispatch, onComplete, index = 0 }) => {
+    Animated.timing(animatedValue, {
+        toValue: sequence[index],
+        duration: 550,
+        useNativeDriver: false,
+    }).start(({ finished }) => {
+        if (!finished) {
+            dispatch(setShowClone(false));
+            return;
+        }
+
+        const isLastStep = index === sequence.length - 1;
+        if (isLastStep) {
+            onComplete();
+            dispatch(setShowClone(false));
+            return;
+        }
+
+        runAnimationSequence({ animatedValue, sequence, dispatch, onComplete, index: index + 1 });
+    });
+};
+
 export default function Player({ color, isSelected, onPress }) {
     const animatedValue = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
     const currentPlayer = useSelector(state => state.game.currentPlayer);
@@ -170,53 +235,6 @@ export default function Player({ color, isSelected, onPress }) {
         }
     });
 
-    const moveElement = () => {
-        const { kickedPlayer, returenToBase, newPosition } = boxesPosition;
-        if (returenToBase) {
-            dispatch(moveSoldier({
-                color: kickedPlayer.color,
-                position: kickedPlayer.initialPosition,
-                soldierID: kickedPlayer.id,
-                returenToBase: returenToBase ? returenToBase : false
-            }));
-            dispatch(setActivePlayer());
-            dispatch(resetTimer());
-            return;
-        }
-
-        dispatch(moveSoldier({
-            color: currentPlayer.color,
-            position: newPosition,
-            soldierID: currentPlayer.id,
-            steps: 0,
-        }));
-
-        dispatch(setCurrentPlayer(null));
-        dispatch(checkIfGotEnemy({ color: currentPlayer.color, position: newPosition }));
-    };
-
-    const runAnimationSequence = (sequence, index = 0) => {
-        Animated.timing(animatedValue, {
-            toValue: sequence[index],
-            duration: 550,
-            useNativeDriver: false,
-        }).start(({ finished }) => {
-            if (!finished) {
-                dispatch(setShowClone(false));
-                return;
-            }
-
-            const isLastStep = index === sequence.length - 1;
-            if (isLastStep) {
-                moveElement();
-                dispatch(setShowClone(false));
-                return;
-            }
-
-            runAnimationSequence(sequence, index + 1);
-        });
-    };
-
     React.useEffect(() => {
         if (!shouldAnimate(showClone, currentPlayer, color, isSelected, boxesPosition)) return;
 
@@ -225,7 +243,12 @@ export default function Player({ color, isSelected, onPress }) {
         if (movementSequence.length === 0) return;
 
         dispatch(setShowClone(true));
-        runAnimationSequence(movementSequence);
+        runAnimationSequence({
+            animatedValue,
+            sequence: movementSequence,
+            dispatch,
+            onComplete: () => moveElementWithState({ boxesPosition, currentPlayer, dispatch }),
+        });
     }, [boxesPosition]);
 
     return (
@@ -237,23 +260,7 @@ export default function Player({ color, isSelected, onPress }) {
             <Pressable
                 onPress={() => onPress()}
                 android_ripple={isSmallScreen ? { color: 'rgba(255,255,255,0.3)', borderless: true } : null}
-                style={{
-                    width: isSelected ? (isSmallScreen ? 10 : 30) : (isSmallScreen ? 3 : 25),
-                    height: isSelected ? (isSmallScreen ? 10 : 30) : (isSmallScreen ? 3 : 25),
-                    borderRadius: isSmallScreen ? 12 : 12.5,
-                    backgroundColor: theme.colors[color],
-                    borderWidth: isSelected ? (isSmallScreen ? 3 : 5) : (isSmallScreen ? 3 : 2),
-                    borderColor: isSelected ? theme.colors.selected : '#ffffff',
-                    padding: isSmallScreen ? 6.5 : 15,
-                    elevation: isSmallScreen ? (isSelected ? 4 : 2) : 0,
-                    shadowColor: isSelected ? (theme.colors.shadowColor ? theme.colors.shadowColor : "") : "",
-                    shadowOffset: {
-                        width: 0,
-                        height: 0,
-                    },
-                    shadowOpacity: isSelected ? 0.7 : 0,
-                    shadowRadius: isSelected ? 50 : 0,
-                }}
+                style={createPieceStyle({ isSelected, isSmallScreen, theme, color })}
             />
         </Animated.View>
     );

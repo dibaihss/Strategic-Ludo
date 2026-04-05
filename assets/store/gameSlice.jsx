@@ -147,6 +147,12 @@ const getNextPlayerType = (currentPlayerType, availableTypesPara) => {
     return availableTypesPara[nextIndex];
 };
 
+const assignIfArray = (state, source, key, targetKey) => {
+    if (Array.isArray(source[key])) {
+        state[targetKey] = source[key];
+    }
+};
+
 export const checkIfGotEnemy = ({ color, position }) => (dispatch, getState) => {
 
     const state = getState().game;
@@ -327,16 +333,21 @@ export const gameSlice = createSlice({
             if (snapshot.currentPlayer) {
                 state.currentPlayer = snapshot.currentPlayer;
             }
-            if (typeof snapshot.timeRemaining === 'number') {
-                state.timeRemaining = snapshot.timeRemaining;
-            } else if (typeof snapshot.timer?.timeRemaining === 'number') {
-                state.timeRemaining = snapshot.timer.timeRemaining;
+
+            const snapshotTimeRemaining = typeof snapshot.timeRemaining === 'number'
+                ? snapshot.timeRemaining
+                : snapshot.timer?.timeRemaining;
+            if (typeof snapshotTimeRemaining === 'number') {
+                state.timeRemaining = snapshotTimeRemaining;
             }
-            if (typeof snapshot.isTimerRunning === 'boolean') {
-                state.isTimerRunning = snapshot.isTimerRunning;
-            } else if (typeof snapshot.timer?.isRunning === 'boolean') {
-                state.isTimerRunning = snapshot.timer.isRunning;
+
+            const snapshotIsTimerRunning = typeof snapshot.isTimerRunning === 'boolean'
+                ? snapshot.isTimerRunning
+                : snapshot.timer?.isRunning;
+            if (typeof snapshotIsTimerRunning === 'boolean') {
+                state.isTimerRunning = snapshotIsTimerRunning;
             }
+
             if (typeof snapshot.stateVersion !== 'undefined') {
                 state.stateVersion = snapshot.stateVersion;
             }
@@ -344,15 +355,15 @@ export const gameSlice = createSlice({
                 state.gamePaused = snapshot.status === 'paused';
             }
 
-            if (Array.isArray(soldiers.blue)) state.blueSoldiers = soldiers.blue;
-            if (Array.isArray(soldiers.red)) state.redSoldiers = soldiers.red;
-            if (Array.isArray(soldiers.yellow)) state.yellowSoldiers = soldiers.yellow;
-            if (Array.isArray(soldiers.green)) state.greenSoldiers = soldiers.green;
+            assignIfArray(state, soldiers, 'blue', 'blueSoldiers');
+            assignIfArray(state, soldiers, 'red', 'redSoldiers');
+            assignIfArray(state, soldiers, 'yellow', 'yellowSoldiers');
+            assignIfArray(state, soldiers, 'green', 'greenSoldiers');
 
-            if (Array.isArray(cards.blue)) state.blueCards = cards.blue;
-            if (Array.isArray(cards.red)) state.redCards = cards.red;
-            if (Array.isArray(cards.yellow)) state.yellowCards = cards.yellow;
-            if (Array.isArray(cards.green)) state.greenCards = cards.green;
+            assignIfArray(state, cards, 'blue', 'blueCards');
+            assignIfArray(state, cards, 'red', 'redCards');
+            assignIfArray(state, cards, 'yellow', 'yellowCards');
+            assignIfArray(state, cards, 'green', 'greenCards');
         },
         updateBlueCards: (state, action) => {
             const { used, value, updateAll } = action.payload;

@@ -110,6 +110,128 @@ const createStepMetrics = (sourcePos, targetPos) => {
     return metrics;
 };
 
+const showErrorToast = (text1, text2) => {
+    Toast.show({
+        type: 'error',
+        text1,
+        text2,
+        position: 'bottom',
+        visibilityTime: 2000,
+    });
+};
+
+const isOutOfBoardPosition = (playerColor, position) => {
+    const outPositions = {
+        blue: '7d',
+        red: '7a',
+        yellow: '7b',
+        green: '7c',
+    };
+    return outPositions[playerColor] === position;
+};
+
+const calculateNewPositionForPlayer = (player, steps) => {
+    if (!player.position || player.isOut) return undefined;
+
+    let numbers = parseInt(player.position.match(/\d+/)[0], 10);
+    let category = player.position.match(/[a-zA-Z]+/)[0];
+
+    for (let i = 0; i < steps; i++) {
+        numbers = numbers === 12 ? 1 : numbers + 1;
+        category = numbers === 1 ? getNextCategory(category) : category;
+        if (isOutOfBoardPosition(player.color, numbers + category)) {
+            return "";
+        }
+    }
+
+    return numbers + category;
+};
+
+const getArrowNameByColor = (color) => {
+    switch (color) {
+        case "red":
+            return "arrow-downward";
+        case "blue":
+            return "arrow-forward";
+        case "green":
+            return "arrow-downward";
+        default:
+            return "arrow-forward-ios";
+    }
+};
+
+const sendMoveUpdateCore = ({ connected, message, sendMatchCommand, currentMatch, user, sendMessage }) => {
+    if (!connected) return;
+
+    if (message?.type) {
+        sendMatchCommand({
+            type: message.type,
+            payload: message.payload || {},
+            matchId: currentMatch?.id,
+            playerId: user?.id,
+        });
+        return;
+    }
+
+    sendMessage(`/app/player.Move/${currentMatch.id}`, message);
+};
+
+const handleEnterNewSoldierCore = ({ activePlayer, color, systemLang, dispatch }) => {
+    if (activePlayer !== color) {
+        const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
+        showErrorToast(
+            uiStrings[systemLang].wrongTurn,
+            uiStrings[systemLang].wrongColor.replace('{color}', localizedActivePlayer)
+        );
+        return;
+    }
+
+    dispatch(enterNewSoldier(color));
+};
+
+const movePlayerCore = ({ color, steps, currentPlayer, activePlayer, systemLang, showClone, dispatch }) => {
+    const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
+
+    if (!currentPlayer || currentPlayer.isOut) {
+        showErrorToast(
+            uiStrings[systemLang].selectPlayer.replace('{color}', localizedActivePlayer),
+            uiStrings[systemLang].playerNotSelected
+        );
+        return;
+    }
+    if (showClone) return;
+
+    if (currentPlayer.color !== color) {
+        showErrorToast(
+            uiStrings[systemLang].wrongColor,
+            uiStrings[systemLang].wrongTurn.replaceAll('{color}', localizedActivePlayer)
+        );
+        return;
+    }
+
+    if (activePlayer !== currentPlayer.color) {
+        showErrorToast(
+            uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer),
+            uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer)
+        );
+        return;
+    }
+
+    dispatch(checkIfCardUsed({ color, steps }));
+    const newPosition = calculateNewPositionForPlayer(currentPlayer, steps);
+
+    if (newPosition === "") {
+        const outOfBoardPayload = currentPlayer.color === "red" || currentPlayer.color === "green"
+            ? { ySteps: steps, newPosition: newPosition }
+            : { xSteps: steps, newPosition: newPosition };
+        dispatch(setBoxesPosition(outOfBoardPayload));
+        return;
+    }
+
+    const metrics = createStepMetrics(currentPlayer.position, newPosition);
+    dispatch(setBoxesPosition({ ...metrics, newPosition: newPosition }));
+};
+
 export default function Bases() {
 
     const dispatch = useDispatch();
@@ -320,166 +442,22 @@ export default function Bases() {
     }, [connected, subscribe, currentMatch, user, currentPlayer]);
 
     const handleEnterNewSoldier = (color) => {
-        if (activePlayer !== color) {
-            const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
-            Toast.show({
-                type: 'error',
-                text1: uiStrings[systemLang].wrongTurn,
-                text2: uiStrings[systemLang].wrongColor.replace('{color}', localizedActivePlayer),
-                position: 'bottom',
-                visibilityTime: 2000,
-            });
-            return;
-        }
-
-        dispatch(enterNewSoldier(color));
+        handleEnterNewSoldierCore({ activePlayer, color, systemLang, dispatch });
     };
 
     const sendMoveUpdate = (message) => {
-        if (connected) {
-            if (message?.type) {
-                sendMatchCommand({
-                    type: message.type,
-                    payload: message.payload || {},
-                    matchId: currentMatch?.id,
-                    playerId: user?.id,
-                });
-                return;
-            }
-            sendMessage(`/app/player.Move/${currentMatch.id}`, message);
-        }
+        sendMoveUpdateCore({ connected, message, sendMatchCommand, currentMatch, user, sendMessage });
     };
 
-     const HandleskipTurn = () => {
+    const HandleskipTurn = () => {
         dispatch(setActivePlayer());
         dispatch(resetTimer());
-      }
+    };
+
     const movePlayer = (color, steps) => {
-        const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
-        const showErrorToast = (text1, text2) => {
-            Toast.show({
-                type: 'error',
-                text1,
-                text2,
-                position: 'bottom',
-                visibilityTime: 2000,
-            });
-        };
-
-        const hasNoSelectablePlayer = !currentPlayer || currentPlayer.isOut;
-        if (hasNoSelectablePlayer) {
-            showErrorToast(
-                uiStrings[systemLang].selectPlayer.replace('{color}', localizedActivePlayer),
-                uiStrings[systemLang].playerNotSelected
-            );
-            return;
-        }
-
-        if (showClone) return;
-
-        if (currentPlayer.color !== color) {
-            showErrorToast(
-                uiStrings[systemLang].wrongColor,
-                uiStrings[systemLang].wrongTurn.replaceAll('{color}', localizedActivePlayer)
-            );
-            return;
-        }
-
-        if (activePlayer !== currentPlayer.color) {
-            showErrorToast(
-                uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer),
-                uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer)
-            );
-            return;
-        }
-
-        dispatch(checkIfCardUsed({ color, steps }));
-        const newPosition = calculateNewPosition(currentPlayer, steps);
-
-        if (newPosition === "") {
-            const outOfBoardPayload = currentPlayer.color === "red" || currentPlayer.color === "green"
-                ? { ySteps: steps, newPosition: newPosition }
-                : { xSteps: steps, newPosition: newPosition };
-            dispatch(setBoxesPosition(outOfBoardPayload));
-            return;
-        }
-
-        getXStepsYSteps(currentPlayer.position, newPosition);
+        movePlayerCore({ color, steps, currentPlayer, activePlayer, systemLang, showClone, dispatch });
     };
 
-    const getXStepsYSteps = (sourcePos, targetPos) => {
-        const metrics = createStepMetrics(sourcePos, targetPos);
-        dispatch(setBoxesPosition({ ...metrics, newPosition: targetPos }));
-    };
-
-    calculateNewPosition = (player, steps) => {
-        if (!player.position || player.isOut) return;
-
-        let numbers = parseInt(player.position.match(/\d+/)[0]);
-        let categorie = player.position.match(/[a-zA-Z]+/)[0];
-
-
-        if (steps === 1) {
-            numbers = numbers === 12 ? 1 : numbers + 1;
-            categorie = numbers === 1 ? getNextCategory(categorie) : categorie;
-            if (CheckOutOfBoardCondition(numbers + categorie)) {
-                return "";
-            }
-            return numbers + categorie;
-        }
-
-        for (let i = 0; i < steps; i++) {
-            numbers = numbers === 12 ? 1 : numbers + 1;
-            categorie = numbers === 1 ? getNextCategory(categorie) : categorie;
-
-            if (CheckOutOfBoardCondition(numbers + categorie)) {
-                return "";
-            }
-        }
-        return numbers + categorie;
-    }
-
-    const CheckOutOfBoardCondition = (position) => {
-
-        switch (currentPlayer.color) {
-            case 'blue':
-                if (position === '7d') {
-                    return true;
-                }
-                break;
-            case 'red':
-                if (position === '7a') {
-                    return true;
-                }
-                break;
-            case 'yellow':
-                if (position === '7b') {
-                    return true;
-                }
-                break;
-            case 'green':
-                if (position === '7c') {
-                    return true;
-                }
-                break;
-            default:
-                break;
-        }
-
-    }
-
-    const getCorrectArrow = (color) => {
-        switch (color) {
-            case "red":
-                return "arrow-downward";
-            case "blue":
-                return "arrow-forward";
-            case "green":
-                return "arrow-downward";
-            default:
-                return "arrow-forward-ios";
-        }
-    };
     // Mutliplayer Functions
     const movePlayerHanlder = (color, steps) => {
         if (!connected) {
@@ -511,6 +489,28 @@ export default function Bases() {
             },
         });
     };
+
+    const cardsByColor = {
+        blue: blueCards,
+        red: redCards,
+        yellow: yellowCards,
+        green: greenCards,
+    };
+
+    const getCardTextStyle = (color, cardUsed) => ([
+        styles.buttonText,
+        cardUsed && { color: '#999' },
+        color === "yellow" && { transform: [{ rotate: '180deg' }] }
+    ]);
+
+    const getCardButtonStyle = (color, i, cardUsed) => ([
+        styles.button,
+        { marginVertical: 5 },
+        cardUsed && { backgroundColor: '#ddd', opacity: 0.7 },
+        styles[color + i],
+        color === "green" && { transform: [{ rotate: '180deg' }] },
+    ]);
+
     const renderInCirclePlayers = (j, playerType, i) => (
         <>
             {[
@@ -536,86 +536,15 @@ export default function Bases() {
                 <View key={color} style={[styles.circleContainer, styles[directions[i]]]}>
                     <View style={{ flexDirection: 'column' }}>
                         <View style={{ display: "flex" }}>
-                            {blueCards.map((card) => (
-                                color === "blue" && (
-                                    <Pressable
-                                        key={card.id}
-                                        disabled={card.used}
-                                        style={[
-                                            styles.button,
-                                            { marginVertical: 5 },
-                                            card.used && { backgroundColor: '#ddd', opacity: 0.7 },
-                                            styles[color + i]
-
-                                        ]}
-                                        onPress={() => movePlayerHanlder(color, card.value)}
-                                    >
-                                        <Text style={[
-                                            styles.buttonText,
-                                            card.used && { color: '#999' }
-                                        ]}>{card.value}</Text>
-                                    </Pressable>
-                                )
-                            ))}
-                            {redCards.map((card) => (
-                                color === "red" && (
-                                    <Pressable
-                                        key={card.id}
-                                        disabled={card.used}
-                                        style={[
-                                            styles.button,
-                                            { marginVertical: 5 },
-                                            card.used && { backgroundColor: '#ddd', opacity: 0.7 },
-                                            styles[color + i]
-                                        ]}
-                                        onPress={() => movePlayerHanlder(color, card.value)}
-                                    >
-                                        <Text style={[
-                                            styles.buttonText,
-                                            card.used && { color: '#999' }
-                                        ]}>{card.value}</Text>
-                                    </Pressable>
-                                )
-                            ))}
-                            {yellowCards.map((card) => (
-                                color === "yellow" && (
-                                    <Pressable
-                                        key={card.id}
-                                        disabled={card.used}
-                                        style={[
-                                            styles.button,
-                                            { marginVertical: 5 },
-                                            card.used && { backgroundColor: '#ddd', opacity: 0.7 },
-                                            styles[color + i]
-                                        ]}
-                                        onPress={() => movePlayerHanlder(color, card.value)}
-                                    >
-                                        <Text style={[
-                                            styles.buttonText,
-                                            card.used && { color: '#999' }, { transform: [{ rotate: '180deg' }] }
-                                        ]}>{card.value}</Text>
-                                    </Pressable>
-                                )
-                            ))}
-                            {greenCards.map((card) => (
-                                color === "green" && (
-                                    <Pressable
-                                        key={card.id}
-                                        disabled={card.used}
-                                        style={[
-                                            styles.button,
-                                            { marginVertical: 5 },
-                                            card.used && { backgroundColor: '#ddd', opacity: 0.7 },
-                                            styles[color + i], { transform: [{ rotate: '180deg' }] }
-                                        ]}
-                                        onPress={() => movePlayerHanlder(color, card.value)}
-                                    >
-                                        <Text style={[
-                                            styles.buttonText,
-                                            card.used && { color: '#999' }
-                                        ]}>{card.value}</Text>
-                                    </Pressable>
-                                )
+                            {(cardsByColor[color] || []).map((card) => (
+                                <Pressable
+                                    key={card.id}
+                                    disabled={card.used}
+                                    style={getCardButtonStyle(color, i, card.used)}
+                                    onPress={() => movePlayerHanlder(color, card.value)}
+                                >
+                                    <Text style={getCardTextStyle(color, card.used)}>{card.value}</Text>
+                                </Pressable>
                             ))}
                         </View>
                     </View>
@@ -630,7 +559,7 @@ export default function Bases() {
                         {
                             color === "yellow" ?
                                 <Feather name="arrow-right" size={24} color={theme.name === "dark" ? "white" : "black"} /> :
-                                <MaterialIcons name={getCorrectArrow(color)} size={24} color={theme.name === "dark" ? "white" : "black"} />
+                                <MaterialIcons name={getArrowNameByColor(color)} size={24} color={theme.name === "dark" ? "white" : "black"} />
                         }
                     </Pressable>
                 </View>
