@@ -15,7 +15,6 @@ import { uiStrings } from '../assets/shared/hardCodedData.js';
 // import { useWebSocket } from '../assets/shared/SimpleWebSocketConnection.jsx';
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
 import Toast from 'react-native-toast-message';
-import GamePausedModal from '../Menu/GamePausedModal.jsx';
 import { activateKeepAwake, deactivateKeepAwake } from 'expo-keep-awake';
 
 const WaitingRoom = ({ navigation, route }) => {
@@ -402,7 +401,6 @@ const WaitingRoom = ({ navigation, route }) => {
           </Text>
         </Pressable>
       </View>
-      <GamePausedModal sendMessage={sendMessage} />
       <Toast />
     </View>
   );

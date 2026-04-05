@@ -79,15 +79,6 @@ export default function AppNavigator() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isLoggedIn ? (
           <>
-            {/* {currentUserPage === "MatchList" ? (
-              <Stack.Screen name="MatchList" component={MatchListPage} />
-            ) : currentUserPage === "WaitingRoom" ? (
-              <Stack.Screen name="WaitingRoom" component={WaitingRoom} />
-            ) : currentUserPage === "Game" ? (
-              <Stack.Screen name="Game" component={GameScreen} />
-            ) : (
-              <Stack.Screen name="Home" component={HomeScreen} />
-            )} */}
             <Stack.Screen name="Home" component={HomeScreen} />
             <Stack.Screen name="Game" component={GameScreen} />
             <Stack.Screen name="MatchList" component={MatchListPage} />
