@@ -26,7 +26,7 @@ const HomePage = ({ onStartLocalGame, onStartMultiplayerGame, onLogout }) => {
   const isGuest = user?.isGuest || false;
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: "rgb(255 255 255)" }]}>
+    <SafeAreaView testID="home-screen" style={[styles.container, { backgroundColor: "rgb(255 255 255)" }]}>
       {/* Logo and Title */}
       <View style={styles.header}>
         <Text style={[styles.title, { color: theme.colors.text }]}>
@@ -57,6 +57,7 @@ const HomePage = ({ onStartLocalGame, onStartMultiplayerGame, onLogout }) => {
           </View>
           
           <Pressable 
+            testID="home-logout-button"
             style={styles.logoutButton}
             onPress={handleLogout}
           >
@@ -101,6 +102,7 @@ const HomePage = ({ onStartLocalGame, onStartMultiplayerGame, onLogout }) => {
       {/* Game Mode Buttons */}
       <View style={styles.buttonsContainer}>
         <Pressable
+          testID="home-play-local-button"
           style={[styles.button, { backgroundColor: theme.colors.button }]}
           onPress={onStartLocalGame}
         >
@@ -111,6 +113,7 @@ const HomePage = ({ onStartLocalGame, onStartMultiplayerGame, onLogout }) => {
         </Pressable>
         
         <Pressable
+          testID="home-play-multiplayer-button"
           style={[
             styles.button, 
             { 

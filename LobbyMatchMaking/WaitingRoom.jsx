@@ -267,7 +267,7 @@ const WaitingRoom = ({ navigation, route }) => {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: "white" }]}>
+    <View testID="waiting-room-screen" style={[styles.container, { backgroundColor: "white" }]}>
       {/* Render countdown timer if showCountdown is true */}
       {showCountdown && (
         <View style={styles.countdownContainer}>
@@ -367,6 +367,7 @@ const WaitingRoom = ({ navigation, route }) => {
       <View style={styles.footer}>
         {(currentMatch?.users?.length >= 2) && (
           <Pressable
+            testID="waiting-room-start-button"
             style={[styles.startButton, { backgroundColor: theme.colors.primary }]}
             onPress={startGame}
           >
@@ -378,6 +379,7 @@ const WaitingRoom = ({ navigation, route }) => {
         )}
 
         <Pressable
+          testID="waiting-room-leave-button"
           style={[styles.leaveButton, { backgroundColor: theme.colors.error }]}
           onPress={handleLeaveMatch}
         >
