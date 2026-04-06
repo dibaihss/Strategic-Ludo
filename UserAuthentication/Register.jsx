@@ -87,7 +87,10 @@ const RegisterPage = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: "white" }]}>
+    <SafeAreaView
+      testID="register-screen"
+      style={[styles.container, { backgroundColor: "white" }]}
+    >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
@@ -115,6 +118,7 @@ const RegisterPage = ({ navigation }) => {
             <View style={[styles.inputWrapper, { borderColor: theme.colors.border }]}>
               <MaterialIcons name="person" size={20} color={theme.colors.textSecondary} style={styles.inputIcon} />
               <TextInput
+                testID="register-username-input"
                 style={[styles.input, { color: theme.colors.text }]}
                 placeholder={uiStrings[systemLang].chooseUsername || 'Choose Username'}
                 placeholderTextColor={theme.colors.textSecondary}
@@ -129,6 +133,7 @@ const RegisterPage = ({ navigation }) => {
             <View style={[styles.inputWrapper, { borderColor: theme.colors.border }]}>
               <MaterialIcons name="email" size={20} color={theme.colors.textSecondary} style={styles.inputIcon} />
               <TextInput
+                testID="register-email-input"
                 style={[styles.input, { color: theme.colors.text }]}
                 placeholder={uiStrings[systemLang].email || 'Email Address'}
                 placeholderTextColor={theme.colors.textSecondary}
@@ -144,6 +149,7 @@ const RegisterPage = ({ navigation }) => {
             <View style={[styles.inputWrapper, { borderColor: theme.colors.border }]}>
               <MaterialIcons name="lock" size={20} color={theme.colors.textSecondary} style={styles.inputIcon} />
               <TextInput
+                testID="register-password-input"
                 style={[styles.input, { color: theme.colors.text }]}
                 placeholder={uiStrings[systemLang].password || 'Password'}
                 placeholderTextColor={theme.colors.textSecondary}
@@ -164,6 +170,7 @@ const RegisterPage = ({ navigation }) => {
 
           {/* Register Button */}
           <Pressable
+            testID="register-submit-button"
             style={[styles.button, { 
               backgroundColor: loading ? theme.colors.disabled : theme.colors.button 
             }]}
@@ -181,6 +188,7 @@ const RegisterPage = ({ navigation }) => {
           
           {/* Back to Login */}
           <TouchableOpacity 
+            testID="register-back-login-button"
             style={styles.loginLink}
             onPress={() => navigation.navigate('Login')}
           >

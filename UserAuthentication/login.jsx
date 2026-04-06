@@ -29,7 +29,6 @@ const LoginPage = ({ navigation }) => {
   const systemLang = useSelector((state) => state.language.systemLang);
   const authError = useSelector((state) => state.auth.error);
   const loading = useSelector((state) => state.auth.loading);
-  const offlineModus = useSelector((state) => state.auth.offlineModus);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -37,6 +36,7 @@ const LoginPage = ({ navigation }) => {
   const windowWidth = Dimensions.get("window").width;
   const windowHeight = Dimensions.get("window").height;
   const isSmallScreen = windowWidth < 375 || windowHeight < 667;
+  const isE2E = process.env.EXPO_PUBLIC_E2E === "true";
 
   const handleLoginPress = () => {
     console.log("Registering user:", { email, password }); // Debugging line
@@ -94,16 +94,18 @@ const LoginPage = ({ navigation }) => {
     navigation.navigate("Register");
   };
 
-  goDirectlyToGame = () => {
-   dispatch(setOfflineModus(true)); // Set offline mode in the store
+  const goDirectlyToGame = () => {
+    dispatch(setOfflineModus(true));
     setTimeout(() => {
-      console.log(offlineModus);
-      navigation.navigate("Game", { mode: "local" }); // This should be 'Game', not 'GameScreen'
-    }, 1000); // Wait for 1 second before navigating
+      navigation.navigate("Game", { mode: "local" });
+    }, 0);
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: "white" }]}>
+    <SafeAreaView
+      testID="login-screen"
+      style={[styles.container, { backgroundColor: "white" }]}
+    >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
@@ -137,6 +139,7 @@ const LoginPage = ({ navigation }) => {
                 style={styles.inputIcon}
               />
               <TextInput
+                testID="login-email-input"
                 style={[styles.input, { color: theme.colors.text }]}
                 placeholder={uiStrings[systemLang].email}
                 placeholderTextColor={theme.colors.textSecondary}
@@ -162,6 +165,7 @@ const LoginPage = ({ navigation }) => {
                 style={styles.inputIcon}
               />
               <TextInput
+                testID="login-password-input"
                 style={[styles.input, { color: theme.colors.text }]}
                 placeholder={uiStrings[systemLang].password}
                 placeholderTextColor={theme.colors.textSecondary}
@@ -182,6 +186,7 @@ const LoginPage = ({ navigation }) => {
 
           {/* Login Button */}
           <Pressable
+            testID="login-submit-button"
             style={[
               styles.button,
               {
@@ -217,6 +222,7 @@ const LoginPage = ({ navigation }) => {
 
           {/* Register Link */}
           <TouchableOpacity
+            testID="login-register-button"
             style={styles.registerContainer}
             onPress={goToRegister}
           >
@@ -257,38 +263,42 @@ const LoginPage = ({ navigation }) => {
           {/* Guest Login */}
           {/* Guest Login and Play Offline buttons in the same row */}
           <View style={styles.buttonsRow}>
-            <Pressable
-              style={[
-                styles.buttonHalf,
-                {
-                  backgroundColor: loading
-                    ? theme.colors.disabled
-                    : theme.colors.button,
-                },
-                isSmallScreen && styles.buttonHalfSmall,
-              ]}
-              onPress={handleGuestLogin}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator
-                  color={theme.colors.buttonText}
-                  size={isSmallScreen ? "small" : "large"}
-                />
-              ) : (
-                <Text
-                  style={[
-                    styles.buttonText,
-                    { color: theme.colors.buttonText },
-                    isSmallScreen && styles.buttonTextSmall,
-                  ]}
-                >
-                  {uiStrings[systemLang].continueAsGuest}
-                </Text>
-              )}
-            </Pressable>
+            {!isE2E && (
+              <Pressable
+                testID="login-guest-button"
+                style={[
+                  styles.buttonHalf,
+                  {
+                    backgroundColor: loading
+                      ? theme.colors.disabled
+                      : theme.colors.button,
+                  },
+                  isSmallScreen && styles.buttonHalfSmall,
+                ]}
+                onPress={handleGuestLogin}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator
+                    color={theme.colors.buttonText}
+                    size={isSmallScreen ? "small" : "large"}
+                  />
+                ) : (
+                  <Text
+                    style={[
+                      styles.buttonText,
+                      { color: theme.colors.buttonText },
+                      isSmallScreen && styles.buttonTextSmall,
+                    ]}
+                  >
+                    {uiStrings[systemLang].continueAsGuest}
+                  </Text>
+                )}
+              </Pressable>
+            )}
 
             <Pressable
+              testID="login-offline-button"
               style={[
                 styles.buttonHalf,
                 {

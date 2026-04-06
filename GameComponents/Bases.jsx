@@ -412,7 +412,7 @@ export default function Bases() {
         dispatch(setBoxesPosition({ ...metrics, newPosition: targetPos }));
     };
 
-    calculateNewPosition = (player, steps) => {
+    const calculateNewPosition = (player, steps) => {
         if (!player.position || player.isOut) return;
 
         let numbers = parseInt(player.position.match(/\d+/)[0]);

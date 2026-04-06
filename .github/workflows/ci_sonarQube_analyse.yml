@@ -22,7 +22,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci --omit=optional
 
       - name: Security audit
         run: npm audit --audit-level=high
@@ -38,15 +38,11 @@ jobs:
             printf "TN:\\n" > coverage/lcov.info
           fi
 
-      - name: Install Playwright Browsers (if E2E configured)
-        run: |
-         npx playwright install --with-deps chromium
-         
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
 
-      - name: Run web E2E tests (if configured)
-        run: |
-          npm run e2e:web
-      
+      - name: Run web E2E tests
+        run: npm run e2e:web
 
       - name: Upload Playwright artifacts
         if: always()
@@ -94,4 +90,3 @@ jobs:
             -Dsonar.host.url="$SONAR_HOST_URL" \
             -Dsonar.token="$SONAR_TOKEN" \
             $SONAR_OPTS
-

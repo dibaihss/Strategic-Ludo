@@ -42,11 +42,19 @@ export default function GameScreen({ route, navigation }) {
     dispatch(resetGameState());
 
     // Keep the device awake when the user is on the GameScreen
-    activateKeepAwake();
+    try {
+      activateKeepAwake();
+    } catch (error) {
+      console.warn("activateKeepAwake failed:", error);
+    }
 
     return () => {
       // Deactivate keep awake when leaving the GameScreen
-      deactivateKeepAwake();
+      try {
+        deactivateKeepAwake();
+      } catch (error) {
+        console.warn("deactivateKeepAwake failed:", error);
+      }
     };
   }, []);
   
@@ -277,7 +285,10 @@ export default function GameScreen({ route, navigation }) {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View
+      testID="game-screen"
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
       {gameIsStarted ? (
         <>
           <Timer />

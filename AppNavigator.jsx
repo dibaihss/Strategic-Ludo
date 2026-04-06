@@ -83,6 +83,7 @@ export default function AppNavigator() {
           <>
             <Stack.Screen name="Login" component={LoginPage} />
             <Stack.Screen name="Register" component={RegisterPage} />
+            <Stack.Screen name="Game" component={GameScreen} />
           </>
         )}
       </Stack.Navigator>
