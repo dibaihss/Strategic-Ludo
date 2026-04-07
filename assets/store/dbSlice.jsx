@@ -19,7 +19,7 @@ const PRODUCTION_API_URL = (typeof process !== 'undefined' && process.env && pro
   'https://lowcostbackendapp-dze4chctcsevdybb.westeurope-01.azurewebsites.net/api';
 
 // URL options based on platform and environment
-const LOCALHOST_API_URL = 'https://lowcostbackendapp-dze4chctcsevdybb.westeurope-01.azurewebsites.net/api'; // Default for iOS simulator
+const LOCALHOST_API_URL =  process.env.EXPO_PUBLIC_LOCALHOST_API_URL || 'https://lowcostbackendapp-dze4chctcsevdybb.westeurope-01.azurewebsites.net/api';
 const ANDROID_API_URL = 'http://192.168.178.130:8080/api'; // Android-specific URL with port
 
 let API_URL = ENV_API || (__DEV__ ? (Platform.OS === 'android' ? ANDROID_API_URL : LOCALHOST_API_URL) : PRODUCTION_API_URL);
@@ -55,14 +55,34 @@ const getE2EUser = async () => {
   if (stored) return JSON.parse(stored);
   return createE2EUser();
 };
+
+const getAuthToken = async (getState) => {
+  const stateToken = getState?.()?.auth?.token;
+  if (stateToken) return stateToken;
+  const storedToken = await AsyncStorage.getItem("token");
+  return storedToken || null;
+};
+
+const requireAuthToken = async (getState, rejectWithValue, actionName) => {
+  const token = await getAuthToken(getState);
+  if (!token) {
+    if (__DEV__) {
+      console.warn(`[auth] Missing token for protected request: ${actionName}`);
+    }
+    return { error: rejectWithValue("Authentication required") };
+  }
+  return { token };
+};
 // Add this thunk after your other API calls
 export const updateUserStatus = createAsyncThunk(
   "auth/updateUserStatus",
   async (status, { getState, rejectWithValue }) => {
     try {
       const state = getState();
-      const token = state.auth.token;
       let user = state.auth.user;
+      const authResult = await requireAuthToken(getState, rejectWithValue, "updateUserStatus");
+      if (authResult.error) return authResult.error;
+      const { token } = authResult;
 
       console.log(`Updating user ${user.id} status to: ${status}`);
 
@@ -71,7 +91,7 @@ export const updateUserStatus = createAsyncThunk(
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ status }),
       });
@@ -154,8 +174,7 @@ export const loginUser = createAsyncThunk(
         return user;
       }
 
-      // Keep your existing API call
-      const response = await fetch(`${API_URL}/users`, {
+      const response = await fetch(`${API_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -233,14 +252,18 @@ export const logout = createAsyncThunk(
 
       // If it's a guest user, delete from database
       if (isGuest && userId) {
+        const token = await getAuthToken(getState);
+        const headers = {
+          "Content-Type": "application/json",
+        };
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+
         // Make API call to delete the guest user
         const response = await fetch(`${API_URL}/users/${userId}`, {
           method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            // Include auth token if required
-            Authorization: `Bearer ${state.auth.token}`,
-          },
+          headers,
         });
 
         if (!response.ok) {
@@ -304,11 +327,17 @@ export const createMatch = createAsyncThunk(
 
       const { auth } = getState();
       const userId = auth.user?.id;
+      const authResult = await requireAuthToken(getState, rejectWithValue, "createMatch");
+      if (authResult.error) return authResult.error;
+      const { token } = authResult;
 
       // Create match
       const response = await fetch(`${API_URL}/sessions`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           name: `Game Room ${Math.floor(Math.random() * 1000)}`,
           status: "waiting",
@@ -320,9 +349,15 @@ export const createMatch = createAsyncThunk(
 
       // Join the match automatically
       if (userId) {
-        await fetch(`${API_URL}/sessions/${match.id}/users/${userId}`, {
+        const joinResponse = await fetch(`${API_URL}/sessions/${match.id}/users/${userId}`, {
           method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
+        if (!joinResponse.ok) {
+          return rejectWithValue("Failed to join created match");
+        }
       }
       return match;
     } catch (error) {
@@ -350,6 +385,9 @@ export const joinMatch = createAsyncThunk(
 
       const { auth } = getState();
       const userId = auth.user?.id;
+      const authResult = await requireAuthToken(getState, rejectWithValue, "joinMatch");
+      if (authResult.error) return authResult.error;
+      const { token } = authResult;
 
       if (!userId) return rejectWithValue("Not logged in");
 
@@ -357,6 +395,9 @@ export const joinMatch = createAsyncThunk(
         `${API_URL}/sessions/${matchId}/users/${userId}`,
         {
           method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
@@ -387,7 +428,9 @@ export const leaveMatch = createAsyncThunk(
 
       const state = getState();
       const userId = state.auth.user?.id;
-      const token = state.auth.token;
+      const authResult = await requireAuthToken(getState, rejectWithValue, "leaveMatch");
+      if (authResult.error) return authResult.error;
+      const { token } = authResult;
       if (!userId) {
         return rejectWithValue("User is not logged in");
       }
@@ -402,7 +445,7 @@ export const leaveMatch = createAsyncThunk(
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
-            Authorization: token ? `Bearer ${token}` : "",
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -431,14 +474,16 @@ export const fetchCurrentMatch = createAsyncThunk(
       }
 
       const state = getState();
-      const token = state.auth.token;
+      const authResult = await requireAuthToken(getState, rejectWithValue, "fetchCurrentMatch");
+      if (authResult.error) return authResult.error;
+      const { token } = authResult;
 
       // Fetch match data from your API
       const response = await fetch(`${API_URL}/sessions/${matchId}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -459,13 +504,15 @@ export const fetchMatchState = createAsyncThunk(
   async (matchId, { getState, rejectWithValue }) => {
     try {
       const state = getState();
-      const token = state.auth.token;
+      const authResult = await requireAuthToken(getState, rejectWithValue, "fetchMatchState");
+      if (authResult.error) return authResult.error;
+      const { token } = authResult;
 
       const response = await fetch(`${API_URL}/sessions/${matchId}/state`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -485,13 +532,15 @@ export const submitMatchCommand = createAsyncThunk(
   async ({ matchId, command }, { getState, rejectWithValue }) => {
     try {
       const state = getState();
-      const token = state.auth.token;
+      const authResult = await requireAuthToken(getState, rejectWithValue, "submitMatchCommand");
+      if (authResult.error) return authResult.error;
+      const { token } = authResult;
 
       const response = await fetch(`${API_URL}/sessions/${matchId}/commands`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(command),
       });
@@ -513,14 +562,16 @@ export const updateMatchStatus = createAsyncThunk(
   async (session, { getState, rejectWithValue }) => {
     try {
       const state = getState();
-      const token = state.auth.token;
+      const authResult = await requireAuthToken(getState, rejectWithValue, "updateMatchStatus");
+      if (authResult.error) return authResult.error;
+      const { token } = authResult;
 
       // Make API request to update session status
       const response = await fetch(`${API_URL}/sessions/${session.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(session),
       });
@@ -546,14 +597,16 @@ export const deleteMatch = createAsyncThunk(
     try {
       console.log("Deleting match with ID:", matchId);
       const state = getState();
-      const token = state.auth.token;
+      const authResult = await requireAuthToken(getState, rejectWithValue, "deleteMatch");
+      if (authResult.error) return authResult.error;
+      const { token } = authResult;
 
       // Delete match
       const response = await fetch(`${API_URL}/sessions/${matchId}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -648,6 +701,7 @@ const authSlice = createSlice({
         state.loading = false;
         state.isLoggedIn = true;
         state.user = action.payload;
+        state.token = action.payload?.token || null;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
@@ -661,7 +715,10 @@ const authSlice = createSlice({
         state.loading = false;
         state.isLoggedIn = true;
         state.user = action.payload;
-        state.user.isGuest = true; // Mark user as guest
+        state.token = action.payload?.token || null;
+        if (state.user) {
+          state.user.isGuest = true; // Mark user as guest
+        }
       })
       .addCase(loginGuest.rejected, (state, action) => {
         state.loading = false;
