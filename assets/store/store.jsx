@@ -1,5 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
-import authReducer from './dbSlice';
+import authReducer from './authSlice';
+import sessionReducer from './sessionSlice';
 import gameReducer from './gameSlice';
 import themeReducer from './themeSlice';
 import animationReducer from './animationSlice';
@@ -9,6 +10,7 @@ import languageReducer from './languageSlice';
 export const store = configureStore({
   reducer: {
     auth: authReducer,
+    session: sessionReducer,
     game: gameReducer,
     theme: themeReducer,
     animation: animationReducer,

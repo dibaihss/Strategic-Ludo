@@ -20,7 +20,7 @@ import {
   loginUser,
   loginGuest,
   setOfflineModus,
-} from "../assets/store/dbSlice.jsx";
+} from "../assets/store/authSlice.jsx";
 import Toast from "react-native-toast-message";
 
 const LoginPage = ({ navigation }) => {

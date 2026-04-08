@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchCurrentMatch, updateMatch, updateMatchStatus, leaveMatch } from '../assets/store/dbSlice.jsx';
+import { fetchCurrentMatch, updateMatch, updateMatchStatus, leaveMatch } from '../assets/store/sessionSlice.jsx';
 import { setPlayerColors, updateSoldiersPosition, removeColorFromAvailableColors, setActivePlayer } from '../assets/store/gameSlice.jsx';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
@@ -20,9 +20,9 @@ const WaitingRoom = ({ navigation, route }) => {
   const dispatch = useDispatch();
   const theme = useSelector(state => state.theme.current);
   const systemLang = useSelector(state => state.language.systemLang);
-  const currentMatch = useSelector(state => state.auth.currentMatch);
+  const currentMatch = useSelector(state => state.session.currentMatch);
   const user = useSelector(state => state.auth.user);
-  const loading = useSelector(state => state.auth.loading);
+  const loading = useSelector(state => state.session.loading);
 
   const [count, setCount] = useState(3);
   const intervalRef = useRef(null);

@@ -10,7 +10,8 @@ import { setActivePlayer, resetTimer, setOnlineModus, resetGameState, setCurrent
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx'; // Import useWebSocket
-import { setCurrentUserPage, leaveMatch } from '../assets/store/dbSlice.jsx';
+import { setCurrentUserPage } from '../assets/store/authSlice.jsx';
+import { leaveMatch } from '../assets/store/sessionSlice.jsx';
 import { activateKeepAwake, deactivateKeepAwake } from 'expo-keep-awake';
 
 export default function GameScreen({ route, navigation }) {
@@ -20,7 +21,7 @@ export default function GameScreen({ route, navigation }) {
   const windowWidth = Dimensions.get('window').width;
   const windowHeight = Dimensions.get('window').height;
   const isSmallScreen = windowWidth < 375 || windowHeight < 667;
-  const currentMatch = useSelector(state => state.auth.currentMatch);
+  const currentMatch = useSelector(state => state.session.currentMatch);
   const user = useSelector(state => state.auth.user);
   const playerColors = useSelector(state => state.game.playerColors);
   const activePlayer = useSelector(state => state.game.activePlayer);

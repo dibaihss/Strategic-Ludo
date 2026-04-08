@@ -12,7 +12,8 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import { MaterialIcons } from '@expo/vector-icons';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
-import { fetchMatches, createMatch, joinMatch, fetchCurrentMatch, updateMatch, setCurrentUserPage } from '../assets/store/dbSlice.jsx';
+import { setCurrentUserPage } from '../assets/store/authSlice.jsx';
+import { fetchMatches, createMatch, joinMatch, fetchCurrentMatch, updateMatch } from '../assets/store/sessionSlice.jsx';
 import { setOnlineModus } from '../assets/store/gameSlice.jsx';
 
 
@@ -22,9 +23,9 @@ const MatchListPage = ({ navigation }) => {
   const dispatch = useDispatch();
   const theme = useSelector(state => state.theme.current);
   const systemLang = useSelector(state => state.language.systemLang);
-  const matches = useSelector(state => state.auth.matches);
-  const loading = useSelector(state => state.auth.loading);
-  const error = useSelector(state => state.auth.error);
+  const matches = useSelector(state => state.session.matches);
+  const loading = useSelector(state => state.session.loading);
+  const error = useSelector(state => state.session.error);
   const timeoutRef = useRef(null);
 
   // Load matches when component mounts

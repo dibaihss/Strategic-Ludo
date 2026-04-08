@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { leaveMatch, fetchMatchState, submitMatchCommand } from '../store/dbSlice.jsx';
+import { leaveMatch, fetchMatchState, submitMatchCommand } from '../store/sessionSlice.jsx';
 import { applyServerStateSnapshot } from '../store/gameSlice.jsx';
 import { AppState, Platform } from 'react-native';
 import { mapLegacySendToCanonical, mapLegacyTopicToCanonicalEvents, shouldDeliverLegacyTopicMessage, toLegacyPayload } from './realtime/mapping';
@@ -59,7 +59,7 @@ export const WebSocketProvider = ({ children }) => {
   const onlineModus = useSelector(state => state.game.onlineModus);
   const appState = useRef(Platform.OS === 'web' ? 'active' : AppState.currentState);
   const user = useSelector(state => state.auth.user);
-  const currentMatch = useSelector(state => state.auth.currentMatch);
+  const currentMatch = useSelector(state => state.session.currentMatch);
 
   const disconnect = async () => {
     const adapter = adapterRef.current;
