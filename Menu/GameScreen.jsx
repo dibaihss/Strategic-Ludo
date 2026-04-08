@@ -3,7 +3,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import Goals from '../GameComponents/Goals.jsx';
 import Bases from '../GameComponents/Bases.jsx';
 import Timer from '../GameComponents/Timer.jsx';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { View, Text, StyleSheet, Pressable, Dimensions, Platform, ActivityIndicator, Modal } from 'react-native';
 import { setActivePlayer, resetTimer, setOnlineModus, resetGameState, setCurrentPlayerColor } from '../assets/store/gameSlice.jsx';
@@ -12,7 +12,7 @@ import { uiStrings } from '../assets/shared/hardCodedData.js';
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx'; // Import useWebSocket
 import { setCurrentUserPage } from '../assets/store/authSlice.jsx';
 import { leaveMatch } from '../assets/store/sessionSlice.jsx';
-import { activateKeepAwake, deactivateKeepAwake } from 'expo-keep-awake';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 
 export default function GameScreen({ route, navigation }) {
   const dispatch = useDispatch();
@@ -30,12 +30,15 @@ export default function GameScreen({ route, navigation }) {
   const [gameIsStarted, setGameIsStarted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showExitModal, setShowExitModal] = useState(false); // <-- Add this state
+  const keepAwakeActivatedRef = useRef(false);
 
   // Get the game mode from navigation params
   const { mode, matchId } = route.params || { mode: 'local', matchId: 1 };
   const { connected, sendMessage, sendMatchCommand } = useWebSocket();
 
   useEffect(() => {
+    let mounted = true;
+
     if(mode === "local"){
       setOnlineModus(false);
     }
@@ -43,11 +46,23 @@ export default function GameScreen({ route, navigation }) {
     dispatch(resetGameState());
 
     // Keep the device awake when the user is on the GameScreen
-    activateKeepAwake();
+    activateKeepAwakeAsync()
+      .then(() => {
+        if (mounted) {
+          keepAwakeActivatedRef.current = true;
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to activate keep-awake on game screen:', error);
+      });
 
     return () => {
+      mounted = false;
       // Deactivate keep awake when leaving the GameScreen
-      deactivateKeepAwake();
+      if (!keepAwakeActivatedRef.current) return;
+      deactivateKeepAwake().catch((error) => {
+        console.warn('Failed to deactivate keep-awake on game screen:', error);
+      });
     };
   }, []);
   

@@ -4,7 +4,7 @@ React Native + Expo frontend for a multiplayer Ludo game with local and online p
 
 ## Tech Stack
 
-- React 18
+- React 19
 - React Native / Expo
 - React Navigation
 - Redux Toolkit
@@ -27,19 +27,12 @@ React Native + Expo frontend for a multiplayer Ludo game with local and online p
 - `GameComponents/`: board, bases, goals, timer, players
 - `assets/store/`: Redux slices and async thunks
 - `assets/shared/webSocketConnection.jsx`: realtime provider layer
-- `assets/shared/realtime/`: socket adapter, mapping, payload utilities
 
 ## Realtime Socket Function (How It Works)
 
 ### Overview
 
-The app uses `socket.io-client` to keep all multiplayer clients synchronized in realtime.
 
-Core implementation:
-
-- Provider: `assets/shared/webSocketConnection.jsx`
-- Adapter: `assets/shared/realtime/SocketIoAdapter.js`
-- Mapping: `assets/shared/realtime/mapping.js`
 
 ### Connection
 
@@ -49,50 +42,6 @@ Socket.IO client connects to backend with:
 - Path: `REACT_APP_SOCKET_PATH` (default `/socket.io`)
 - Transports: `websocket`, `polling`
 - Optional token auth: `REACT_APP_SOCKET_AUTH_TOKEN`
-
-On connect, the provider joins the current match room (`joinMatch(matchId)`).
-
-### Event Contract Used by This Frontend
-
-Current backend-facing events:
-
-- Client -> Server: `client_message`
-- Server -> Client: `server_message`
-
-Payload shape used internally:
-
-```json
-{
-  "matchId": "string",
-  "type": "string",
-  "payload": {},
-  "meta": {
-    "requestId": "string",
-    "clientTs": 0,
-    "version": 1
-  }
-}
-```
-
-### Legacy Compatibility Layer
-
-Many UI modules still call legacy STOMP-style APIs:
-
-- Publish-style calls (examples):
-  - `/app/player.Move/{matchId}`
-  - `/app/player.getPlayer/{matchId}`
-  - `/app/waitingRoom.gameStarted/{matchId}`
-- Subscribe-style topics (examples):
-  - `/topic/playerMove/{matchId}`
-  - `/topic/currentPlayer/{matchId}`
-  - `/topic/gameStarted/{matchId}`
-
-The mapping layer translates these calls to Socket.IO:
-
-- Legacy send destinations -> `client_message`
-- Legacy subscribe topics <- filtered `server_message`
-
-So existing components can keep using `sendMessage()` and `subscribe()` while the transport is Socket.IO.
 
 ### Realtime Flow Examples
 
@@ -133,7 +82,6 @@ Copy `.env.example` to `.env` and update values:
 - `REACT_APP_SOCKET_URL`
 - `REACT_APP_SOCKET_PATH=/socket.io`
 - `REACT_APP_SOCKET_AUTH_TOKEN` (if backend requires auth)
-- `REACT_APP_RT_TRANSPORT=socketio`
 - `REACT_APP_API_URL`
 
 ## Getting Started
@@ -157,9 +105,3 @@ npm run web
 npm run android
 npm run ios
 ```
-
-## Notes
-
-- Backend must expose Socket.IO on `/socket.io`.
-- If backend event names change, update `assets/shared/realtime/mapping.js`.
-- Some old STOMP-related packages may still exist in `package.json`, but active realtime path is Socket.IO.

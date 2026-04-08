@@ -9,7 +9,7 @@ import { updateCurrentUserStatus} from '../store/dbSlice.jsx'; // Import the act
 
 // --- WebSocket URL Configuration ---
 const PRODUCTION_WS_URL = 'https://strategic-ludo-srping-boot.onrender.com/ws';
-const LOCALHOST_WS_URL = 'http://localhost:8080/ws'; // Default for iOS
+const LOCALHOST_WS_URL = 'http://localhost:3000/ws'; // Default for iOS
 const ANDROID_WS_URL = 'http://192.168.178.130:8080/ws'; // Android-specific URL with port
 
 // Choose the appropriate WebSocket URL based on platform and environment

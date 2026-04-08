@@ -14,7 +14,7 @@ import { setPlayerColors, updateSoldiersPosition, removeColorFromAvailableColors
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
 import Toast from 'react-native-toast-message';
-import { activateKeepAwake, deactivateKeepAwake } from 'expo-keep-awake';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 
 const WaitingRoom = ({ navigation, route }) => {
   const dispatch = useDispatch();
@@ -29,6 +29,7 @@ const WaitingRoom = ({ navigation, route }) => {
 
   const [refreshing, setRefreshing] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
+  const keepAwakeActivatedRef = useRef(false);
 
 
   const { connected, subscribe, sendMessage } = useWebSocket();
@@ -38,12 +39,26 @@ const WaitingRoom = ({ navigation, route }) => {
   let join = route.params?.join || false;
 
   useEffect(() => {
+    let mounted = true;
+
     // Keep the device awake when the user is in the WaitingRoom
-    activateKeepAwake();
+    activateKeepAwakeAsync()
+      .then(() => {
+        if (mounted) {
+          keepAwakeActivatedRef.current = true;
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to activate keep-awake:', error);
+      });
 
     return () => {
+      mounted = false;
       // Deactivate keep awake when leaving the WaitingRoom
-      deactivateKeepAwake();
+      if (!keepAwakeActivatedRef.current) return;
+      deactivateKeepAwake().catch((error) => {
+        console.warn('Failed to deactivate keep-awake:', error);
+      });
     };
   }, []);
 
