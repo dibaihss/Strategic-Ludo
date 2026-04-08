@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { updateUserStatus, leaveMatch, fetchMatchState, submitMatchCommand } from '../store/dbSlice.jsx';
+import { leaveMatch, fetchMatchState, submitMatchCommand } from '../store/dbSlice.jsx';
 import { applyServerStateSnapshot } from '../store/gameSlice.jsx';
 import { AppState, Platform } from 'react-native';
 import { mapLegacySendToCanonical, mapLegacyTopicToCanonicalEvents, shouldDeliverLegacyTopicMessage, toLegacyPayload } from './realtime/mapping';
@@ -15,12 +15,13 @@ try {
   ExpoConstants = null;
 }
 
+
 const PRODUCTION_SOCKET_URL = 'https://lowcostbackendapp-dze4chctcsevdybb.westeurope-01.azurewebsites.net';
-const LOCALHOST_SOCKET_URL = 'http://localhost:3000';
+const LOCALHOST_WS_URL =  process.env.EXPO_PUBLIIC_LOCALHOST_WS_URL || 'http://localhost:3000/ws';
 const ANDROID_SOCKET_URL = 'http://192.168.178.130:8080';
 const SOCKET_URL = (typeof process !== 'undefined' && process.env && process.env.REACT_APP_SOCKET_URL) ||
   (ExpoConstants && (ExpoConstants.manifest?.extra?.REACT_APP_SOCKET_URL || ExpoConstants.expoConfig?.extra?.REACT_APP_SOCKET_URL)) ||
-  (__DEV__ ? (Platform.OS === 'android' ? ANDROID_SOCKET_URL : LOCALHOST_SOCKET_URL) : PRODUCTION_SOCKET_URL);
+  (__DEV__ ? (Platform.OS === 'android' ? ANDROID_SOCKET_URL : LOCALHOST_WS_URL) : PRODUCTION_SOCKET_URL);
 
 const SOCKET_TOKEN = (typeof process !== 'undefined' && process.env && process.env.REACT_APP_SOCKET_AUTH_TOKEN) ||
   (ExpoConstants && (ExpoConstants.manifest?.extra?.REACT_APP_SOCKET_AUTH_TOKEN || ExpoConstants.expoConfig?.extra?.REACT_APP_SOCKET_AUTH_TOKEN)) ||
@@ -117,38 +118,6 @@ export const WebSocketProvider = ({ children }) => {
     adapter.off(eventName, handlerOrId);
   };
 
-  // useEffect(() => {
-  //   if (Platform.OS === 'web') {
-  //     // Web-specific visibility API
-  //     const handleVisibilityChange = () => {
-  //       const nextAppState = document.hidden ? 'background' : 'active';
-  //       console.log('Web visibility changed:', nextAppState);
-  //       if (nextAppState === 'background' && user && currentMatch?.id) {
-  //         dispatch(updateUserStatus(false));
-  //         sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userInactive', userId: user.id });
-  //       }
-  //       if (nextAppState === 'active' && user && user.status === false && currentMatch?.id) {
-  //         dispatch(updateUserStatus(true));
-  //         sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userBack', userId: user.id });
-  //       }
-
-  //       appState.current = nextAppState;
-
-  //       if (nextAppState === 'active' && onlineModus) {
-  //         if (!connected) {
-  //           console.log('Web page became visible, reconnecting realtime transport...');
-  //           connect();
-  //         }
-  //       }
-  //     };
-
-  //     document.addEventListener('visibilitychange', handleVisibilityChange);
-
-  //     return () => {
-  //       document.removeEventListener('visibilitychange', handleVisibilityChange);
-  //     };
-  //   }
-  // }, [onlineModus, connected, user, currentMatch?.id]);
 
   useEffect(() => {
     if (!onlineModus) {

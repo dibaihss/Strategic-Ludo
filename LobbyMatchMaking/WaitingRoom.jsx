@@ -144,13 +144,14 @@ const WaitingRoom = ({ navigation, route }) => {
     if (!currentMatch || !user) return false;
 
     // Assuming the first user in the array is the host
-    return currentMatch.users[0]?.id === user.id;
+    return currentMatch.users?.[0]?.id === user.id;
   };
 
   const handleRefresh = () => {
     if (isFetching) return;
     if (!currentMatch?.id) return;
     const id = currentMatch.id;
+    setIsFetching(true);
     setRefreshing(true);
     fetchCurrentMatchData(id);
   };
@@ -178,8 +179,9 @@ const WaitingRoom = ({ navigation, route }) => {
 
   const checkIfUserInMatch = (match) => {
     if(!match || !match.id) return;
-    const userInMatch = match.users.find(u => u.id === user.id);
-    console.log('User in match:', currentMatch.users, userInMatch);
+    const users = Array.isArray(match.users) ? match.users : [];
+    const userInMatch = users.find(u => u.id === user.id);
+    console.log('User in match:', users, userInMatch);
     if (!userInMatch) {
       navigation.navigate('Home');
       dispatch(updateMatch(null))
@@ -187,14 +189,16 @@ const WaitingRoom = ({ navigation, route }) => {
     }
 };
   const startGame = () => {
-    if (currentMatch.users.length < 2) {
+    const users = Array.isArray(currentMatch?.users) ? currentMatch.users : [];
+    if (users.length < 2) {
       return;
     }
     sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'startGame' });
   };
 
   const handleStartGame = () => {
-    const players = currentMatch.users;
+    const players = Array.isArray(currentMatch?.users) ? currentMatch.users : [];
+    if (players.length < 2) return;
     const playerColors = {
       blue: players[0].id,
       red: players[1].id,
