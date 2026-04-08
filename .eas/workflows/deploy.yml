@@ -1,4 +1,4 @@
-# https://docs.expo.dev/eas/hosting/workflows/
+# https://docs.expo.dev/eas/hosting/workflows/  deploy to production on push to main branch
 name: Deploy
 
 on:
