@@ -17,7 +17,7 @@ const ENV_API =
 
 const PRODUCTION_API_URL =
   (typeof process !== "undefined" && process.env && process.env.REACT_APP_PRODUCTION_URL) ||
-  "https://lowcostbackendapp-dze4chctcsevdybb.westeurope-01.azurewebsites.net/api";
+  "https://api-ludo-app-gtvtnw.fly.dev/api";
 
 const LOCALHOST_API_URL =
   process.env.EXPO_PUBLIC_LOCALHOST_API_URL ||
