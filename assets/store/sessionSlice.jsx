@@ -275,13 +275,20 @@ export const updateMatchStatus = createAsyncThunk(
       if (authResult.error) return authResult.error;
       const { token } = authResult;
 
+     
+      const payload = {
+        name: session.name,
+        status: session.status,
+        maxPlayers: session.maxPlayers ?? session.max_players,
+      };
+
       const response = await fetch(`${API_URL}/sessions/${session.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(session),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -289,7 +296,8 @@ export const updateMatchStatus = createAsyncThunk(
         return rejectWithValue(errorData.message || "Failed to update match status");
       }
 
-      return await response.json();
+      const updatedSession = await response.json().catch(() => null);
+      return updatedSession || { ...session, ...payload };
     } catch (error) {
       console.error("Error updating match status:", error);
       return rejectWithValue("Network error while updating match status");

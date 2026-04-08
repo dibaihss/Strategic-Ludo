@@ -220,10 +220,10 @@ const WaitingRoom = ({ navigation, route }) => {
       yellow: players[2] ? players[2].id : players[1].id,
       green: players[3] ? players[3].id : players[0].id
     }
-    if (currentMatch && currentMatch.status !== 'started') {
+    if (currentMatch && currentMatch.status !== 'in_progress') {
       const updatedMatch = {
         ...currentMatch,
-        status: 'started',
+        status: 'in_progress',
       };
       dispatch(updateMatchStatus(updatedMatch))
         .unwrap()
