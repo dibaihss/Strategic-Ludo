@@ -1,336 +1,130 @@
-import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { updateUserStatus, leaveMatch, fetchMatchState, submitMatchCommand } from '../store/dbSlice.jsx';
-import { applyServerStateSnapshot } from '../store/gameSlice.jsx';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { io } from 'socket.io-client';
+import { useSelector } from 'react-redux';
 import { AppState, Platform } from 'react-native';
-import { mapLegacySendToCanonical, mapLegacyTopicToCanonicalEvents, shouldDeliverLegacyTopicMessage, toLegacyPayload } from './realtime/mapping';
-import { createRequestId, normalizePayload } from './realtime/utils';
-import { SocketIoAdapter } from './realtime/SocketIoAdapter';
 
-// --- Realtime Socket.IO Configuration ---
-let ExpoConstants = null;
-try {
-  ExpoConstants = require('expo-constants');
-} catch (e) {
-  ExpoConstants = null;
+// --- WebSocket URL Configuration ---
+const PRODUCTION_WS_URL = 'https://strategic-ludo-srping-boot.onrender.com';
+const LOCALHOST_WS_URL = 'http://localhost:3000';
+const ANDROID_WS_URL = 'http://192.168.178.130:3000';
+
+// Choose the appropriate WebSocket URL based on platform and environment
+let WEBSOCKET_URL;
+if (__DEV__) {
+  if (Platform.OS === 'android') {
+    WEBSOCKET_URL = ANDROID_WS_URL;
+  } else {
+    WEBSOCKET_URL = LOCALHOST_WS_URL;
+  }
+} else {
+  WEBSOCKET_URL = PRODUCTION_WS_URL;
 }
 
-const PRODUCTION_SOCKET_URL = 'https://lowcostbackendapp-dze4chctcsevdybb.westeurope-01.azurewebsites.net';
-const LOCALHOST_SOCKET_URL = 'http://localhost:3000';
-const ANDROID_SOCKET_URL = 'http://192.168.178.130:8080';
-const SOCKET_URL = (typeof process !== 'undefined' && process.env && process.env.REACT_APP_SOCKET_URL) ||
-  (ExpoConstants && (ExpoConstants.manifest?.extra?.REACT_APP_SOCKET_URL || ExpoConstants.expoConfig?.extra?.REACT_APP_SOCKET_URL)) ||
-  (__DEV__ ? (Platform.OS === 'android' ? ANDROID_SOCKET_URL : LOCALHOST_SOCKET_URL) : PRODUCTION_SOCKET_URL);
-
-const SOCKET_TOKEN = (typeof process !== 'undefined' && process.env && process.env.REACT_APP_SOCKET_AUTH_TOKEN) ||
-  (ExpoConstants && (ExpoConstants.manifest?.extra?.REACT_APP_SOCKET_AUTH_TOKEN || ExpoConstants.expoConfig?.extra?.REACT_APP_SOCKET_AUTH_TOKEN)) ||
-  '';
-
-const SOCKET_PATH = (typeof process !== 'undefined' && process.env && process.env.REACT_APP_SOCKET_PATH) ||
-  (ExpoConstants && (ExpoConstants.manifest?.extra?.REACT_APP_SOCKET_PATH || ExpoConstants.expoConfig?.extra?.REACT_APP_SOCKET_PATH)) ||
-  '/socket.io';
-
-const TRANSPORT = ((typeof process !== 'undefined' && process.env && process.env.REACT_APP_RT_TRANSPORT) ||
-  (ExpoConstants && (ExpoConstants.manifest?.extra?.REACT_APP_RT_TRANSPORT || ExpoConstants.expoConfig?.extra?.REACT_APP_RT_TRANSPORT)) ||
-  'socketio').toLowerCase();
-
-// --- END: Realtime Socket.IO Configuration ---
+// --- END: WebSocket URL Configuration ---
 // Create the context
 const WebSocketContext = createContext(null);
 
-const getLegacyDestinationForCommand = (type, matchId) => {
-  if (!matchId) return null;
-  const destinationByType = {
-    movePlayer: `/app/player.Move/${matchId}`,
-    enterNewSoldier: `/app/player.Move/${matchId}`,
-    skipTurn: `/app/player.Move/${matchId}`,
-    selectPlayer: `/app/player.getPlayer/${matchId}`,
-  };
-  return destinationByType[type] || `/app/player.Move/${matchId}`;
-};
-
 // Create a provider component
 export const WebSocketProvider = ({ children }) => {
-  const dispatch = useDispatch();
-  const adapterRef = useRef(null);
+
+  const [socketClient, setSocketClient] = useState(null);
   const [connected, setConnected] = useState(false);
-  const [messages] = useState({});
+  const [messages, setMessages] = useState({});
   const onlineModus = useSelector(state => state.game.onlineModus);
-  const appState = useRef(Platform.OS === 'web' ? 'active' : AppState.currentState);
-  const user = useSelector(state => state.auth.user);
-  const currentMatch = useSelector(state => state.auth.currentMatch);
 
-  const disconnect = async () => {
-    const adapter = adapterRef.current;
-    if (!adapter) return;
-    try {
-      await adapter.leaveMatch(currentMatch?.id);
-    } catch (error) {
-      console.error('Failed to leave Socket.IO match room:', error);
+
+  const reconnectSocket = () => {
+    if (socketClient && !socketClient.connected) {
+      console.log('Reconnecting Socket.IO client...');
+      socketClient.connect();
     }
-    adapter.disconnect();
   };
 
-  const buildAdapter = useMemo(() => {
-    return () => {
-      if (TRANSPORT !== 'socketio') {
-        console.warn(`Unsupported realtime transport "${TRANSPORT}". Falling back to socketio.`);
-      }
-      return new SocketIoAdapter({
-        url: SOCKET_URL,
-        token: SOCKET_TOKEN,
-        path: SOCKET_PATH,
-        onConnectionChange: setConnected,
-        onError: (error) => console.error('Socket.IO error:', error),
-      });
-    };
-  }, []);
-
-  const connect = () => {
-    if (!adapterRef.current) {
-      adapterRef.current = buildAdapter();
+  const sendMessage = (destination, body) => {
+    if (socketClient && socketClient.connected) {
+      socketClient.emit(destination, body);
+      return true;
     }
-    adapterRef.current.connect();
+    return false;
   };
 
-  const joinMatch = async (matchId) => {
-    const adapter = adapterRef.current;
-    if (!adapter || !matchId) return;
-    await adapter.joinMatch(matchId);
+  const sendMatchCommand = ({ type, payload = {}, matchId, playerId }) => {
+    if (!matchId || !type) return false;
+    const message = { type, payload };
+    if (playerId) {
+      message.playerId = playerId;
+    }
+    return sendMessage(`/app/player.Move/${matchId}`, message);
   };
-
-  const emit = async (eventName, payload, options = {}) => {
-    const adapter = adapterRef.current;
-    if (!adapter) return { ok: false, code: 'NO_ADAPTER' };
-    return adapter.emit(eventName, payload, options);
-  };
-
-  const on = (eventName, handler) => {
-    const adapter = adapterRef.current;
-    if (!adapter) return;
-    adapter.on(eventName, handler);
-  };
-
-  const off = (eventName, handlerOrId) => {
-    const adapter = adapterRef.current;
-    if (!adapter) return;
-    adapter.off(eventName, handlerOrId);
-  };
-
-  // useEffect(() => {
-  //   if (Platform.OS === 'web') {
-  //     // Web-specific visibility API
-  //     const handleVisibilityChange = () => {
-  //       const nextAppState = document.hidden ? 'background' : 'active';
-  //       console.log('Web visibility changed:', nextAppState);
-  //       if (nextAppState === 'background' && user && currentMatch?.id) {
-  //         dispatch(updateUserStatus(false));
-  //         sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userInactive', userId: user.id });
-  //       }
-  //       if (nextAppState === 'active' && user && user.status === false && currentMatch?.id) {
-  //         dispatch(updateUserStatus(true));
-  //         sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userBack', userId: user.id });
-  //       }
-
-  //       appState.current = nextAppState;
-
-  //       if (nextAppState === 'active' && onlineModus) {
-  //         if (!connected) {
-  //           console.log('Web page became visible, reconnecting realtime transport...');
-  //           connect();
-  //         }
-  //       }
-  //     };
-
-  //     document.addEventListener('visibilitychange', handleVisibilityChange);
-
-  //     return () => {
-  //       document.removeEventListener('visibilitychange', handleVisibilityChange);
-  //     };
-  //   }
-  // }, [onlineModus, connected, user, currentMatch?.id]);
 
   useEffect(() => {
     if (!onlineModus) {
-      disconnect();
+      if (socketClient) {
+        socketClient.disconnect();
+        setSocketClient(null);
+      }
+      setConnected(false);
       return;
     }
 
-    connect();
+    const client = io(WEBSOCKET_URL, {
+      transports: ['websocket', 'polling'],
+      timeout: 10000,
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      withCredentials: false,
+      autoConnect: true,
+    });
+
+    client.on('connect', () => {
+      console.log('Connected to Socket.IO');
+      setConnected(true);
+    });
+
+    client.on('disconnect', () => {
+      console.log('Disconnected from Socket.IO');
+      setConnected(false);
+    });
+
+    client.on('connect_error', (error) => {
+      console.error('Socket.IO error:', error?.message || error);
+    });
+
+    setSocketClient(client);
+
+    // Cleanup on unmount
     return () => {
-      disconnect();
+      client.disconnect();
+      setConnected(false);
     };
   }, [onlineModus]);
 
-  useEffect(() => {
-
-    if (!connected || !currentMatch?.id) return;
-    joinMatch(currentMatch.id);
-    dispatch(fetchMatchState(currentMatch.id))
-      .unwrap()
-      .then((snapshot) => {
-        if (snapshot) {
-          dispatch(applyServerStateSnapshot(snapshot));
-        }
-      })
-      .catch((error) => {
-        console.warn('Failed to recover match snapshot:', error);
-      });
-  }, [connected, currentMatch?.id]);
-
-  useEffect(() => {
-    if (!connected || !currentMatch?.id) return;
-
-    const shouldHandleMatch = (payloadMatchId) => {
-      if (!payloadMatchId) return true;
-      return String(payloadMatchId) === String(currentMatch.id);
-    };
-
-    const handleSnapshot = (envelope) => {
-      const normalized = normalizePayload(envelope);
-      const payload = normalized?.payload || normalized;
-      const snapshot = payload?.state || payload;
-      const payloadMatchId = normalized?.matchId || payload?.matchId || payload?.sessionId;
-      if (!shouldHandleMatch(payloadMatchId)) return;
-      dispatch(applyServerStateSnapshot(snapshot));
-    };
-
-    const handleDelta = (envelope) => {
-      const normalized = normalizePayload(envelope);
-      const payload = normalized?.payload || normalized;
-      const delta = payload?.state || payload;
-      const payloadMatchId = normalized?.matchId || payload?.matchId || payload?.sessionId;
-      if (!shouldHandleMatch(payloadMatchId)) return;
-      dispatch(applyServerStateSnapshot(delta));
-    };
-
-    const handleCommandRejected = (envelope) => {
-      const normalized = normalizePayload(envelope);
-      const reasonCode = normalized?.reasonCode || normalized?.payload?.reasonCode || 'UNKNOWN_REASON';
-      console.warn(`Match command rejected: ${reasonCode}`, normalized);
-    };
-
-    on('match.state.snapshot', handleSnapshot);
-    on('match.state.delta', handleDelta);
-    on('match.command.rejected', handleCommandRejected);
-
-    return () => {
-      off('match.state.snapshot', handleSnapshot);
-      off('match.state.delta', handleDelta);
-      off('match.command.rejected', handleCommandRejected);
-    };
-  }, [connected, currentMatch?.id, dispatch]);
-
-  useEffect(() => {
-    if (!connected || !currentMatch?.id || !user?.id) return;
-    return () => {
-      if (connected && currentMatch?.id && user?.id) {
-        dispatch(leaveMatch({ matchId: currentMatch.id, playerId: user.id }));
-      }
-    };
-  }, [connected, currentMatch?.id, user?.id]);
-
+  // Subscribe to a topic
   const subscribe = (topic, callback) => {
-    const adapter = adapterRef.current;
-    if (!adapter || !connected) return null;
-    const isLegacyTopic = String(topic).startsWith('/topic/');
-    const { events } = isLegacyTopic
-      ? mapLegacyTopicToCanonicalEvents(topic)
-      : { events: [topic] };
-    const handlers = events.map((eventName) => {
-      const handler = (envelope) => {
-        const normalized = normalizePayload(envelope);
-        if (isLegacyTopic) {
-          if (!shouldDeliverLegacyTopicMessage(topic, normalized)) return;
-          callback?.(toLegacyPayload(normalized));
-          return;
-        }
-        callback?.(normalized);
+    if (socketClient && socketClient.connected) {
+      const handler = (data) => {
+        if (callback) callback(data);
       };
-      adapter.on(eventName, handler);
-      return { eventName, handler };
-    });
-
-    return {
-      unsubscribe: () => {
-        handlers.forEach(({ eventName, handler }) => {
-          adapter.off(eventName, handler);
-        });
-      },
-    };
-  };
-
-  const sendMessage = (destination, body, options = {}) => {
-    const adapter = adapterRef.current;
-    if (!adapter || !connected) return false;
-    const mapped = mapLegacySendToCanonical(destination, body);
-    emit(mapped.eventName, mapped.envelope, options).catch((error) => {
-      console.error('Failed to emit Socket.IO event:', error);
-    });
-    return true;
-  };
-
-  const sendMatchCommand = async ({
-    type,
-    payload = {},
-    matchId,
-    playerId,
-    requestId,
-    clientTs,
-    fallbackToSocket = true,
-  }) => {
-    const resolvedMatchId = matchId || currentMatch?.id;
-    const resolvedPlayerId = playerId || user?.id;
-    if (!resolvedMatchId || !type) {
-      return { ok: false, code: 'INVALID_COMMAND' };
+      socketClient.on(topic, handler);
+      return {
+        unsubscribe: () => socketClient.off(topic, handler)
+      };
     }
-
-    const command = {
-      requestId: requestId || createRequestId(),
-      type,
-      payload,
-      playerId: resolvedPlayerId,
-      clientTs: clientTs || Date.now(),
-    };
-
-    try {
-      const response = await dispatch(submitMatchCommand({ matchId: resolvedMatchId, command })).unwrap();
-      return response || { ok: true, requestId: command.requestId };
-    } catch (error) {
-      if (!fallbackToSocket) {
-        return { ok: false, code: 'REST_COMMAND_FAILED', error };
-      }
-      const destination = getLegacyDestinationForCommand(type, resolvedMatchId);
-      const sent = sendMessage(destination, {
-        type,
-        payload,
-        meta: {
-          requestId: command.requestId,
-          clientTs: command.clientTs,
-          version: 1,
-        },
-      });
-      return sent
-        ? { ok: true, code: 'SOCKET_FALLBACK', requestId: command.requestId }
-        : { ok: false, code: 'SOCKET_FALLBACK_FAILED', error };
-    }
+    return null;
   };
 
   // The value that will be provided to consumers of this context
   const value = {
-    stompClient: adapterRef.current,
+    stompClient: socketClient,
+    socketClient,
     connected,
     messages,
-    connect,
-    disconnect,
-    joinMatch,
-    emit,
-    on,
-    off,
     subscribe,
     sendMessage,
     sendMatchCommand,
-    transport: TRANSPORT,
+    reconnect: reconnectSocket,
   };
 
   return (

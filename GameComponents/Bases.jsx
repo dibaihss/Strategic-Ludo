@@ -249,7 +249,7 @@ export default function Bases() {
     const showClone = useSelector(state => state.animation.showClone);
     const systemLang = useSelector(state => state.language.systemLang);
     const user = useSelector(state => state.auth.user);
-    const currentMatch = useSelector(state => state.auth.currentMatch);
+    const currentMatch = useSelector(state => state.session.currentMatch);
     const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
     
 

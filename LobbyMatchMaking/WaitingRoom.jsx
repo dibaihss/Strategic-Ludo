@@ -9,26 +9,27 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchCurrentMatch, updateMatch, updateMatchStatus, leaveMatch } from '../assets/store/dbSlice.jsx';
+import { fetchCurrentMatch, updateMatch, updateMatchStatus, leaveMatch } from '../assets/store/sessionSlice.jsx';
 import { setPlayerColors, updateSoldiersPosition, removeColorFromAvailableColors, setActivePlayer } from '../assets/store/gameSlice.jsx';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
 import Toast from 'react-native-toast-message';
-import { activateKeepAwake, deactivateKeepAwake } from 'expo-keep-awake';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 
 const WaitingRoom = ({ navigation, route }) => {
   const dispatch = useDispatch();
   const theme = useSelector(state => state.theme.current);
   const systemLang = useSelector(state => state.language.systemLang);
-  const currentMatch = useSelector(state => state.auth.currentMatch);
+  const currentMatch = useSelector(state => state.session.currentMatch);
   const user = useSelector(state => state.auth.user);
-  const loading = useSelector(state => state.auth.loading);
+  const loading = useSelector(state => state.session.loading);
 
   const [count, setCount] = useState(3);
   const intervalRef = useRef(null);
 
   const [refreshing, setRefreshing] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
+  const keepAwakeActivatedRef = useRef(false);
 
 
   const { connected, subscribe, sendMessage } = useWebSocket();
@@ -38,12 +39,26 @@ const WaitingRoom = ({ navigation, route }) => {
   let join = route.params?.join || false;
 
   useEffect(() => {
+    let mounted = true;
+
     // Keep the device awake when the user is in the WaitingRoom
-    activateKeepAwake();
+    activateKeepAwakeAsync()
+      .then(() => {
+        if (mounted) {
+          keepAwakeActivatedRef.current = true;
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to activate keep-awake:', error);
+      });
 
     return () => {
+      mounted = false;
       // Deactivate keep awake when leaving the WaitingRoom
-      deactivateKeepAwake();
+      if (!keepAwakeActivatedRef.current) return;
+      deactivateKeepAwake().catch((error) => {
+        console.warn('Failed to deactivate keep-awake:', error);
+      });
     };
   }, []);
 
@@ -144,13 +159,14 @@ const WaitingRoom = ({ navigation, route }) => {
     if (!currentMatch || !user) return false;
 
     // Assuming the first user in the array is the host
-    return currentMatch.users[0]?.id === user.id;
+    return currentMatch.users?.[0]?.id === user.id;
   };
 
   const handleRefresh = () => {
     if (isFetching) return;
     if (!currentMatch?.id) return;
     const id = currentMatch.id;
+    setIsFetching(true);
     setRefreshing(true);
     fetchCurrentMatchData(id);
   };
@@ -178,8 +194,9 @@ const WaitingRoom = ({ navigation, route }) => {
 
   const checkIfUserInMatch = (match) => {
     if(!match || !match.id) return;
-    const userInMatch = match.users.find(u => u.id === user.id);
-    console.log('User in match:', currentMatch.users, userInMatch);
+    const users = Array.isArray(match.users) ? match.users : [];
+    const userInMatch = users.find(u => u.id === user.id);
+    console.log('User in match:', users, userInMatch);
     if (!userInMatch) {
       navigation.navigate('Home');
       dispatch(updateMatch(null))
@@ -187,14 +204,16 @@ const WaitingRoom = ({ navigation, route }) => {
     }
 };
   const startGame = () => {
-    if (currentMatch.users.length < 2) {
+    const users = Array.isArray(currentMatch?.users) ? currentMatch.users : [];
+    if (users.length < 2) {
       return;
     }
     sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'startGame' });
   };
 
   const handleStartGame = () => {
-    const players = currentMatch.users;
+    const players = Array.isArray(currentMatch?.users) ? currentMatch.users : [];
+    if (players.length < 2) return;
     const playerColors = {
       blue: players[0].id,
       red: players[1].id,

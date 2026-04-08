@@ -97,8 +97,8 @@ export const saveGameState = createAsyncThunk(
                 greenSoldiers: state.game.greenSoldiers,
                 isTimerRunning: state.game.isTimerRunning,
                 timeRemaining: state.game.timeRemaining,
-                // Include currentMatch from auth slice
-                currentMatch: state.auth.currentMatch,
+                // Include currentMatch from session slice
+                currentMatch: state.session.currentMatch,
                 timestamp: new Date().toISOString()
             };
 

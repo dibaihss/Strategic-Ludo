@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { View, Text, StyleSheet, Pressable, Modal, TextInput } from 'react-native';
-import { setUser } from '../assets/store/dbSlice.jsx';
+import { setUser } from '../assets/store/authSlice.jsx';
 import { setOnlineModus } from '../assets/store/gameSlice.jsx';
 
 

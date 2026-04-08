@@ -1,156 +1,110 @@
 # Strategic Ludo Frontend
 
-React Native + Expo frontend for a multiplayer Ludo game with local and online play modes.
+Strategic Ludo is a cross-platform frontend (Web, Android, iOS) for a turn-based Ludo game with both local play and realtime multiplayer.
 
-## Tech Stack
+## What This Project Does
 
-- React 18
-- React Native / Expo
-- React Navigation
-- Redux Toolkit
-- Socket.IO client for realtime multiplayer
+- Runs local/offline matches fully on the client.
+- Supports online multiplayer with waiting room + in-game realtime events.
+- Manages game, session, auth, and UI state with Redux.
+- Connects to backend services for matchmaking/session data and live game updates.
 
-## App Features
+## Architecture (Simple View)
 
-- Local game mode (offline)
-- Multiplayer game mode (online)
-- Waiting room and match lifecycle
-- Turn-based movement, player selection, skip turn
-- Player presence handling (join/leave/inactive/back)
-- Cross-platform targets: Web, Android, iOS
+The app follows a layered structure:
 
-## Project Structure
+1. UI Layer
+- Screens and components render game state and capture player actions.
+- Main areas: `Menu/`, `LobbyMatchMaking/`, `GameComponents/`, `UserAuthentication/`.
 
-- `App.jsx`, `AppNavigator.jsx`: app bootstrap and navigation
-- `Menu/`: game screens (home, game screen, modal flows)
-- `LobbyMatchMaking/`: waiting room and matchmaking UI
-- `GameComponents/`: board, bases, goals, timer, players
-- `assets/store/`: Redux slices and async thunks
-- `assets/shared/webSocketConnection.jsx`: realtime provider layer
-- `assets/shared/realtime/`: socket adapter, mapping, payload utilities
+2. State Layer (Redux)
+- Centralized state slices for auth, session, game, theme, and language.
+- Async operations and server sync are handled in Redux thunks.
+- Location: `assets/store/`.
 
-## Realtime Socket Function (How It Works)
+3. Realtime Layer (Socket.IO)
+- `WebSocketProvider` exposes `connected`, `subscribe`, `sendMessage`, and `sendMatchCommand`.
+- Consumers use a stable hook API: `useWebSocket()`.
+- Location: `assets/shared/webSocketConnection.jsx`.
 
-### Overview
+4. Navigation & App Composition
+- App providers and navigation setup are composed at the root.
+- Entry files: `index.js`, `App.jsx`, `AppNavigator.jsx`.
 
-The app uses `socket.io-client` to keep all multiplayer clients synchronized in realtime.
+## Realtime Event Model
 
-Core implementation:
+The frontend keeps existing event names while using Socket.IO transport.
 
-- Provider: `assets/shared/webSocketConnection.jsx`
-- Adapter: `assets/shared/realtime/SocketIoAdapter.js`
-- Mapping: `assets/shared/realtime/mapping.js`
-
-### Connection
-
-Socket.IO client connects to backend with:
-
-- Base URL: `REACT_APP_SOCKET_URL`
-- Path: `REACT_APP_SOCKET_PATH` (default `/socket.io`)
-- Transports: `websocket`, `polling`
-- Optional token auth: `REACT_APP_SOCKET_AUTH_TOKEN`
-
-On connect, the provider joins the current match room (`joinMatch(matchId)`).
-
-### Event Contract Used by This Frontend
-
-Current backend-facing events:
-
-- Client -> Server: `client_message`
-- Server -> Client: `server_message`
-
-Payload shape used internally:
-
-```json
-{
-  "matchId": "string",
-  "type": "string",
-  "payload": {},
-  "meta": {
-    "requestId": "string",
-    "clientTs": 0,
-    "version": 1
-  }
-}
-```
-
-### Legacy Compatibility Layer
-
-Many UI modules still call legacy STOMP-style APIs:
-
-- Publish-style calls (examples):
+- Emit examples:
+  - `/app/waitingRoom.gameStarted/{matchId}`
   - `/app/player.Move/{matchId}`
   - `/app/player.getPlayer/{matchId}`
-  - `/app/waitingRoom.gameStarted/{matchId}`
-- Subscribe-style topics (examples):
+- Subscribe examples:
+  - `/topic/gameStarted/{matchId}`
   - `/topic/playerMove/{matchId}`
   - `/topic/currentPlayer/{matchId}`
-  - `/topic/gameStarted/{matchId}`
 
-The mapping layer translates these calls to Socket.IO:
+This allows protocol compatibility with a Socket.IO backend (`/socket.io/*`) while preserving current gameplay message contracts.
 
-- Legacy send destinations -> `client_message`
-- Legacy subscribe topics <- filtered `server_message`
+## Folder Structure
 
-So existing components can keep using `sendMessage()` and `subscribe()` while the transport is Socket.IO.
+- `App.jsx` - Root providers (Redux, WebSocket, gesture handler)
+- `AppNavigator.jsx` - Navigation routes and screen flow
+- `Menu/` - Main app/game screens
+- `LobbyMatchMaking/` - Lobby and waiting room logic
+- `GameComponents/` - Board, bases, players, timer, goals
+- `UserAuthentication/` - Login/guest/auth screens
+- `assets/shared/` - Shared utilities and realtime provider
+- `assets/store/` - Redux store, slices, and async logic
+- `e2e/` - Playwright tests
 
-### Realtime Flow Examples
+## Technologies Used
 
-1. Player move:
-- UI sends `/app/player.Move/{matchId}` with `type: movePlayer`
-- Mapping converts to `client_message`
-- Backend emits `server_message`
-- Topic filter routes move updates to subscribers of `/topic/playerMove/{matchId}`
+Core:
+- React 19
+- React Native 0.83
+- Expo 55
 
-2. Player selection:
-- UI sends `/app/player.getPlayer/{matchId}`
-- Backend responds via `server_message`
-- Topic filter routes to `/topic/currentPlayer/{matchId}`
+State and navigation:
+- Redux Toolkit
+- React Redux
+- React Navigation (native + native-stack)
 
-3. Waiting room events:
-- UI sends `/app/waitingRoom.gameStarted/{matchId}` with types like `startGame`, `userJoined`, `userLeft`
-- Backend broadcasts `server_message`
-- Topic filter routes to `/topic/gameStarted/{matchId}`
+Realtime and networking:
+- Socket.IO Client
+- Async Storage
 
-### Match Recovery + Command API
+UI/platform:
+- React Native Gesture Handler
+- React Native Reanimated
+- React Native Screens
+- React Native Safe Area Context
+- Expo Keep Awake
 
-For multiplayer MVP reliability, the frontend now supports:
-
-- Snapshot recovery endpoint: `GET /sessions/{id}/state`
-- Idempotent command endpoint: `POST /sessions/{id}/commands`
-- Socket contracts: `match.state.snapshot`, `match.state.delta`, `match.command.rejected`
-
-Move commands use this flow:
-
-1. Submit command to REST with `requestId`.
-2. If REST fails, fallback to legacy Socket.IO emit.
-3. Apply incoming snapshot/delta events to Redux game state.
-
-## Environment Variables
-
-Copy `.env.example` to `.env` and update values:
-
-- `REACT_APP_SOCKET_URL`
-- `REACT_APP_SOCKET_PATH=/socket.io`
-- `REACT_APP_SOCKET_AUTH_TOKEN` (if backend requires auth)
-- `REACT_APP_RT_TRANSPORT=socketio`
-- `REACT_APP_API_URL`
+Testing and tooling:
+- Playwright (web E2E)
+- Babel
+- dotenv
 
 ## Getting Started
 
-1. Install dependencies:
+### 1. Install dependencies
 
 ```bash
 npm install
 ```
 
-2. Start app:
+### 2. Configure environment
+
+Create a `.env` file (or copy from `.env.example`) and set values for your local/backend environment.
+
+### 3. Run the app
 
 ```bash
 npm start
 ```
 
-3. Run target:
+Target-specific commands:
 
 ```bash
 npm run web
@@ -158,8 +112,24 @@ npm run android
 npm run ios
 ```
 
-## Notes
+## NPM Scripts
 
-- Backend must expose Socket.IO on `/socket.io`.
-- If backend event names change, update `assets/shared/realtime/mapping.js`.
-- Some old STOMP-related packages may still exist in `package.json`, but active realtime path is Socket.IO.
+- `npm start` - Start Expo dev server
+- `npm run web` - Start web target
+- `npm run android` - Start Android target
+- `npm run ios` - Start iOS target
+- `npm run web:e2e` - Start web app in E2E mode on fixed port
+- `npm run e2e:web` - Run Playwright tests
+- `npm run e2e:web:ui` - Run Playwright in UI mode
+- `npm run e2e:web:update` - Update snapshots
+
+## Development Notes
+
+- Realtime is enabled only in online mode.
+- Provider reconnect logic handles visibility/app state transitions.
+- Local game mode continues to work without backend realtime connection.
+
+## Current Status
+
+- STOMP/SockJS client has been removed.
+- Frontend realtime transport is now Socket.IO-based.

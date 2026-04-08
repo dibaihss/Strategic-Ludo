@@ -36,3 +36,4 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 assets/shared/SimpleWebSocketConnection.jsx
+assets/Implementing Real LLM Integration.md

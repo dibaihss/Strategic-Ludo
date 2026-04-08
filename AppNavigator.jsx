@@ -10,7 +10,7 @@ import LoginPage from "./UserAuthentication/login.jsx";
 import RegisterPage from "./UserAuthentication/Register.jsx";
 import MatchListPage from "./LobbyMatchMaking/MultiplayerMenu.jsx";
 import WaitingRoom from "./LobbyMatchMaking/WaitingRoom.jsx";
-import { setUser, setLoggedIn } from "./assets/store/dbSlice.jsx";
+import { setUser, setLoggedIn } from "./assets/store/authSlice.jsx";
 import { saveGameState, loadGameState } from "./assets/store/gameSlice.jsx";
 
 const Stack = createNativeStackNavigator();

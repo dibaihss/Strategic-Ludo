@@ -4,11 +4,9 @@ Environment variables and Expo setup
 This project reads runtime configuration from environment variables. Use `.env` for local development and `.env.example` as a template for required keys.
 
 Important keys
-- `REACT_APP_WS_URL` - Legacy STOMP WebSocket URL (`wss://...` or `https://.../ws`)
 - `REACT_APP_SOCKET_URL` - Socket.IO server base URL (`https://...` or local `http://...`)
 - `REACT_APP_SOCKET_PATH` - Socket.IO path (default `/socket.io`)
 - `REACT_APP_SOCKET_AUTH_TOKEN` - Token sent in Socket.IO `auth` handshake
-- `REACT_APP_RT_TRANSPORT` - Realtime transport selector (`socketio` recommended)
 - `REACT_APP_API_URL` - Base API URL
 - `REACT_APP_PRODUCTION_URL` - Production API URL
 
@@ -23,7 +21,7 @@ npm install dotenv --save-dev
 
 ```js
 require('dotenv').config();
-// process.env.REACT_APP_WS_URL is now available
+// process.env.REACT_APP_SOCKET_URL is now available
 ```
 
 Expo / React Native (recommended)
@@ -41,11 +39,9 @@ import 'dotenv/config';
 export default ({ config }) => ({
   ...config,
   extra: {
-    REACT_APP_WS_URL: process.env.REACT_APP_WS_URL || 'https://api.example.com/ws',
     REACT_APP_SOCKET_URL: process.env.REACT_APP_SOCKET_URL || 'https://api.example.com',
     REACT_APP_SOCKET_PATH: process.env.REACT_APP_SOCKET_PATH || '/socket.io',
     REACT_APP_SOCKET_AUTH_TOKEN: process.env.REACT_APP_SOCKET_AUTH_TOKEN || '',
-    REACT_APP_RT_TRANSPORT: process.env.REACT_APP_RT_TRANSPORT || 'socketio',
     REACT_APP_API_URL: process.env.REACT_APP_API_URL || 'https://api.example.com'
   }
 });
@@ -56,7 +52,6 @@ In code you can read via `expo-constants`:
 ```js
 import Constants from 'expo-constants';
 const extra = Constants.manifest?.extra || Constants.expoConfig?.extra;
-const wsUrl = extra?.REACT_APP_WS_URL;
 const socketUrl = extra?.REACT_APP_SOCKET_URL;
 ```
 
@@ -65,4 +60,4 @@ Security
 
 CI / Production
 - Configure your CI/CD to set the same environment variables.
-- Use `REACT_APP_RT_TRANSPORT=socketio` and ensure `REACT_APP_SOCKET_PATH=/socket.io`.
+- Ensure `REACT_APP_SOCKET_PATH=/socket.io` unless your backend uses a custom path.

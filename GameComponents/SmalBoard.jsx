@@ -45,7 +45,7 @@ export default function SmalBoard() {
     const greenSoldiers = useSelector(state => state.game.greenSoldiers);
     const boxSize = useSelector(state => state.animation.boxSize);
     const theme = useSelector(state => state.theme.current);
-    const currentMatch = useSelector(state => state.auth.currentMatch);
+    const currentMatch = useSelector(state => state.session.currentMatch);
     const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
     const availableTypes = useSelector(state => state.game.availableTypes);
 
