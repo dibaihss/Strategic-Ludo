@@ -1,15 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { Client } from '@stomp/stompjs';
-import SockJs from 'sockjs-client';
-import { useSelector, useDispatch } from 'react-redux';
-import { updateUserStatus, leaveMatch} from '../store/dbSlice.jsx'; // Import the action to update user status
+import { io } from 'socket.io-client';
+import { useSelector } from 'react-redux';
 import { AppState, Platform } from 'react-native';
-import { updateMatch } from '../store/dbSlice.jsx'; // Import the action to update match status
 
 // --- WebSocket URL Configuration ---
-const PRODUCTION_WS_URL = 'https://strategic-ludo-srping-boot.onrender.com/ws';
-const LOCALHOST_WS_URL = 'http://localhost:3000/ws'; // Default for iOS
-const ANDROID_WS_URL = 'http://192.168.178.130:8080/ws'; // Android-specific URL with port
+const PRODUCTION_WS_URL = 'https://strategic-ludo-srping-boot.onrender.com';
+const LOCALHOST_WS_URL = 'http://localhost:3000';
+const ANDROID_WS_URL = 'http://192.168.178.130:3000';
 
 // Choose the appropriate WebSocket URL based on platform and environment
 let WEBSOCKET_URL;
@@ -29,130 +26,105 @@ const WebSocketContext = createContext(null);
 
 // Create a provider component
 export const WebSocketProvider = ({ children }) => {
-    const dispatch = useDispatch();
-  const [stompClient, setStompClient] = useState(null);
+
+  const [socketClient, setSocketClient] = useState(null);
   const [connected, setConnected] = useState(false);
   const [messages, setMessages] = useState({});
   const onlineModus = useSelector(state => state.game.onlineModus);
-  const appState = useRef(Platform.OS === 'web' ? 'active' : AppState.currentState);
-  const [appStateVisible, setAppStateVisible] = useState(appState.current);
-  const user = useSelector(state => state.auth.user);
-  const currentMatch = useSelector(state => state.auth.currentMatch);
 
 
-  useEffect(() => {
-    if (Platform.OS === 'web') {
-      // Web-specific visibility API
-      const handleVisibilityChange = () => {
-        const nextAppState = document.hidden ? 'background' : 'active';
-        console.log('Web visibility changed:', nextAppState);
-        if(nextAppState === 'background' && user){
-            dispatch(updateUserStatus(false));
-          sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userInactive', userId: user.id })
-        } 
-        if(nextAppState === 'active' && user && user.status === false){
-            dispatch(updateUserStatus(true));
-          sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userBack', userId: user.id })
-        } 
-             
-        appState.current = nextAppState;
-        setAppStateVisible(nextAppState);
-
-        if (nextAppState === 'active' && onlineModus) {
-          if (!connected && stompClient) {
-            
-            console.log('Web page became visible, reconnecting WebSocket...');
-            reconnectWebSocket();
-          }
-        }
-      };
-
-      document.addEventListener('visibilitychange', handleVisibilityChange);
-
-      return () => {
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-      };
+  const reconnectSocket = () => {
+    if (socketClient && !socketClient.connected) {
+      console.log('Reconnecting Socket.IO client...');
+      socketClient.connect();
     }
-  }, [onlineModus, connected, stompClient,user]);
-
-  useEffect(() => {
-    if (!onlineModus) return; // Don't create a WebSocket connection if onlineModus is false
-    // Create STOMP client
-    const client = new Client({
-      webSocketFactory: () => {
-        const socket = new SockJs(WEBSOCKET_URL, null, {
-          transports: ['websocket', 'xhr-streaming', 'xhr-polling'],
-          timeout: 10000,
-          headers: {
-            'Origin': 'http://localhost:8081'
-          }
-        });
-        return socket;
-      },
-      onConnect: () => {
-        console.log('Connected to WebSocket');
-        setConnected(true);
-      },
-      onDisconnect: () => {
-        console.log('Disconnected from WebSocket');
-        setConnected(false);
-        if(currentMatch?.id){
-          dispatch(leaveMatch(currentMatch.id));
-          sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userDisconnected', userId: user.id })          
-        }
-
-      },
-      onStompError: (error) => {
-        console.error('STOMP error:', error);
-      },
-      reconnectDelay: 5000,
-      heartbeatIncoming: 4000,
-      heartbeatOutgoing: 4000
-    });
-
-    // Activate the client
-    client.activate();
-    setStompClient(client);
-
-    // Cleanup on unmount
-    return () => {
-      if (client && client.connected) {
-        client.deactivate();
-      }
-    };
-  }, [onlineModus]);
-
-  // Subscribe to a topic
-  const subscribe = (topic, callback) => {
-
-    if (stompClient && stompClient.connected) {
-      return stompClient.subscribe(topic, (message) => {
-        const data = JSON.parse(message.body);
-        if (callback) callback(data);
-      });
-    }
-    return null;
   };
 
-  // Send a message
   const sendMessage = (destination, body) => {
-    if (stompClient && stompClient.connected) {
-      stompClient.publish({
-        destination,
-        body: JSON.stringify(body)
-      });
+    if (socketClient && socketClient.connected) {
+      socketClient.emit(destination, body);
       return true;
     }
     return false;
   };
 
+  const sendMatchCommand = ({ type, payload = {}, matchId, playerId }) => {
+    if (!matchId || !type) return false;
+    const message = { type, payload };
+    if (playerId) {
+      message.playerId = playerId;
+    }
+    return sendMessage(`/app/player.Move/${matchId}`, message);
+  };
+
+  useEffect(() => {
+    if (!onlineModus) {
+      if (socketClient) {
+        socketClient.disconnect();
+        setSocketClient(null);
+      }
+      setConnected(false);
+      return;
+    }
+
+    const client = io(WEBSOCKET_URL, {
+      transports: ['websocket', 'polling'],
+      timeout: 10000,
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      withCredentials: false,
+      autoConnect: true,
+    });
+
+    client.on('connect', () => {
+      console.log('Connected to Socket.IO');
+      setConnected(true);
+    });
+
+    client.on('disconnect', () => {
+      console.log('Disconnected from Socket.IO');
+      setConnected(false);
+    });
+
+    client.on('connect_error', (error) => {
+      console.error('Socket.IO error:', error?.message || error);
+    });
+
+    setSocketClient(client);
+
+    // Cleanup on unmount
+    return () => {
+      client.disconnect();
+      setConnected(false);
+    };
+  }, [onlineModus]);
+
+  // Subscribe to a topic
+  const subscribe = (topic, callback) => {
+    if (socketClient && socketClient.connected) {
+      const handler = (data) => {
+        if (callback) callback(data);
+      };
+      socketClient.on(topic, handler);
+      return {
+        unsubscribe: () => socketClient.off(topic, handler)
+      };
+    }
+    return null;
+  };
+
   // The value that will be provided to consumers of this context
   const value = {
-    stompClient,
+    stompClient: socketClient,
+    socketClient,
     connected,
     messages,
     subscribe,
-    sendMessage
+    sendMessage,
+    sendMatchCommand,
+    reconnect: reconnectSocket,
   };
 
   return (
