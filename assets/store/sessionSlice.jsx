@@ -192,7 +192,7 @@ export const fetchCurrentMatch = createAsyncThunk(
       if (authResult.error) return authResult.error;
       const { token } = authResult;
 
-      const response = await fetch(`${API_URL}/sessions/${matchId}`, {
+      const response = await fetch(`${API_URL}/sessions/${matchId}/with-users/`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
