@@ -3,234 +3,20 @@ import React, { useEffect } from 'react';
 import Player from './Player';
 import { useDispatch, useSelector } from 'react-redux';
 import {
-    enterNewSoldier,
-    checkIfCardUsed,
     setActivePlayer,
     resetTimer,
 } from '../assets/store/gameSlice.jsx';
-import { setBoxesPosition } from '../assets/store/animationSlice.jsx';
-import Toast from 'react-native-toast-message';
-import { boxes, categories, directions, playerType, uiStrings, getLocalizedColor } from "../assets/shared/hardCodedData.js";
+import { directions, playerType } from "../assets/shared/hardCodedData.js";
 import { MaterialIcons } from '@expo/vector-icons';
 import Feather from '@expo/vector-icons/Feather';
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
-
-const getCategoryFromPosition = (position) => position.match(/[a-zA-Z]+/)[0];
-const getNumberFromPosition = (position) => parseInt(position.match(/\d+/)[0], 10);
-
-const canControlColor = (currentPlayerColor, color) => {
-    if (currentPlayerColor === color) return true;
-    if (Array.isArray(currentPlayerColor)) {
-        return currentPlayerColor[0] === color || currentPlayerColor[1] === color;
-    }
-    return false;
-};
-
-const getNextCategory = (currentCategory) => {
-    const currentIndex = categories.indexOf(currentCategory);
-    const nextIndex = (currentIndex + 1) % categories.length;
-    return categories[nextIndex];
-};
-
-const getInvolvedSteps = (band, sourcePos, targetPos) => {
-    const targetCategory = getCategoryFromPosition(targetPos);
-    const sourceCategory = getCategoryFromPosition(sourcePos);
-
-    if (targetCategory === getNextCategory(sourceCategory)) {
-        const maxBandNumber = Math.max(...band.map(item => getNumberFromPosition(item)));
-        return band.filter((box) => {
-            const boxCategory = getCategoryFromPosition(box);
-            if (boxCategory === targetCategory) {
-                return getNumberFromPosition(box) <= getNumberFromPosition(targetPos);
-            }
-            if (boxCategory === sourceCategory) {
-                return getNumberFromPosition(box) <= maxBandNumber && getNumberFromPosition(box) >= getNumberFromPosition(sourcePos);
-            }
-            return false;
-        });
-    }
-
-    return band.filter((box) => {
-        const boxCategory = getCategoryFromPosition(box);
-        if (boxCategory !== sourceCategory && boxCategory !== targetCategory) return false;
-        return getNumberFromPosition(box) <= getNumberFromPosition(targetPos) && getNumberFromPosition(box) > getNumberFromPosition(sourcePos);
-    });
-};
-
-const getMaxPositionNumber = (positions) => {
-    if (!positions.length) return 0;
-    return Math.max(...positions.map(item => getNumberFromPosition(item)));
-};
-
-const createStepMetrics = (sourcePos, targetPos) => {
-    const row2 = getInvolvedSteps(boxes.row2, sourcePos, targetPos);
-    const row1 = getInvolvedSteps(boxes.row1, sourcePos, targetPos);
-    const column2 = getInvolvedSteps(boxes.column2, sourcePos, targetPos);
-    const column1 = getInvolvedSteps(boxes.column1, sourcePos, targetPos);
-
-    const metrics = {
-        xSteps: 0,
-        xSteps2: 0,
-        ySteps: 0,
-        ySteps2: 0,
-        maxRow: 0,
-        maxCol: 0,
-        maxRow1: 0,
-        maxRow2: 0,
-        maxCol1: 0,
-        maxCol2: 0,
-    };
-
-    if (row1.length > 0 && row2.length > 0) {
-        metrics.maxRow1 = getMaxPositionNumber(row1);
-        metrics.maxRow2 = getMaxPositionNumber(row2);
-        const isFirstPathLarger = metrics.maxRow1 > metrics.maxRow2;
-        const primary = isFirstPathLarger ? row1.length : row2.length;
-        const secondary = isFirstPathLarger ? row2.length : row1.length;
-        metrics.xSteps = primary;
-        metrics.xSteps2 = secondary - 1;
-        return metrics;
-    }
-
-    if (column1.length > 0 && column2.length > 0) {
-        metrics.maxCol1 = getMaxPositionNumber(column1);
-        metrics.maxCol2 = getMaxPositionNumber(column2);
-        const isFirstPathLarger = metrics.maxCol1 > metrics.maxCol2;
-        const primary = isFirstPathLarger ? column1.length : column2.length;
-        const secondary = isFirstPathLarger ? column2.length : column1.length;
-        metrics.ySteps = primary;
-        metrics.ySteps2 = secondary - 1;
-        return metrics;
-    }
-
-    metrics.xSteps = row1.length + row2.length;
-    metrics.ySteps = column2.length + column1.length;
-    metrics.maxRow = Math.max(getMaxPositionNumber(row1), getMaxPositionNumber(row2));
-    metrics.maxCol = Math.max(getMaxPositionNumber(column1), getMaxPositionNumber(column2));
-    return metrics;
-};
-
-const showErrorToast = (text1, text2) => {
-    Toast.show({
-        type: 'error',
-        text1,
-        text2,
-        position: 'bottom',
-        visibilityTime: 2000,
-    });
-};
-
-const isOutOfBoardPosition = (playerColor, position) => {
-    const outPositions = {
-        blue: '7d',
-        red: '7a',
-        yellow: '7b',
-        green: '7c',
-    };
-    return outPositions[playerColor] === position;
-};
-
-const calculateNewPositionForPlayer = (player, steps) => {
-    if (!player.position || player.isOut) return undefined;
-
-    let numbers = parseInt(player.position.match(/\d+/)[0], 10);
-    let category = player.position.match(/[a-zA-Z]+/)[0];
-
-    for (let i = 0; i < steps; i++) {
-        numbers = numbers === 12 ? 1 : numbers + 1;
-        category = numbers === 1 ? getNextCategory(category) : category;
-        if (isOutOfBoardPosition(player.color, numbers + category)) {
-            return "";
-        }
-    }
-
-    return numbers + category;
-};
-
-const getArrowNameByColor = (color) => {
-    switch (color) {
-        case "red":
-            return "arrow-downward";
-        case "blue":
-            return "arrow-forward";
-        case "green":
-            return "arrow-downward";
-        default:
-            return "arrow-forward-ios";
-    }
-};
-
-const sendMoveUpdateCore = ({ connected, message, sendMatchCommand, currentMatch, user, sendMessage }) => {
-    if (!connected) return;
-
-    if (message?.type) {
-        sendMatchCommand({
-            type: message.type,
-            payload: message.payload || {},
-            matchId: currentMatch?.id,
-            playerId: user?.id,
-        });
-        return;
-    }
-
-    sendMessage(`/app/player.Move/${currentMatch.id}`, message);
-};
-
-const handleEnterNewSoldierCore = ({ activePlayer, color, systemLang, dispatch }) => {
-    if (activePlayer !== color) {
-        const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
-        showErrorToast(
-            uiStrings[systemLang].wrongTurn,
-            uiStrings[systemLang].wrongColor.replace('{color}', localizedActivePlayer)
-        );
-        return;
-    }
-
-    dispatch(enterNewSoldier(color));
-};
-
-const movePlayerCore = ({ color, steps, currentPlayer, activePlayer, systemLang, showClone, dispatch }) => {
-    const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
-
-    if (!currentPlayer || currentPlayer.isOut) {
-        showErrorToast(
-            uiStrings[systemLang].selectPlayer.replace('{color}', localizedActivePlayer),
-            uiStrings[systemLang].playerNotSelected
-        );
-        return;
-    }
-    if (showClone) return;
-
-    if (currentPlayer.color !== color) {
-        showErrorToast(
-            uiStrings[systemLang].wrongColor,
-            uiStrings[systemLang].wrongTurn.replaceAll('{color}', localizedActivePlayer)
-        );
-        return;
-    }
-
-    if (activePlayer !== currentPlayer.color) {
-        showErrorToast(
-            uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer),
-            uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer)
-        );
-        return;
-    }
-
-    dispatch(checkIfCardUsed({ color, steps }));
-    const newPosition = calculateNewPositionForPlayer(currentPlayer, steps);
-
-    if (newPosition === "") {
-        const outOfBoardPayload = currentPlayer.color === "red" || currentPlayer.color === "green"
-            ? { ySteps: steps, newPosition: newPosition }
-            : { xSteps: steps, newPosition: newPosition };
-        dispatch(setBoxesPosition(outOfBoardPayload));
-        return;
-    }
-
-    const metrics = createStepMetrics(currentPlayer.position, newPosition);
-    dispatch(setBoxesPosition({ ...metrics, newPosition: newPosition }));
-};
+import {
+    canControlColor,
+    getArrowNameByColor,
+    handleEnterNewSoldierCore,
+    movePlayerCore,
+    sendMoveUpdateCore,
+} from './Bases.logic';
 
 export default function Bases() {
 
@@ -539,6 +325,7 @@ export default function Bases() {
                             {(cardsByColor[color] || []).map((card) => (
                                 <Pressable
                                     key={card.id}
+                                    testID={`move-card-${color}-${card.value}`}
                                     disabled={card.used}
                                     style={getCardButtonStyle(color, i, card.used)}
                                     onPress={() => movePlayerHanlder(color, card.value)}
@@ -555,11 +342,15 @@ export default function Bases() {
                             </View>
                         ))}
                     </View>
-                    <Pressable style={[styles.button, styles[color + i], { marginVertical: 5 }]} onPress={() => enterNewSoldierHandler(color)}>
+                    <Pressable
+                        testID={`enter-soldier-${color}`}
+                        style={[styles.button, styles[color + i], { marginVertical: 5 }]}
+                        onPress={() => enterNewSoldierHandler(color)}
+                    >
                         {
                             color === "yellow" ?
-                                <Feather name="arrow-right" size={24} color={theme.name === "dark" ? "white" : "black"} /> :
-                                <MaterialIcons name={getArrowNameByColor(color)} size={24} color={theme.name === "dark" ? "white" : "black"} />
+                                <Feather name="arrow-right" size={24} color={theme.name === "modernDark" ? "white" : "black"} /> :
+                                <MaterialIcons name={getArrowNameByColor(color)} size={24} color={theme.name === "modernDark" ? "white" : "black"} />
                         }
                     </Pressable>
                 </View>

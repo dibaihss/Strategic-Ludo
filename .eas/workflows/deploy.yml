@@ -1,9 +1,9 @@
-# https://docs.expo.dev/eas/hosting/workflows/  deploy to production on push to main branch
+# https://docs.expo.dev/eas/hosting/workflows/ 
 name: Deploy
 
 on:
   push:
-    branches: ['main']
+    tags: ['v*.*.*']
 
 jobs:
   deploy:

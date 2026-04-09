@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   FlatList,
   Pressable,
   ActivityIndicator,
@@ -15,6 +14,7 @@ import { uiStrings } from '../assets/shared/hardCodedData.js';
 import { setCurrentUserPage } from '../assets/store/authSlice.jsx';
 import { fetchMatches, createMatch, joinMatch, fetchCurrentMatch, updateMatch } from '../assets/store/sessionSlice.jsx';
 import { setOnlineModus } from '../assets/store/gameSlice.jsx';
+import { createMultiplayerMenuStyles } from './MultiplayerMenu.styles.js';
 
 
 const MatchListPage = ({ navigation }) => {
@@ -22,6 +22,7 @@ const MatchListPage = ({ navigation }) => {
 
   const dispatch = useDispatch();
   const theme = useSelector(state => state.theme.current);
+  const styles = useMemo(() => createMultiplayerMenuStyles(theme), [theme]);
   const systemLang = useSelector(state => state.language.systemLang);
   const matches = useSelector(state => state.session.matches);
   const loading = useSelector(state => state.session.loading);
@@ -153,14 +154,14 @@ const MatchListPage = ({ navigation }) => {
   }
 
   return (
-    <View testID="match-list-screen" style={[styles.container, { backgroundColor: "white" }]}>
+    <View testID="match-list-screen" style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Header */}
       <View style={styles.header}>
         <Pressable
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <MaterialIcons name="arrow-back" size={24} color={theme.colors.primary} />
+          <MaterialIcons name="arrow-back" size={24} color={theme.colors.accent} />
         </Pressable>
         <Text style={[styles.title, { color: theme.colors.text }]}>
           {uiStrings[systemLang].availableMatches || 'Available Matches'}
@@ -175,7 +176,7 @@ const MatchListPage = ({ navigation }) => {
           <MaterialIcons 
             name="refresh" 
             size={24} 
-            color={(refreshing || loading) ? theme.colors.disabled : theme.colors.primary} 
+            color={(refreshing || loading) ? theme.colors.disabled : theme.colors.accent} 
           />
         </Pressable>
       </View>
@@ -185,7 +186,7 @@ const MatchListPage = ({ navigation }) => {
         <View style={styles.errorContainer}>
           <Text style={[styles.errorText, { color: theme.colors.error }]}>{error}</Text>
           <Pressable
-            style={[styles.retryButton, { backgroundColor: theme.colors.button }]}
+            style={[styles.retryButton, { backgroundColor: theme.colors.accent, borderColor: theme.colors.border, borderWidth: 1 }]}
             onPress={() => dispatch(fetchMatches())}
           >
             <Text style={[styles.retryText, { color: theme.colors.buttonText }]}>
@@ -205,14 +206,14 @@ const MatchListPage = ({ navigation }) => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[theme.colors.primary]}
-            tintColor={theme.colors.primary}
+            colors={[theme.colors.accent]}
+            tintColor={theme.colors.accent}
           />
         }
         ListEmptyComponent={
           !loading && !error ? (
             <View style={styles.emptyContainer}>
-              <MaterialIcons name="sports-esports" size={60} color={theme.colors.textSecondary} />
+              <MaterialIcons name="sports-esports" size={72} color={theme.colors.textSecondary} />
               <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
                 {uiStrings[systemLang].noMatches || 'No matches available'}
               </Text>
@@ -231,7 +232,9 @@ const MatchListPage = ({ navigation }) => {
           style={[
             styles.createButton,
             {
-              backgroundColor: loading ? theme.colors.disabled : theme.colors.button,
+              backgroundColor: loading ? theme.colors.disabled : theme.colors.accent,
+              borderColor: theme.colors.border,
+              borderWidth: 1,
               opacity: loading ? 0.7 : 1
             }
           ]}
@@ -253,126 +256,5 @@ const MatchListPage = ({ navigation }) => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  centered: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    paddingTop: 20,
-    justifyContent: 'space-between', // Adjust layout
-  },
-  backButton: {
-    // Keep existing styles or adjust if needed
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    flex: 1, // Allow title to take available space
-    textAlign: 'center', // Center title
-    marginHorizontal: 10, // Add some margin around title
-  },
-  refreshButtonHeader: {
-    padding: 8, // Add padding for easier pressing
-  },
-  listContent: {
-    padding: 16,
-    flexGrow: 1,
-  },
-  matchItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    marginBottom: 12,
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 2,
-  },
-  matchInfo: {
-    flex: 1,
-  },
-  matchTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  matchStatus: {
-    fontSize: 14,
-  },
-  matchPlayers: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  playersCount: {
-    marginRight: 8,
-    fontSize: 14,
-  },
-  footer: {
-    padding: 16,
-    paddingBottom: 24,
-  },
-  createButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    borderRadius: 12,
-  },
-  createButtonText: {
-    marginLeft: 8,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-  },
-  errorContainer: {
-    padding: 16,
-    alignItems: 'center',
-  },
-  errorText: {
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  retryButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-  },
-  retryText: {
-    fontWeight: '600',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 40,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginTop: 16,
-    textAlign: 'center',
-  },
-  emptySubtext: {
-    fontSize: 14,
-    marginTop: 8,
-    textAlign: 'center',
-  },
-});
 
 export default MatchListPage;

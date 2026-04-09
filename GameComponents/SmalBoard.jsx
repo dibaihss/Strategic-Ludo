@@ -10,8 +10,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
     setCurrentPlayer
 } from '../assets/store/gameSlice.jsx';
-import { Feather } from '@expo/vector-icons';
-import Entypo from '@expo/vector-icons/Entypo';
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
 
 const canControlColor = (currentPlayerColor, selectedColor) => {

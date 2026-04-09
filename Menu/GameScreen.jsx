@@ -3,9 +3,9 @@ import { MaterialIcons } from '@expo/vector-icons';
 import Goals from '../GameComponents/Goals.jsx';
 import Bases from '../GameComponents/Bases.jsx';
 import Timer from '../GameComponents/Timer.jsx';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { View, Text, StyleSheet, Pressable, Dimensions, Platform, ActivityIndicator, Modal } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator, Modal } from 'react-native';
 import { setActivePlayer, resetTimer, setOnlineModus, resetGameState, setCurrentPlayerColor } from '../assets/store/gameSlice.jsx';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 
@@ -13,14 +13,13 @@ import { useWebSocket } from '../assets/shared/webSocketConnection.jsx'; // Impo
 import { setCurrentUserPage } from '../assets/store/authSlice.jsx';
 import { leaveMatch } from '../assets/store/sessionSlice.jsx';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
+import { createGameScreenStyles } from './GameScreen.styles.js';
+import Instructions from './Instructions.jsx';
 
 export default function GameScreen({ route, navigation }) {
   const dispatch = useDispatch();
   const theme = useSelector(state => state.theme.current);
   const systemLang = useSelector(state => state.language.systemLang);
-  const windowWidth = Dimensions.get('window').width;
-  const windowHeight = Dimensions.get('window').height;
-  const isSmallScreen = windowWidth < 375 || windowHeight < 667;
   const currentMatch = useSelector(state => state.session.currentMatch);
   const user = useSelector(state => state.auth.user);
   const playerColors = useSelector(state => state.game.playerColors);
@@ -32,6 +31,9 @@ export default function GameScreen({ route, navigation }) {
   const [showExitModal, setShowExitModal] = useState(false); // <-- Add this state
   const keepAwakeActivatedRef = useRef(false);
 
+  // Memoize styles to avoid recreating on every render
+  const styles = useMemo(() => createGameScreenStyles(theme), [theme]);
+
   // Get the game mode from navigation params
   const { mode, matchId } = route.params || { mode: 'local', matchId: 1 };
   const { connected, sendMessage, sendMatchCommand } = useWebSocket();
@@ -39,7 +41,7 @@ export default function GameScreen({ route, navigation }) {
   useEffect(() => {
     let mounted = true;
 
-    if(mode === "local"){
+    if (mode === "local") {
       setOnlineModus(false);
     }
     setCurrentUserPage('Game');
@@ -65,13 +67,13 @@ export default function GameScreen({ route, navigation }) {
       });
     };
   }, []);
-  
+
   useEffect(() => {
     console.log(playerColors)
 
-      console.log(user)
-      setGameIsStarted(true);
-      setLoading(false);
+    console.log(user)
+    setGameIsStarted(true);
+    setLoading(false);
   }, [mode, matchId, dispatch]);
 
   useEffect(() => {
@@ -79,7 +81,7 @@ export default function GameScreen({ route, navigation }) {
       const players = currentMatch.users;
       setOnlineModus(true);
       if (players.length >= 2) {
-        dispatch(setCurrentPlayerColor(findUserColors())) 
+        dispatch(setCurrentPlayerColor(findUserColors()))
         dispatch(setOnlineModus(true));
         setGameIsStarted(true);
       }
@@ -144,148 +146,30 @@ export default function GameScreen({ route, navigation }) {
     handleLeaveMatch(); // Call the function to leave the match
   };
 
- const handleLeaveMatch = () => {
-      if (currentMatch && currentMatch.id) {
-        console.log("Leaving match", currentMatch.id)
-        sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userLeft', userId: user.id, colors: currentPlayerColor })
-        dispatch(leaveMatch({matchId: currentMatch.id, playerId: user.id}))
-          .unwrap()
-          .then(() => {
-            console.log('User left successfully');
-          })
-          .catch(error => {
-            console.error('Failed to leave match:', error);
-          });
-      }
-    };
+  const handleLeaveMatch = () => {
+    if (currentMatch && currentMatch.id) {
+      console.log("Leaving match", currentMatch.id)
+      sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userLeft', userId: user.id, colors: currentPlayerColor })
+      dispatch(leaveMatch({ matchId: currentMatch.id, playerId: user.id }))
+        .unwrap()
+        .then(() => {
+          console.log('User left successfully');
+        })
+        .catch(error => {
+          console.error('Failed to leave match:', error);
+        });
+    }
+  };
 
   const cancelExitGame = () => {
     setShowExitModal(false); // Close the modal
   };
-  
-  const styles = StyleSheet.create({
-    container: {
-      padding: isSmallScreen ? 1 : 10,
-      flex: 1,
-      margin: isSmallScreen ? 1 : 10,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    controls: {
-      position: 'absolute',
-      bottom: isSmallScreen ? 22 : -20,
-      left: isSmallScreen ? "25%" : "",
-      flexDirection: 'row',
-      gap: isSmallScreen ? 4 : 20,
-      backgroundColor: '#ffffff',
-      padding: isSmallScreen ? 2 : 10,
-      borderRadius: 10,
-      ...Platform.select({
-        ios: {
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.25,
-          shadowRadius: 3.84,
-        },
-        android: {
-          elevation: 6,
-        },
-      }),
-      zIndex: 999
-    },
-    button: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      padding: isSmallScreen ? 2 : 10,
-      backgroundColor: '#e8ecf4',
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: '#d1d9e6',
-      gap: isSmallScreen ? 2 : 10,
-      elevation: isSmallScreen ? 3 : 0,
-    },
-    buttonText: {
-      fontSize: isSmallScreen ? 14 : 16,
-      color: '#2a3f5f',
-      fontWeight: isSmallScreen ? 'bold' : '500',
-    },
-    loadingContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    loadingText: {
-      marginTop: 10,
-      fontSize: 16,
-      color: '#333',
-    },
-    loadingText: {
-      marginTop: 10,
-      fontSize: 16,
-      color: '#333',
-    },
-    // --- Add Modal Styles ---
-    modalOverlay: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: 'rgba(0, 0, 0, 0.6)', // Darker overlay
-    },
-    modalContainer: {
-      width: '85%',
-      maxWidth: 350,
-      padding: 25,
-      borderRadius: 12,
-      alignItems: 'center',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.25,
-      shadowRadius: 4,
-      elevation: 5,
-    },
-    modalTitle: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      marginBottom: 15,
-      textAlign: 'center',
-    },
-    modalMessage: {
-      fontSize: 16,
-      textAlign: 'center',
-      marginBottom: 25,
-      lineHeight: 22,
-    },
-    modalButtonRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      width: '100%',
-    },
-    modalButton: {
-      flex: 1, // Make buttons share space
-      paddingVertical: 12,
-      paddingHorizontal: 15,
-      borderRadius: 8,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginHorizontal: 5, // Add some space between buttons
-    },
-    cancelButton: {
-      borderWidth: 1,
-    },
-    confirmButton: {
-      // backgroundColor is set inline using theme
-    },
-    modalButtonText: {
-      fontSize: 16,
-      fontWeight: '500',
-    },
-  });
 
   if (loading) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
-        <Text style={[styles.loadingText, { color: theme.colors.text }]}>
+        <Text style={styles.loadingText}>
           {uiStrings[systemLang].loadingGame || 'Loading game...'}
         </Text>
       </View>
@@ -293,40 +177,35 @@ export default function GameScreen({ route, navigation }) {
   }
 
   return (
-    <View testID="game-screen" style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View testID="game-screen" style={styles.container}>
+      <Instructions mode={mode} />
       {gameIsStarted ? (
         <>
           <Timer />
           <SmalBoard />
           <Goals />
           <Bases />
-          <View style={[styles.controls, { backgroundColor: theme.colors.background }]}>
+          <View style={styles.controls}>
             <Pressable
               testID="game-skip-turn-button"
-              style={[styles.button, {
-                backgroundColor: theme.colors.button,
-                borderColor: theme.colors.buttonBorder
-              }]}
+              style={styles.button}
               onPress={() => {
                 skipTurn();
               }}
             >
               <MaterialIcons name="casino" size={24} color={theme.colors.buttonText} />
-              <Text style={[styles.buttonText, { color: theme.colors.buttonText }]}>
+              <Text style={styles.buttonText}>
                 {uiStrings[systemLang].skipButton || 'Skip Turn'}
               </Text>
             </Pressable>
 
             <Pressable
               testID="game-exit-button"
-              style={[styles.button, {
-                backgroundColor: theme.colors.button,
-                borderColor: theme.colors.buttonBorder
-              }]}
+              style={styles.button}
               onPress={handleExitGame}
             >
               <MaterialIcons name="exit-to-app" size={24} color={theme.colors.buttonText} />
-              <Text style={[styles.buttonText, { color: theme.colors.buttonText }]}>
+              <Text style={styles.buttonText}>
                 {uiStrings[systemLang].exitGame || 'Exit'}
               </Text>
             </Pressable>
@@ -334,59 +213,56 @@ export default function GameScreen({ route, navigation }) {
         </>
       ) : (
         <View style={styles.loadingContainer}>
-          <Text style={[styles.loadingText, { color: theme.colors.text }]}>
+          <Text style={styles.loadingText}>
             {uiStrings[systemLang].waitingForPlayers || 'Waiting for enough players to join...'}
           </Text>
           <Pressable
-            style={[styles.button, {
-              backgroundColor: theme.colors.button,
-              marginTop: 20
-            }]}
+            style={[styles.button, { marginTop: 20 }]}
             onPress={handleExitGame}
           >
-            <Text style={[styles.buttonText, { color: theme.colors.buttonText }]}>
+            <Text style={styles.buttonText}>
               {uiStrings[systemLang].backToLobby || 'Back to Lobby'}
             </Text>
           </Pressable>
         </View>
       )}
-       {/* Exit Confirmation Modal */}
-  <Modal
-    visible={showExitModal}
-    transparent={true}
-    animationType="fade"
-    onRequestClose={cancelExitGame} // Handle back button on Android
-  >
-    <View style={styles.modalOverlay}>
-      <View style={[styles.modalContainer, { backgroundColor: theme.colors.background }]}>
-        <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
-          {uiStrings[systemLang].exitGameTitle || 'Exit Game?'}
-        </Text>
-        <Text style={[styles.modalMessage, { color: theme.colors.textSecondary }]}>
-          {uiStrings[systemLang].exitGameConfirm || 'Are you sure you want to leave the current game?'}
-        </Text>
-        <View style={styles.modalButtonRow}>
-          <Pressable
-            style={[styles.modalButton, styles.cancelButton, { borderColor: theme.colors.border }]}
-            onPress={cancelExitGame}
-          >
-            <Text style={[styles.modalButtonText, { color: theme.colors.textSecondary }]}>
-              {uiStrings[systemLang].cancel || 'Cancel'}
+      {/* Exit Confirmation Modal */}
+      <Modal
+        visible={showExitModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={cancelExitGame} // Handle back button on Android
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>
+              {uiStrings[systemLang].exitGameTitle || 'Exit Game?'}
             </Text>
-          </Pressable>
-          <Pressable
-            style={[styles.modalButton, styles.confirmButton, { backgroundColor: theme.colors.danger || '#dc3545' }]} // Use a danger color
-            onPress={confirmExitGame}
-          >
-            <Text style={[styles.modalButtonText, { color: '#fff' }]}>
-              {uiStrings[systemLang].exit || 'Exit'}
+            <Text style={styles.modalMessage}>
+              {uiStrings[systemLang].exitGameConfirm || 'Are you sure you want to leave the current game?'}
             </Text>
-          </Pressable>
+            <View style={styles.modalButtonRow}>
+              <Pressable
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={cancelExitGame}
+              >
+                <Text style={[styles.modalButtonText, { color: theme.colors.textSecondary }]}>
+                  {uiStrings[systemLang].cancel || 'Cancel'}
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[styles.modalButton, styles.confirmButton]}
+                onPress={confirmExitGame}
+              >
+                <Text style={[styles.modalButtonText, { color: '#fff' }]}>
+                  {uiStrings[systemLang].exit || 'Exit'}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
         </View>
-      </View>
-    </View>
-  </Modal>
-  {/* End Exit Confirmation Modal */}
+      </Modal>
+      {/* End Exit Confirmation Modal */}
     </View>
   );
 }

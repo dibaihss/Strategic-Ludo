@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   Pressable,
   ActivityIndicator,
   FlatList,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { createWaitingRoomStyles } from './WaitingRoom.styles.js';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchCurrentMatch, updateMatch, updateMatchStatus, leaveMatch } from '../assets/store/sessionSlice.jsx';
 import { setPlayerColors, updateSoldiersPosition, removeColorFromAvailableColors, setActivePlayer } from '../assets/store/gameSlice.jsx';
@@ -19,6 +19,7 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 const WaitingRoom = ({ navigation, route }) => {
   const dispatch = useDispatch();
   const theme = useSelector(state => state.theme.current);
+  const styles = useMemo(() => createWaitingRoomStyles(theme), [theme]);
   const systemLang = useSelector(state => state.language.systemLang);
   const currentMatch = useSelector(state => state.session.currentMatch);
   const user = useSelector(state => state.auth.user);
@@ -286,7 +287,7 @@ const WaitingRoom = ({ navigation, route }) => {
   }
 
   return (
-    <View testID="waiting-room-screen" style={[styles.container, { backgroundColor: "white" }]}>
+    <View testID="waiting-room-screen" style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Render countdown timer if showCountdown is true */}
       {showCountdown && (
         <View style={styles.countdownContainer}>
@@ -306,7 +307,7 @@ const WaitingRoom = ({ navigation, route }) => {
         </Text>
       </View>
 
-      <View style={[styles.playersContainer, { backgroundColor: theme.colors.card }]}>
+      <View style={[styles.playersContainer, { backgroundColor: theme.colors.card, borderColor: theme.colors.border, borderWidth: 1 }]}>
         <View style={styles.playersHeader}>
           <Text style={[styles.playersTitle, { color: theme.colors.text }]}>
             {uiStrings[systemLang].players || 'Players'} ({currentMatch.users?.length || 0}/4)
@@ -319,8 +320,8 @@ const WaitingRoom = ({ navigation, route }) => {
           >
             <MaterialIcons
               name="refresh"
-              size={20}
-              color={refreshing ? theme.colors.disabled : theme.colors.primary}
+              size={24}
+              color={refreshing ? theme.colors.disabled : theme.colors.accent}
             />
           </Pressable>
         </View>
@@ -328,7 +329,7 @@ const WaitingRoom = ({ navigation, route }) => {
         {refreshing && (
           <ActivityIndicator
             size="small"
-            color={theme.colors.primary}
+            color={theme.colors.accent}
             style={styles.refreshIndicator}
           />
         )}
@@ -337,9 +338,9 @@ const WaitingRoom = ({ navigation, route }) => {
           data={currentMatch.users || []}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item, index }) => (
-            <View style={[styles.playerItem]}>
+            <View style={[styles.playerItem, { backgroundColor: theme.colors.inputBackground }]}>
               <View style={styles.playerDetails}>
-                <View style={[styles.playerAvatar, { backgroundColor: getPlayerColor(index) }]}>
+                <View style={[styles.playerAvatar, { backgroundColor: getPlayerColor(index, theme) }]}>
                   <Text style={styles.playerInitial}>
                     {(item.name || item.username || "User").charAt(0).toUpperCase()}
                   </Text>
@@ -348,14 +349,14 @@ const WaitingRoom = ({ navigation, route }) => {
                 <Text style={[styles.playerName, { color: theme.colors.text }]}>
                   {item.name || item.username || "User"}
                   {item.id === user.id && (
-                    <Text style={{ color: theme.colors.primary }}> {uiStrings[systemLang].you || '(You)'}</Text>
+                    <Text style={{ color: theme.colors.accent }}> {uiStrings[systemLang].you || '(You)'}</Text>
                   )}
                 </Text>
               </View>
 
               {index === 0 && (
-                <View style={styles.hostBadge}>
-                  <Text style={styles.hostBadgeText}>
+                <View style={[styles.hostBadge, { backgroundColor: theme.colors.yellow }]}>
+                  <Text style={[styles.hostBadgeText, { color: theme.colors.text }]}>
                     {uiStrings[systemLang].host || 'Host'}
                   </Text>
                 </View>
@@ -387,11 +388,11 @@ const WaitingRoom = ({ navigation, route }) => {
         {(currentMatch?.users?.length >= 2) && (
           <Pressable
             testID="waiting-room-start-button"
-            style={[styles.startButton, { backgroundColor: theme.colors.primary }]}
+            style={[styles.startButton, { backgroundColor: theme.colors.success, borderColor: theme.colors.border }]}
             onPress={startGame}
           >
-            <MaterialIcons name="play-arrow" size={24} color="black" />
-            <Text style={styles.startButtonText}>
+            <MaterialIcons name="play-arrow" size={24} color={theme.colors.buttonText} />
+            <Text style={[styles.startButtonText, { color: theme.colors.buttonText }]}>
               {uiStrings[systemLang].startGame || 'Start Game'}
             </Text>
           </Pressable>
@@ -399,11 +400,11 @@ const WaitingRoom = ({ navigation, route }) => {
 
         <Pressable
           testID="waiting-room-leave-button"
-          style={[styles.leaveButton, { backgroundColor: theme.colors.error }]}
+          style={[styles.leaveButton, { backgroundColor: theme.colors.error, borderColor: theme.colors.border }]}
           onPress={handleLeaveMatch}
         >
-          <MaterialIcons name="exit-to-app" size={20} color="black" />
-          <Text style={styles.leaveButtonText}>
+          <MaterialIcons name="exit-to-app" size={20} color={theme.colors.buttonText} />
+          <Text style={[styles.leaveButtonText, { color: theme.colors.buttonText }]}>
             {uiStrings[systemLang].leaveMatch || 'Leave Match'}
           </Text>
         </Pressable>
@@ -414,184 +415,9 @@ const WaitingRoom = ({ navigation, route }) => {
 };
 
 // Helper function to get color for player avatars
-const getPlayerColor = (index) => {
-  const colors = ['#3498db', '#e74c3c', '#f1c40f', '#2ecc71'];
+const getPlayerColor = (index, theme) => {
+  const colors = [theme.colors.blue, theme.colors.red, theme.colors.yellow, theme.colors.green];
   return colors[index % colors.length];
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  subtitle: {
-    fontSize: 14,
-  },
-  playersContainer: {
-    flex: 1,
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 20,
-  },
-  playersHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  playersTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  refreshButton: {
-    padding: 5,
-  },
-  refreshIndicator: {
-    marginBottom: 10,
-  },
-  playerItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    marginVertical: 4,
-    borderRadius: 8,
-  },
-  playerDetails: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  playerAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  playerInitial: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  playerName: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  hostBadge: {
-    backgroundColor: '#f1c40f',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  hostBadgeText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  emptyText: {
-    textAlign: 'center',
-    padding: 20,
-    fontStyle: 'italic',
-  },
-  joinInfo: {
-    marginTop: 15,
-    padding: 10,
-  },
-  joinInfoText: {
-    textAlign: 'center',
-    marginBottom: 5,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  startButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    justifyContent: 'center',
-    flex: 0.7,
-    border: 1,
-    borderColor: "black",
-    borderRadius: 8,
-    padding: 5,
-  },
-  startButtonText: {
-    color: "black",
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 10,
-
-  },
-  leaveButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    marginLeft: 10,
-    justifyContent: 'center',
-    border: 1,
-    borderColor: "black",
-    borderRadius: 8,
-    padding: 5,
-  },
-  leaveButtonText: {
-    color: "black",
-    fontSize: 14,
-    marginLeft: 5,
-
-  },
-  loadingText: {
-    marginTop: 20,
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  errorText: {
-    fontSize: 18,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  button: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  countdownContainer: {
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    position: 'absolute',
-    top: '80%',
-    alignSelf: 'center',
-    zIndex: 1000,
-    width: '80%',
-  },
-  countdownText: {
-    color: 'white',
-    fontSize: 22,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  }
-});
 
 export default WaitingRoom;

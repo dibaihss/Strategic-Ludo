@@ -37,3 +37,5 @@ yarn-error.*
 *.tsbuildinfo
 assets/shared/SimpleWebSocketConnection.jsx
 assets/Implementing Real LLM Integration.md
+coverage
+playwright-report

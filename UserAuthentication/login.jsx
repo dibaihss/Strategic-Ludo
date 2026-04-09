@@ -1,10 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
   TextInput,
   Pressable,
-  StyleSheet,
   SafeAreaView,
   Image,
   KeyboardAvoidingView,
@@ -13,6 +12,7 @@ import {
   TouchableOpacity,
   Dimensions,
 } from "react-native";
+import { createLoginStyles } from './login.styles.js';
 import { useDispatch, useSelector } from "react-redux";
 import { MaterialIcons } from "@expo/vector-icons";
 import { uiStrings } from "../assets/shared/hardCodedData.js";
@@ -26,6 +26,7 @@ import Toast from "react-native-toast-message";
 const LoginPage = ({ navigation }) => {
   const dispatch = useDispatch();
   const theme = useSelector((state) => state.theme.current);
+  const styles = useMemo(() => createLoginStyles(theme), [theme]);
   const systemLang = useSelector((state) => state.language.systemLang);
   const authError = useSelector((state) => state.auth.error);
   const loading = useSelector((state) => state.auth.loading);
@@ -103,7 +104,7 @@ const LoginPage = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: "white" }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
@@ -127,13 +128,13 @@ const LoginPage = ({ navigation }) => {
             <View
               style={[
                 styles.inputWrapper,
-                { borderColor: theme.colors.border },
+                { backgroundColor: theme.colors.inputBackground, borderColor: theme.colors.inputBorder },
               ]}
               testID="login-email-wrapper"
             >
               <MaterialIcons
                 name="email"
-                size={20}
+                size={24}
                 color={theme.colors.textSecondary}
                 style={styles.inputIcon}
               />
@@ -154,13 +155,13 @@ const LoginPage = ({ navigation }) => {
             <View
               style={[
                 styles.inputWrapper,
-                { borderColor: theme.colors.border },
+                { backgroundColor: theme.colors.inputBackground, borderColor: theme.colors.inputBorder },
               ]}
               testID="login-password-wrapper"
             >
               <MaterialIcons
                 name="lock"
-                size={20}
+                size={24}
                 color={theme.colors.textSecondary}
                 style={styles.inputIcon}
               />
@@ -192,7 +193,7 @@ const LoginPage = ({ navigation }) => {
               {
                 backgroundColor: loading
                   ? theme.colors.disabled
-                  : theme.colors.button,
+                  : theme.colors.accent,
               },
             ]}
             onPress={handleLoginPress}
@@ -213,7 +214,7 @@ const LoginPage = ({ navigation }) => {
             <Text
               style={[
                 styles.forgotPasswordText,
-                { color: theme.colors.primary },
+                { color: theme.colors.accent },
               ]}
             >
               {uiStrings[systemLang].forgotPassword}
@@ -226,10 +227,10 @@ const LoginPage = ({ navigation }) => {
             onPress={goToRegister}
           >
             <Text
-              style={[styles.registerText, { color: theme.colors.primary }]}
+              style={[styles.registerText, { color: theme.colors.textSecondary }]}
             >
               {uiStrings[systemLang].noAccount}
-              <Text style={{ fontWeight: "bold" }}>
+              <Text style={{ fontWeight: "bold", color: theme.colors.accent }}>
                 {" "}
                 {uiStrings[systemLang].signUp}
               </Text>
@@ -269,7 +270,9 @@ const LoginPage = ({ navigation }) => {
                 {
                   backgroundColor: loading
                     ? theme.colors.disabled
-                    : theme.colors.button,
+                    : theme.colors.card,
+                  borderColor: theme.colors.border,
+                  borderWidth: 1,
                 },
                 isSmallScreen && styles.buttonHalfSmall,
               ]}
@@ -278,14 +281,14 @@ const LoginPage = ({ navigation }) => {
             >
               {loading ? (
                 <ActivityIndicator
-                  color={theme.colors.buttonText}
+                  color={theme.colors.text}
                   size={isSmallScreen ? "small" : "large"}
                 />
               ) : (
                 <Text
                   style={[
                     styles.buttonText,
-                    { color: theme.colors.buttonText },
+                    { color: theme.colors.text },
                     isSmallScreen && styles.buttonTextSmall,
                   ]}
                 >
@@ -299,7 +302,7 @@ const LoginPage = ({ navigation }) => {
               style={[
                 styles.buttonHalf,
                 {
-                  backgroundColor: theme.colors.accent || "#4CAF50",
+                  backgroundColor: theme.colors.success,
                 },
                 isSmallScreen && styles.buttonHalfSmall,
               ]}
@@ -322,121 +325,5 @@ const LoginPage = ({ navigation }) => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    justifyContent: "center",
-    paddingHorizontal: 20,
-  },
-  header: {
-    alignItems: "center",
-    marginBottom: 40,
-  },
-  logo: {
-    width: 80,
-    height: 80,
-    marginBottom: 10,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  inputWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderRadius: 8,
-    marginBottom: 15,
-    paddingHorizontal: 10,
-  },
-  inputIcon: {
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    height: 50,
-    fontSize: 16,
-  },
-  button: {
-    paddingVertical: 15,
-    borderRadius: 8,
-    alignItems: "center",
-    marginBottom: 15,
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  errorText: {
-    fontSize: 14,
-    marginBottom: 15,
-    textAlign: "center",
-  },
-  forgotPasswordContainer: {
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  forgotPasswordText: {
-    fontSize: 14,
-  },
-  registerContainer: {
-    alignItems: "center",
-    marginTop: 5,
-    padding: 10,
-  },
-  registerText: {
-    fontSize: 14,
-  },
-  // Add these styles to your StyleSheet
-  divider: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 20,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-  },
-  dividerText: {
-    paddingHorizontal: 15,
-    fontSize: 14,
-  },
-  guestButton: {
-    paddingVertical: 15,
-    borderRadius: 8,
-    alignItems: "center",
-    marginBottom: 15,
-  },
-  guestButtonText: {
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  buttonsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
-    marginBottom: 15,
-  },
-  buttonHalf: {
-    flex: 0.48,
-    paddingVertical: 15,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  buttonHalfSmall: {
-    paddingVertical: 10,
-  },
-});
 
 export default LoginPage;

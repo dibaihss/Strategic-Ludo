@@ -3,7 +3,6 @@ import {
     StyleSheet,
     Pressable,
     Animated,
-    Platform,
     Dimensions
 } from 'react-native';
 import {

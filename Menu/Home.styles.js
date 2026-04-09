@@ -1,0 +1,159 @@
+import { StyleSheet } from 'react-native';
+
+export const createHomeStyles = (theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      paddingHorizontal: 24,
+      paddingVertical: 40,
+      justifyContent: 'space-between',
+      backgroundColor: theme.colors.background,
+    },
+    header: {
+      alignItems: 'center',
+      marginBottom: 32,
+    },
+    logo: {
+      width: 120,
+      height: 120,
+    },
+    title: {
+      fontSize: 36,
+      fontWeight: 'bold',
+      marginBottom: 16,
+      color: theme.colors.text,
+    },
+    profileCard: {
+      padding: 24,
+      borderRadius: 16,
+      marginBottom: 24,
+      backgroundColor: theme.colors.card,
+      borderColor: theme.colors.border,
+      borderWidth: 1,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 4,
+      },
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      elevation: 6,
+    },
+    profileHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    profileInfo: {
+      flex: 1,
+    },
+    welcomeText: {
+      fontSize: 16,
+      marginBottom: 8,
+      color: theme.colors.textSecondary,
+    },
+    username: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: theme.colors.text,
+    },
+    guestBadge: {
+      fontStyle: 'italic',
+      fontWeight: '500',
+      color: theme.colors.accent,
+    },
+    logoutButton: {
+      padding: 12,
+      borderRadius: 24,
+    },
+    dashboard: {
+      padding: 24,
+      borderRadius: 16,
+      marginBottom: 32,
+      backgroundColor: theme.colors.card,
+      borderColor: theme.colors.border,
+      borderWidth: 1,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 4,
+      },
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      elevation: 6,
+    },
+    dashboardTitle: {
+      fontSize: 22,
+      fontWeight: '600',
+      marginBottom: 20,
+      color: theme.colors.text,
+    },
+    statsContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    statItem: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      flex: 1,
+    },
+    statValue: {
+      fontSize: 28,
+      fontWeight: 'bold',
+      marginVertical: 8,
+      color: theme.colors.text,
+    },
+    statLabel: {
+      fontSize: 14,
+      textAlign: 'center',
+      color: theme.colors.textSecondary,
+    },
+    buttonsContainer: {
+      gap: 16,
+      marginBottom: 48,
+    },
+    button: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 20,
+      paddingHorizontal: 24,
+      borderRadius: 16,
+      gap: 12,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    buttonPrimary: {
+      backgroundColor: theme.colors.accent,
+      borderColor: theme.colors.border,
+      borderWidth: 1,
+    },
+    buttonSecondary: {
+      backgroundColor: theme.colors.card,
+      borderColor: theme.colors.border,
+      borderWidth: 1,
+    },
+    buttonText: {
+      fontSize: 18,
+      fontWeight: '600',
+    },
+    buttonTextPrimary: {
+      color: theme.colors.buttonText,
+    },
+    buttonTextSecondary: {
+      color: theme.colors.text,
+    },
+    footer: {
+      alignItems: 'center',
+    },
+    footerText: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+    },
+  });

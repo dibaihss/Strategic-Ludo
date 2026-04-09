@@ -50,7 +50,7 @@ This allows protocol compatibility with a Socket.IO backend (`/socket.io/*`) whi
 
 - `App.jsx` - Root providers (Redux, WebSocket, gesture handler)
 - `AppNavigator.jsx` - Navigation routes and screen flow
-- `Menu/` - Main app/game screens
+- `Menu/` - Main app/game screen - GameScreen.jsx renders GameComponents
 - `LobbyMatchMaking/` - Lobby and waiting room logic
 - `GameComponents/` - Board, bases, players, timer, goals
 - `UserAuthentication/` - Login/guest/auth screens
@@ -82,6 +82,7 @@ UI/platform:
 - Expo Keep Awake
 
 Testing and tooling:
+- Jest + jest-expo (unit/component)
 - Playwright (web E2E)
 - Babel
 - dotenv
@@ -118,10 +119,17 @@ npm run ios
 - `npm run web` - Start web target
 - `npm run android` - Start Android target
 - `npm run ios` - Start iOS target
+- `npm test` - Run Jest unit/component tests
 - `npm run web:e2e` - Start web app in E2E mode on fixed port
 - `npm run e2e:web` - Run Playwright tests
 - `npm run e2e:web:ui` - Run Playwright in UI mode
 - `npm run e2e:web:update` - Update snapshots
+
+## Testing
+
+- Test structure guide: `docs/TESTING.md`
+- Unit tests (Jest): `npm test`
+- Web E2E tests (Playwright): `npm run e2e:web`
 
 ## Development Notes
 

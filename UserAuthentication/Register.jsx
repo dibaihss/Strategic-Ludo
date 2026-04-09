@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
   TextInput,
   Pressable,
-  StyleSheet,
   SafeAreaView,
   Image,
   KeyboardAvoidingView,
@@ -12,6 +11,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
+import { createRegisterStyles } from './Register.styles.js';
 import { useDispatch, useSelector } from 'react-redux';
 import { MaterialIcons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
@@ -21,6 +21,7 @@ import { registerUser } from '../assets/store/authSlice.jsx';
 const RegisterPage = ({ navigation }) => {
   const dispatch = useDispatch();
   const theme = useSelector(state => state.theme.current);
+  const styles = useMemo(() => createRegisterStyles(theme), [theme]);
   const systemLang = useSelector(state => state.language.systemLang);
   const loading = useSelector(state => state.auth.loading);
   const error = useSelector(state => state.auth.error);
@@ -87,7 +88,7 @@ const RegisterPage = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: "white" }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
@@ -112,8 +113,8 @@ const RegisterPage = ({ navigation }) => {
             </Text>
             
             {/* Username Input */}
-            <View style={[styles.inputWrapper, { borderColor: theme.colors.border }]}>
-              <MaterialIcons name="person" size={20} color={theme.colors.textSecondary} style={styles.inputIcon} />
+            <View style={[styles.inputWrapper, { backgroundColor: theme.colors.inputBackground, borderColor: theme.colors.inputBorder }]}>
+              <MaterialIcons name="person" size={24} color={theme.colors.textSecondary} style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, { color: theme.colors.text }]}
                 placeholder={uiStrings[systemLang].chooseUsername || 'Choose Username'}
@@ -126,8 +127,8 @@ const RegisterPage = ({ navigation }) => {
             </View>
             
             {/* Email Input */}
-            <View style={[styles.inputWrapper, { borderColor: theme.colors.border }]}>
-              <MaterialIcons name="email" size={20} color={theme.colors.textSecondary} style={styles.inputIcon} />
+            <View style={[styles.inputWrapper, { backgroundColor: theme.colors.inputBackground, borderColor: theme.colors.inputBorder }]}>
+              <MaterialIcons name="email" size={24} color={theme.colors.textSecondary} style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, { color: theme.colors.text }]}
                 placeholder={uiStrings[systemLang].email || 'Email Address'}
@@ -141,8 +142,8 @@ const RegisterPage = ({ navigation }) => {
             </View>
             
             {/* Password Input */}
-            <View style={[styles.inputWrapper, { borderColor: theme.colors.border }]}>
-              <MaterialIcons name="lock" size={20} color={theme.colors.textSecondary} style={styles.inputIcon} />
+            <View style={[styles.inputWrapper, { backgroundColor: theme.colors.inputBackground, borderColor: theme.colors.inputBorder }]}>
+              <MaterialIcons name="lock" size={24} color={theme.colors.textSecondary} style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, { color: theme.colors.text }]}
                 placeholder={uiStrings[systemLang].password || 'Password'}
@@ -165,7 +166,7 @@ const RegisterPage = ({ navigation }) => {
           {/* Register Button */}
           <Pressable
             style={[styles.button, { 
-              backgroundColor: loading ? theme.colors.disabled : theme.colors.button 
+              backgroundColor: loading ? theme.colors.disabled : theme.colors.accent 
             }]}
             onPress={handleRegister}
             disabled={loading}
@@ -184,7 +185,7 @@ const RegisterPage = ({ navigation }) => {
             style={styles.loginLink}
             onPress={() => navigation.navigate('Login')}
           >
-            <Text style={[styles.loginText, { color: theme.colors.primary }]}>
+            <Text style={[styles.loginText, { color: theme.colors.textSecondary }]}>
               {uiStrings[systemLang].backToLogin || 'Already have an account? Log in'}
             </Text>
           </TouchableOpacity>
@@ -196,79 +197,5 @@ const RegisterPage = ({ navigation }) => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 30,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  logo: {
-    width: 70,
-    height: 70,
-    marginBottom: 10,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 15,
-  },
-  inputContainer: {
-    marginBottom: 25,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 8,
-    marginBottom: 15,
-    paddingHorizontal: 10,
-  },
-  inputIcon: {
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    height: 50,
-    fontSize: 16,
-  },
-  button: {
-    paddingVertical: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  errorText: {
-    fontSize: 14,
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  loginLink: {
-    alignItems: 'center',
-    padding: 10,
-  },
-  loginText: {
-    fontSize: 14,
-  },
-});
 
 export default RegisterPage;
