@@ -5,9 +5,9 @@ import Bases from '../GameComponents/Bases.jsx';
 import Timer from '../GameComponents/Timer.jsx';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { View, Text, Pressable, ActivityIndicator, Modal } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator, Modal, Animated } from 'react-native';
 import { setActivePlayer, resetTimer, setIsOnline, resetGameState, setCurrentPlayerColor } from '../assets/store/gameSlice.jsx';
-import { uiStrings } from '../assets/shared/hardCodedData.js';
+import { uiStrings, getLocalizedColor } from '../assets/shared/hardCodedData.js';
 
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx'; // Import useWebSocket
 import { setCurrentUserPage } from '../assets/store/authSlice.jsx';
@@ -26,10 +26,19 @@ export default function GameScreen({ route, navigation }) {
   const activePlayer = useSelector(state => state.game.activePlayer);
   const isOnline = useSelector(state => state.game.isOnline);
   const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
+  const blueSoldiers = useSelector(state => state.game.blueSoldiers);
+  const redSoldiers = useSelector(state => state.game.redSoldiers);
+  const yellowSoldiers = useSelector(state => state.game.yellowSoldiers);
+  const greenSoldiers = useSelector(state => state.game.greenSoldiers);
 
   const [gameIsStarted, setGameIsStarted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showExitModal, setShowExitModal] = useState(false); // <-- Add this state
+  const [showWinnerModal, setShowWinnerModal] = useState(false);
+  const [winnerResults, setWinnerResults] = useState([]);
+  const [winningColor, setWinningColor] = useState(null);
+  const [winnerDetected, setWinnerDetected] = useState(false);
+  const winnerScale = useRef(new Animated.Value(0.7)).current;
   const keepAwakeActivatedRef = useRef(false);
 
   // Memoize styles to avoid recreating on every render
@@ -90,6 +99,41 @@ export default function GameScreen({ route, navigation }) {
       }
     }
   }, [currentMatch?.users, mode, dispatch]);
+
+  useEffect(() => {
+    if (winnerDetected || loading) return;
+
+    const players = [
+      { color: 'blue', soldiers: blueSoldiers },
+      { color: 'red', soldiers: redSoldiers },
+      { color: 'yellow', soldiers: yellowSoldiers },
+      { color: 'green', soldiers: greenSoldiers },
+    ];
+
+    const results = players.map(player => {
+      const completed = player.soldiers.filter(obj => obj.isOut === true).length;
+      return {
+        color: player.color,
+        completed,
+        isWinner: player.soldiers.length > 0 && player.soldiers.every(obj => obj.isOut === true),
+      };
+    });
+
+    const winner = results.find(player => player.isWinner);
+    if (!winner) return;
+
+    const sorted = [...results].sort((a, b) => b.completed - a.completed);
+    setWinningColor(winner.color);
+    setWinnerResults(sorted.slice(0, 3));
+    setShowWinnerModal(true);
+    setWinnerDetected(true);
+    Animated.spring(winnerScale, {
+      toValue: 1,
+      friction: 6,
+      tension: 80,
+      useNativeDriver: true,
+    }).start();
+  }, [blueSoldiers, redSoldiers, yellowSoldiers, greenSoldiers, loading, winnerDetected, winnerScale]);
 
   const sendMoveUpdate = (message) => {
     if (connected && message?.type) {
@@ -232,7 +276,42 @@ export default function GameScreen({ route, navigation }) {
           </Pressable>
         </View>
       )}
-      {/* Exit Confirmation Modal */}
+      {/* Winner Popup Modal */}
+      <Modal
+        visible={showWinnerModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowWinnerModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <Animated.View style={[styles.winnerModalCard, { transform: [{ scale: winnerScale }] }]}> 
+            <Text style={styles.winnerHeader}>
+              🎉 {getLocalizedColor(winningColor, systemLang)} {uiStrings[systemLang].wonGame || 'won the Game'} 🎉
+            </Text>
+            <Text style={styles.winnerSubtitle}>
+              {uiStrings[systemLang].topRankings || 'Top rankings'}
+            </Text>
+            <View style={styles.winnerList}>
+              {winnerResults.map((result, index) => (
+                <View key={result.color} style={styles.winnerItem}>
+                  <View style={[styles.winnerBadge, { backgroundColor: theme.colors[result.color] || '#888' }]}>
+                    <Text style={styles.winnerBadgeText}>{index + 1}</Text>
+                  </View>
+                  <Text style={styles.winnerItemText} selectable>
+                    {getLocalizedColor(result.color, systemLang)} • {result.completed} {uiStrings[systemLang].completedSoldiers || 'completed'}
+                  </Text>
+                </View>
+              ))}
+            </View>
+            <Pressable style={[styles.modalButton, styles.confirmButton, styles.winnerCloseButton]} onPress={() => setShowWinnerModal(false)}>
+              <Text style={[styles.modalButtonText, { color: '#fff' }]}> 
+                {uiStrings[systemLang].gotIt || 'Got it'}
+              </Text>
+            </Pressable>
+          </Animated.View>
+        </View>
+      </Modal>
+
       <Modal
         visible={showExitModal}
         transparent={true}

@@ -8,10 +8,10 @@ const boxes = {
 
 const categories = ["a", "b", "c", "d"];
 const startingPositions = {
-    red: "1b",
-    yellow: "1c",
-    blue: "1a",
-    green: "1d"
+    red: "6a",
+    yellow: "6b",
+    blue: "6d",
+    green: "6c"
 };
 
 const directions = ["left", "top", "bottom", "right"];
