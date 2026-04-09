@@ -2,13 +2,13 @@ import React, { useState, useMemo } from 'react'
 import { View, Text, Pressable, Modal, ScrollView } from 'react-native';
 import { useSelector } from 'react-redux';
 import { gameInstructions, uiStrings } from '../assets/shared/hardCodedData.js';
-import { createAnleitungStyles } from './Anleitung.styles.js';
+import { createInstructionsStyles } from './Instructions.styles.js';
 
-export default function Anleitung({ mode }) {
+export default function Instructions({ mode }) {
     const [showModal, setShowModal] = useState(true);
     const systemLang = useSelector(state => state.language.systemLang);
     const theme = useSelector(state => state.theme.current);
-    const styles = useMemo(() => createAnleitungStyles(theme), [theme]);
+    const styles = useMemo(() => createInstructionsStyles(theme), [theme]);
 
   return (
     <View>

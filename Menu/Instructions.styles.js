@@ -1,6 +1,6 @@
 import { StyleSheet, Platform } from 'react-native';
 
-export const createAnleitungStyles = (theme) =>
+export const createInstructionsStyles = (theme) =>
   StyleSheet.create({
     modalContainer: {
       flex: 1,

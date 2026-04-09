@@ -14,6 +14,7 @@ import { setCurrentUserPage } from '../assets/store/authSlice.jsx';
 import { leaveMatch } from '../assets/store/sessionSlice.jsx';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { createGameScreenStyles } from './GameScreen.styles.js';
+import Instructions from './Instructions.jsx';
 
 export default function GameScreen({ route, navigation }) {
   const dispatch = useDispatch();
@@ -177,6 +178,7 @@ export default function GameScreen({ route, navigation }) {
 
   return (
     <View testID="game-screen" style={styles.container}>
+      <Instructions mode={mode} />
       {gameIsStarted ? (
         <>
           <Timer />
