@@ -18,7 +18,7 @@ const Stack = createNativeStackNavigator();
 export default function AppNavigator() {
   const dispatch = useDispatch();
   const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
-  const offlineModus = useSelector((state) => state.auth.offlineModus);
+  const isOnline = useSelector((state) => state.game.isOnline);
   const [isLoading, setIsLoading] = useState(true);
   const gameState = useSelector(state => state.game);
 
@@ -74,10 +74,11 @@ export default function AppNavigator() {
             <Stack.Screen name="MatchList" component={MatchListPage} />
             <Stack.Screen name="WaitingRoom" component={WaitingRoom} />
           </>
-        ) : offlineModus ? (
+        ) : !isOnline ? (
           <>
+            <Stack.Screen name="Login" component={LoginPage} />
+            <Stack.Screen name="Register" component={RegisterPage} />
             <Stack.Screen name="Game" component={GameScreen} />
-            <Stack.Screen name="Home" component={HomeScreen} />
           </>
         ) : (
           <>

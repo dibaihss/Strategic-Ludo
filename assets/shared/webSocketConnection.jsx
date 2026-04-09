@@ -30,7 +30,7 @@ export const WebSocketProvider = ({ children }) => {
   const [socketClient, setSocketClient] = useState(null);
   const [connected, setConnected] = useState(false);
   const [messages, setMessages] = useState({});
-  const onlineModus = useSelector(state => state.game.onlineModus);
+  const isOnline = useSelector(state => state.game.isOnline);
 
 
   const reconnectSocket = () => {
@@ -58,7 +58,7 @@ export const WebSocketProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    if (!onlineModus) {
+    if (!isOnline) {
       if (socketClient) {
         socketClient.disconnect();
         setSocketClient(null);
@@ -99,7 +99,7 @@ export const WebSocketProvider = ({ children }) => {
       client.disconnect();
       setConnected(false);
     };
-  }, [onlineModus]);
+  }, [isOnline]);
 
   // Subscribe to a topic
   const subscribe = (topic, callback) => {

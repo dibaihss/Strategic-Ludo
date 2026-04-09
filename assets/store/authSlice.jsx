@@ -216,7 +216,6 @@ const authSlice = createSlice({
     token: null,
     error: null,
     loading: false,
-    offlineModus: false,
     currentUserPage: null,
   },
   reducers: {
@@ -233,9 +232,6 @@ const authSlice = createSlice({
     },
     setCurrentUserPage: (state, action) => {
       state.currentUserPage = action.payload;
-    },
-    setOfflineModus: (state, action) => {
-      state.offlineModus = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -329,7 +325,7 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearAuth, setUser, setLoggedIn, setCurrentUserPage, setOfflineModus } = authSlice.actions;
+export const { clearAuth, setUser, setLoggedIn, setCurrentUserPage } = authSlice.actions;
 
 export const selectUser = (state) => state.auth.user;
 export const selectIsLoggedIn = (state) => state.auth.isLoggedIn;

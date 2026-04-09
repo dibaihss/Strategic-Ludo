@@ -5,7 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { getLocalizedColor } from "../assets/shared/hardCodedData.js";
 
 
-const ActivePlayerIndicator = () => {
+const TurnIndicator = () => {
   const activePlayer = useSelector(state => state.game.activePlayer);
   const theme = useSelector(state => state.theme.current);
   const systemLang = useSelector(state => state.language.systemLang);
@@ -53,4 +53,4 @@ const ActivePlayerIndicator = () => {
   );
 };
 
-export default ActivePlayerIndicator;
+export default TurnIndicator;

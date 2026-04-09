@@ -13,7 +13,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 import { setCurrentUserPage } from '../assets/store/authSlice.jsx';
 import { fetchMatches, createMatch, joinMatch, fetchCurrentMatch, updateMatch } from '../assets/store/sessionSlice.jsx';
-import { setOnlineModus } from '../assets/store/gameSlice.jsx';
+import { setIsOnline } from '../assets/store/gameSlice.jsx';
 import { createMultiplayerMenuStyles } from './MultiplayerMenu.styles.js';
 
 
@@ -73,7 +73,7 @@ const MatchListPage = ({ navigation }) => {
     dispatch(joinMatch(matchId)).unwrap()
       .then(() => {
         fetchCurrentMatchData(matchId)
-        dispatch(setOnlineModus(true));
+        dispatch(setIsOnline(true));
         navigation.navigate('WaitingRoom', { join: true });
       })
       .catch(err => {
@@ -90,7 +90,7 @@ const MatchListPage = ({ navigation }) => {
   const handleCreateMatch = () => {
     dispatch(createMatch()).unwrap()
       .then((createdMatch) => {
-        dispatch(setOnlineModus(true));
+        dispatch(setIsOnline(true));
         navigation.navigate('WaitingRoom', { join: false });
         // Clear any potentially existing timeout before setting a new one
         if (timeoutRef.current) {

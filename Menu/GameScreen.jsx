@@ -6,7 +6,7 @@ import Timer from '../GameComponents/Timer.jsx';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { View, Text, Pressable, ActivityIndicator, Modal } from 'react-native';
-import { setActivePlayer, resetTimer, setOnlineModus, resetGameState, setCurrentPlayerColor } from '../assets/store/gameSlice.jsx';
+import { setActivePlayer, resetTimer, setIsOnline, resetGameState, setCurrentPlayerColor } from '../assets/store/gameSlice.jsx';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx'; // Import useWebSocket
@@ -24,6 +24,7 @@ export default function GameScreen({ route, navigation }) {
   const user = useSelector(state => state.auth.user);
   const playerColors = useSelector(state => state.game.playerColors);
   const activePlayer = useSelector(state => state.game.activePlayer);
+  const isOnline = useSelector(state => state.game.isOnline);
   const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
 
   const [gameIsStarted, setGameIsStarted] = useState(false);
@@ -41,12 +42,14 @@ export default function GameScreen({ route, navigation }) {
   useEffect(() => {
     let mounted = true;
 
-    if (mode === "local") {
-      setOnlineModus(false);
-    }
     setCurrentUserPage('Game');
     dispatch(resetGameState());
 
+    if (isOnline == false) {
+      console.log(isOnline)
+      dispatch(setActivePlayer("blue"));
+      dispatch(setCurrentPlayerColor("blue"));
+    }
     // Keep the device awake when the user is on the GameScreen
     activateKeepAwakeAsync()
       .then(() => {
@@ -79,10 +82,10 @@ export default function GameScreen({ route, navigation }) {
   useEffect(() => {
     if (mode === 'multiplayer' && currentMatch && currentMatch.users) {
       const players = currentMatch.users;
-      setOnlineModus(true);
+      setIsOnline(true);
       if (players.length >= 2) {
         dispatch(setCurrentPlayerColor(findUserColors()))
-        dispatch(setOnlineModus(true));
+        dispatch(setIsOnline(true));
         setGameIsStarted(true);
       }
     }
@@ -141,9 +144,12 @@ export default function GameScreen({ route, navigation }) {
 
   const confirmExitGame = () => {
     setShowExitModal(false); // Close the modal
-    // Navigate back to home
-    navigation.navigate('Home');
-    handleLeaveMatch(); // Call the function to leave the match
+    if (mode === 'local') {
+      navigation.navigate('Login');
+    } else {
+      navigation.navigate('Home');
+      handleLeaveMatch(); // Call the function to leave the match
+    }
   };
 
   const handleLeaveMatch = () => {

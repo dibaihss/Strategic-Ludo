@@ -12,7 +12,7 @@ import {
 } from '../assets/store/gameSlice.jsx';
 import { setBoxesPosition } from '../assets/store/animationSlice.jsx';
 
-jest.mock('./Player', () => () => null);
+jest.mock('./Soldier', () => () => null);
 
 jest.mock('react-redux', () => ({
     useDispatch: jest.fn(),

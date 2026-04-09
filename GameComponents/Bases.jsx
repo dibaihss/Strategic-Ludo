@@ -1,6 +1,6 @@
 import { View, Pressable, Text, StyleSheet, Dimensions } from "react-native";
 import React, { useEffect } from 'react';
-import Player from './Player';
+import Soldier from './Soldier';
 import { useDispatch, useSelector } from 'react-redux';
 import {
     setActivePlayer,
@@ -306,7 +306,7 @@ export default function Bases() {
                 ...greenSoldiers.map(soldier => ({ player: soldier }))
             ].map((item, index) => (
                 item.player.position === `${j + 1}${playerType[i]}` && (
-                    <Player
+                    <Soldier
                         key={`circle-player-${item.player.id}-${index}`}
                         color={item.player.color}
                         size={20}

@@ -4,7 +4,7 @@ import {
     Dimensions
 } from 'react-native';
 import React, { useEffect } from 'react';
-import Player from './Player';
+import Soldier from './Soldier';
 import { boxes } from "../assets/shared/hardCodedData.js"
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -23,7 +23,7 @@ const canControlColor = (currentPlayerColor, selectedColor) => {
 const renderSoldiersForBox = ({ soldiers, keyPrefix, number, currentPlayer, onSelect }) => (
     soldiers.map((soldier) =>
         soldier.position === number && (
-            <Player
+            <Soldier
                 key={`${keyPrefix}-${soldier.id}`}
                 isSelected={currentPlayer?.id === soldier.id}
                 onPress={() => onSelect(soldier)}
@@ -54,7 +54,7 @@ export default function SmalBoard() {
     const isSmallScreen = windowWidth < 375 || windowHeight < 667;
 
     const currentSelectedPlayer = (selectedPlayer) => {
-        console.log(availableTypes);
+        console.log(selectedPlayer);
         if (!connected) {
             dispatch(setCurrentPlayer(selectedPlayer));
             return;

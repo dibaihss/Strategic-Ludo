@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { View, Text, Pressable, Modal, TextInput } from 'react-native';
 import { setUser } from '../assets/store/authSlice.jsx';
-import { setOnlineModus } from '../assets/store/gameSlice.jsx';
+import { setIsOnline } from '../assets/store/gameSlice.jsx';
 import { createModalUserInputStyles } from './modelInputTest.styles.js';
 
 
@@ -30,7 +30,7 @@ export default function ModalUserInput({ navigation }) {
 
         // Set the user in Redux state
         dispatch(setUser(user));
-        dispatch(setOnlineModus(true));
+        dispatch(setIsOnline(true));
         // Close modal and navigate to game
         setShowNameModal(false);
         navigation.navigate('Game', { mode: 'local' });
