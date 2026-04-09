@@ -5,7 +5,7 @@ import Bases from '../GameComponents/Bases.jsx';
 import Timer from '../GameComponents/Timer.jsx';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { View, Text, Pressable, Platform, ActivityIndicator, Modal } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator, Modal } from 'react-native';
 import { setActivePlayer, resetTimer, setOnlineModus, resetGameState, setCurrentPlayerColor } from '../assets/store/gameSlice.jsx';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 

@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   FlatList,
   Pressable,
   ActivityIndicator,
@@ -15,6 +14,7 @@ import { uiStrings } from '../assets/shared/hardCodedData.js';
 import { setCurrentUserPage } from '../assets/store/authSlice.jsx';
 import { fetchMatches, createMatch, joinMatch, fetchCurrentMatch, updateMatch } from '../assets/store/sessionSlice.jsx';
 import { setOnlineModus } from '../assets/store/gameSlice.jsx';
+import { createMultiplayerMenuStyles } from './MultiplayerMenu.styles.js';
 
 
 const MatchListPage = ({ navigation }) => {
@@ -22,6 +22,7 @@ const MatchListPage = ({ navigation }) => {
 
   const dispatch = useDispatch();
   const theme = useSelector(state => state.theme.current);
+  const styles = useMemo(() => createMultiplayerMenuStyles(theme), [theme]);
   const systemLang = useSelector(state => state.language.systemLang);
   const matches = useSelector(state => state.session.matches);
   const loading = useSelector(state => state.session.loading);
@@ -255,138 +256,5 @@ const MatchListPage = ({ navigation }) => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  centered: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 24,
-    paddingTop: 32,
-    justifyContent: 'space-between',
-  },
-  backButton: {
-    padding: 8,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    flex: 1,
-    textAlign: 'center',
-    marginHorizontal: 16,
-  },
-  refreshButtonHeader: {
-    padding: 8,
-  },
-  listContent: {
-    padding: 24,
-    flexGrow: 1,
-  },
-  matchItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    marginBottom: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  matchInfo: {
-    flex: 1,
-  },
-  matchTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 6,
-  },
-  matchStatus: {
-    fontSize: 14,
-  },
-  matchPlayers: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  playersCount: {
-    marginRight: 12,
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  footer: {
-    padding: 24,
-    paddingBottom: 32,
-  },
-  createButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  createButtonText: {
-    marginLeft: 12,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-  },
-  errorContainer: {
-    padding: 24,
-    alignItems: 'center',
-  },
-  errorText: {
-    marginBottom: 16,
-    textAlign: 'center',
-    fontSize: 16,
-  },
-  retryButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-  },
-  retryText: {
-    fontWeight: '600',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 48,
-  },
-  emptyText: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginTop: 20,
-    textAlign: 'center',
-  },
-  emptySubtext: {
-    fontSize: 16,
-    marginTop: 12,
-    textAlign: 'center',
-  },
-});
 
 export default MatchListPage;

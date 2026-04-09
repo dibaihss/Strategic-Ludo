@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   Pressable,
   ActivityIndicator,
   FlatList,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { createWaitingRoomStyles } from './WaitingRoom.styles.js';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchCurrentMatch, updateMatch, updateMatchStatus, leaveMatch } from '../assets/store/sessionSlice.jsx';
 import { setPlayerColors, updateSoldiersPosition, removeColorFromAvailableColors, setActivePlayer } from '../assets/store/gameSlice.jsx';
@@ -19,6 +19,7 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 const WaitingRoom = ({ navigation, route }) => {
   const dispatch = useDispatch();
   const theme = useSelector(state => state.theme.current);
+  const styles = useMemo(() => createWaitingRoomStyles(theme), [theme]);
   const systemLang = useSelector(state => state.language.systemLang);
   const currentMatch = useSelector(state => state.session.currentMatch);
   const user = useSelector(state => state.auth.user);
@@ -418,200 +419,5 @@ const getPlayerColor = (index, theme) => {
   const colors = [theme.colors.blue, theme.colors.red, theme.colors.yellow, theme.colors.green];
   return colors[index % colors.length];
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 24,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-  },
-  playersContainer: {
-    flex: 1,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  playersHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  playersTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  refreshButton: {
-    padding: 8,
-  },
-  refreshIndicator: {
-    marginBottom: 16,
-  },
-  playerItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    marginVertical: 6,
-    borderRadius: 12,
-  },
-  playerDetails: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  playerAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  playerInitial: {
-    color: 'white',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  playerName: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  hostBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  hostBadgeText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  emptyText: {
-    textAlign: 'center',
-    padding: 24,
-    fontStyle: 'italic',
-  },
-  joinInfo: {
-    marginTop: 20,
-    padding: 16,
-  },
-  joinInfoText: {
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  startButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    flex: 0.7,
-    borderWidth: 1,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  startButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 10,
-  },
-  leaveButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    marginLeft: 12,
-    justifyContent: 'center',
-    borderWidth: 1,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  leaveButtonText: {
-    fontSize: 14,
-    marginLeft: 8,
-  },
-  loadingText: {
-    marginTop: 20,
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  errorText: {
-    fontSize: 18,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  button: {
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  countdownContainer: {
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    padding: 20,
-    borderRadius: 16,
-    alignItems: 'center',
-    position: 'absolute',
-    top: '75%',
-    alignSelf: 'center',
-    zIndex: 1000,
-    width: '85%',
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 10,
-  },
-  countdownText: {
-    color: 'white',
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  }
-});
 
 export default WaitingRoom;

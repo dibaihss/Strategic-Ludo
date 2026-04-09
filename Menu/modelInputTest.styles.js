@@ -1,0 +1,83 @@
+import { StyleSheet } from 'react-native';
+
+export const createModalUserInputStyles = (theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: theme.colors.background,
+    },
+    modalOverlay: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    modalContainer: {
+      width: '80%',
+      padding: 20,
+      borderRadius: 10,
+      alignItems: 'center',
+      backgroundColor: theme.colors.background,
+    },
+    modalTitle: {
+      fontSize: 22,
+      fontWeight: 'bold',
+      marginBottom: 20,
+      textAlign: 'center',
+      color: theme.colors.text,
+    },
+    welcomeText: {
+      fontSize: 16,
+      marginBottom: 20,
+      textAlign: 'center',
+      color: theme.colors.textSecondary,
+    },
+    input: {
+      width: '100%',
+      height: 50,
+      borderWidth: 1,
+      borderRadius: 8,
+      paddingHorizontal: 15,
+      marginBottom: 20,
+      fontSize: 16,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.card,
+      color: theme.colors.text,
+    },
+    buttonRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      width: '100%',
+    },
+    startButton: {
+      backgroundColor: theme.colors.primary,
+      paddingVertical: 12,
+      paddingHorizontal: 20,
+      borderRadius: 8,
+      flex: 3,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    skipButton: {
+      paddingVertical: 12,
+      paddingHorizontal: 15,
+      borderRadius: 8,
+      marginRight: 10,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    startButtonText: {
+      color: 'white',
+      fontSize: 16,
+      fontWeight: 'bold',
+    },
+    skipButtonText: {
+      color: theme.colors.textSecondary,
+      fontSize: 16,
+    },
+  });

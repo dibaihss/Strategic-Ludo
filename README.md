@@ -50,7 +50,7 @@ This allows protocol compatibility with a Socket.IO backend (`/socket.io/*`) whi
 
 - `App.jsx` - Root providers (Redux, WebSocket, gesture handler)
 - `AppNavigator.jsx` - Navigation routes and screen flow
-- `Menu/` - Main app/game screens
+- `Menu/` - Main app/game screen - GameScreen.jsx renders GameComponents
 - `LobbyMatchMaking/` - Lobby and waiting room logic
 - `GameComponents/` - Board, bases, players, timer, goals
 - `UserAuthentication/` - Login/guest/auth screens

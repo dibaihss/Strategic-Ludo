@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { 
   View, 
   Text, 
-  StyleSheet, 
   Pressable, 
   Image, 
   SafeAreaView 
@@ -10,12 +9,14 @@ import {
 import { useSelector } from 'react-redux';
 import { MaterialIcons } from '@expo/vector-icons';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
+import { createHomeStyles } from './Home.styles.js';
 
 const HomePage = ({ onStartLocalGame, onStartMultiplayerGame, onLogout }) => {
 
   const theme = useSelector(state => state.theme.current);
   const systemLang = useSelector(state => state.language.systemLang);
   const user = useSelector(state => state.auth.user);
+  const styles = useMemo(() => createHomeStyles(theme), [theme]);
 
   const handleLogout = () => {
     onLogout();
@@ -26,10 +27,10 @@ const HomePage = ({ onStartLocalGame, onStartMultiplayerGame, onLogout }) => {
   const isGuest = user?.isGuest || false;
 
   return (
-    <SafeAreaView testID="home-screen" style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView testID="home-screen" style={styles.container}>
       {/* Logo and Title */}
       <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>
+        <Text style={styles.title}>
           Strategic Ludo
         </Text>
         <Image 
@@ -40,16 +41,16 @@ const HomePage = ({ onStartLocalGame, onStartMultiplayerGame, onLogout }) => {
       </View>
       
       {/* User Profile Section */}
-      <View style={[styles.profileCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border, borderWidth: 1 }]}>
+      <View style={styles.profileCard}>
         <View style={styles.profileHeader}>
           <View style={styles.profileInfo}>
-            <Text style={[styles.welcomeText, { color: theme.colors.textSecondary }]}>
+            <Text style={styles.welcomeText}>
               {uiStrings[systemLang].welcome}
             </Text>
-            <Text style={[styles.username, { color: theme.colors.text }]}>
+            <Text style={styles.username}>
               {displayName}
               {isGuest && (
-                <Text style={[styles.guestBadge, { color: theme.colors.accent }]}>
+                <Text style={styles.guestBadge}>
                   {" "}({uiStrings[systemLang].guest})
                 </Text>
               )}
@@ -67,32 +68,32 @@ const HomePage = ({ onStartLocalGame, onStartMultiplayerGame, onLogout }) => {
       </View>
       
       {/* User Dashboard */}
-      <View style={[styles.dashboard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border, borderWidth: 1 }]}>
-        <Text style={[styles.dashboardTitle, { color: theme.colors.text }]}>
+      <View style={styles.dashboard}>
+        <Text style={styles.dashboardTitle}>
           {uiStrings[systemLang].dashboard}
         </Text>
         
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
             <MaterialIcons name="emoji-events" size={28} color={theme.colors.accent} />
-            <Text style={[styles.statValue, { color: theme.colors.text }]}>5</Text>
-            <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
+            <Text style={styles.statValue}>5</Text>
+            <Text style={styles.statLabel}>
               {uiStrings[systemLang].wins}
             </Text>
           </View>
           
           <View style={styles.statItem}>
             <MaterialIcons name="history" size={28} color={theme.colors.accent} />
-            <Text style={[styles.statValue, { color: theme.colors.text }]}>12</Text>
-            <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
+            <Text style={styles.statValue}>12</Text>
+            <Text style={styles.statLabel}>
               {uiStrings[systemLang].gamesPlayed}
             </Text>
           </View>
           
           <View style={styles.statItem}>
             <MaterialIcons name="star" size={28} color={theme.colors.accent} />
-            <Text style={[styles.statValue, { color: theme.colors.text }]}>1024</Text>
-            <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
+            <Text style={styles.statValue}>1024</Text>
+            <Text style={styles.statLabel}>
               {uiStrings[systemLang].points}
             </Text>
           </View>
@@ -103,29 +104,22 @@ const HomePage = ({ onStartLocalGame, onStartMultiplayerGame, onLogout }) => {
       <View style={styles.buttonsContainer}>
         <Pressable
           testID="home-play-local-button"
-          style={[styles.button, { backgroundColor: theme.colors.accent, borderColor: theme.colors.border, borderWidth: 1 }]}
+          style={[styles.button, styles.buttonPrimary]}
           onPress={onStartLocalGame}
         >
           <MaterialIcons name="people" size={28} color={theme.colors.buttonText} />
-          <Text style={[styles.buttonText, { color: theme.colors.buttonText }]}>
+          <Text style={[styles.buttonText, styles.buttonTextPrimary]}>
             {uiStrings[systemLang].playLocal}
           </Text>
         </Pressable>
         
         <Pressable
           testID="home-play-multiplayer-button"
-          style={[
-            styles.button, 
-            { 
-              backgroundColor: theme.colors.card,
-              borderColor: theme.colors.border,
-              borderWidth: 1,
-            }
-          ]}
+          style={[styles.button, styles.buttonSecondary]}
           onPress={onStartMultiplayerGame}
         >
           <MaterialIcons name="public" size={28} color={theme.colors.text} />
-          <Text style={[styles.buttonText, { color: theme.colors.text }]}>
+          <Text style={[styles.buttonText, styles.buttonTextSecondary]}>
             {uiStrings[systemLang].playMultiplayer}
           </Text>
         </Pressable>
@@ -133,144 +127,12 @@ const HomePage = ({ onStartLocalGame, onStartMultiplayerGame, onLogout }) => {
       
       {/* Version Footer */}
       <View style={styles.footer}>
-        <Text style={[styles.footerText, { color: theme.colors.textSecondary }]}>
+        <Text style={styles.footerText}>
           {uiStrings[systemLang].developmentPhase}
         </Text>
       </View>
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingVertical: 40,
-    justifyContent: 'space-between',
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  logo: {
-    width: 120,
-    height: 120,
-  },
-  title: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  profileCard: {
-    padding: 24,
-    borderRadius: 16,
-    marginBottom: 24,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  profileHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  profileInfo: {
-    flex: 1,
-  },
-  welcomeText: {
-    fontSize: 16,
-    marginBottom: 8,
-  },
-  username: {
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  guestBadge: {
-    fontStyle: 'italic',
-    fontWeight: '500',
-  },
-  logoutButton: {
-    padding: 12,
-    borderRadius: 24,
-  },
-  dashboard: {
-    padding: 24,
-    borderRadius: 16,
-    marginBottom: 32,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  dashboardTitle: {
-    fontSize: 22,
-    fontWeight: '600',
-    marginBottom: 20,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  statItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-  },
-  statValue: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginVertical: 8,
-  },
-  statLabel: {
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  buttonsContainer: {
-    gap: 16,
-    marginBottom: 48,
-  },
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 20,
-    paddingHorizontal: 24,
-    borderRadius: 16,
-    gap: 12,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  buttonText: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  connectionWarning: {
-    position: 'absolute',
-    bottom: -20,
-    fontSize: 12,
-    fontStyle: 'italic',
-  },
-  footer: {
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 12,
-  },
-});
 
 export default HomePage;

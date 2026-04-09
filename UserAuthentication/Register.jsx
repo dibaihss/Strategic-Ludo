@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
   TextInput,
   Pressable,
-  StyleSheet,
   SafeAreaView,
   Image,
   KeyboardAvoidingView,
@@ -12,6 +11,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
+import { createRegisterStyles } from './Register.styles.js';
 import { useDispatch, useSelector } from 'react-redux';
 import { MaterialIcons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
@@ -21,6 +21,7 @@ import { registerUser } from '../assets/store/authSlice.jsx';
 const RegisterPage = ({ navigation }) => {
   const dispatch = useDispatch();
   const theme = useSelector(state => state.theme.current);
+  const styles = useMemo(() => createRegisterStyles(theme), [theme]);
   const systemLang = useSelector(state => state.language.systemLang);
   const loading = useSelector(state => state.auth.loading);
   const error = useSelector(state => state.auth.error);
@@ -196,87 +197,5 @@ const RegisterPage = ({ navigation }) => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 48,
-  },
-  logo: {
-    width: 100,
-    height: 100,
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 20,
-  },
-  inputContainer: {
-    marginBottom: 24,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 12,
-    marginBottom: 16,
-    paddingHorizontal: 16,
-    height: 56,
-  },
-  inputIcon: {
-    marginRight: 12,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-  },
-  button: {
-    height: 56,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  errorText: {
-    fontSize: 14,
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  loginLink: {
-    alignItems: 'center',
-    padding: 12,
-  },
-  loginText: {
-    fontSize: 14,
-  },
-});
 
 export default RegisterPage;
