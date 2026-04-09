@@ -29,7 +29,7 @@ export default function Goals() {
     // Check for winners and show toasts
     useEffect(() => {
         const checkAndShowToast = (soldiers, color) => {
-            if (soldiers.every(obj => obj.isOut === true) && !winners[color.toLowerCase()]) {
+            if (soldiers.length > 0 && soldiers.every(obj => obj.isOut === true) && !winners[color.toLowerCase()]) {
                 // Use getLocalizedColor to translate the color name
                 const localizedColor = getLocalizedColor(color.toLowerCase(), systemLang);
                 Toast.show({

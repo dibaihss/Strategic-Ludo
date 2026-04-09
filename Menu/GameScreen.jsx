@@ -286,7 +286,7 @@ export default function GameScreen({ route, navigation }) {
         <View style={styles.modalOverlay}>
           <Animated.View style={[styles.winnerModalCard, { transform: [{ scale: winnerScale }] }]}> 
             <Text style={styles.winnerHeader}>
-              🎉 {getLocalizedColor(winningColor, systemLang)} {uiStrings[systemLang].wonGame || 'won the Game'} 🎉
+              🎉 {uiStrings[systemLang].wonGame ? uiStrings[systemLang].wonGame.replace('{color}', getLocalizedColor(winningColor, systemLang)) : `${getLocalizedColor(winningColor, systemLang)} won the Game`} 🎉
             </Text>
             <Text style={styles.winnerSubtitle}>
               {uiStrings[systemLang].topRankings || 'Top rankings'}
