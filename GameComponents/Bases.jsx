@@ -349,8 +349,8 @@ export default function Bases() {
                     >
                         {
                             color === "yellow" ?
-                                <Feather name="arrow-right" size={24} color={theme.name === "dark" ? "white" : "black"} /> :
-                                <MaterialIcons name={getArrowNameByColor(color)} size={24} color={theme.name === "dark" ? "white" : "black"} />
+                                <Feather name="arrow-right" size={24} color={theme.name === "modernDark" ? "white" : "black"} /> :
+                                <MaterialIcons name={getArrowNameByColor(color)} size={24} color={theme.name === "modernDark" ? "white" : "black"} />
                         }
                     </Pressable>
                 </View>

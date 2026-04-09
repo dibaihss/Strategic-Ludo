@@ -5,7 +5,7 @@ import { gameInstructions, uiStrings } from '../assets/shared/hardCodedData.js';
 import { createInstructionsStyles } from './Instructions.styles.js';
 
 export default function Instructions({ mode }) {
-    const [showModal, setShowModal] = useState(true);
+    const [showModal, setShowModal] = useState(process.env.EXPO_PUBLIC_E2E !== 'true');
     const systemLang = useSelector(state => state.language.systemLang);
     const theme = useSelector(state => state.theme.current);
     const styles = useMemo(() => createInstructionsStyles(theme), [theme]);
