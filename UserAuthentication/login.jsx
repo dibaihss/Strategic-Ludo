@@ -103,7 +103,7 @@ const LoginPage = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: "white" }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
@@ -127,13 +127,13 @@ const LoginPage = ({ navigation }) => {
             <View
               style={[
                 styles.inputWrapper,
-                { borderColor: theme.colors.border },
+                { backgroundColor: theme.colors.inputBackground, borderColor: theme.colors.inputBorder },
               ]}
               testID="login-email-wrapper"
             >
               <MaterialIcons
                 name="email"
-                size={20}
+                size={24}
                 color={theme.colors.textSecondary}
                 style={styles.inputIcon}
               />
@@ -154,13 +154,13 @@ const LoginPage = ({ navigation }) => {
             <View
               style={[
                 styles.inputWrapper,
-                { borderColor: theme.colors.border },
+                { backgroundColor: theme.colors.inputBackground, borderColor: theme.colors.inputBorder },
               ]}
               testID="login-password-wrapper"
             >
               <MaterialIcons
                 name="lock"
-                size={20}
+                size={24}
                 color={theme.colors.textSecondary}
                 style={styles.inputIcon}
               />
@@ -192,7 +192,7 @@ const LoginPage = ({ navigation }) => {
               {
                 backgroundColor: loading
                   ? theme.colors.disabled
-                  : theme.colors.button,
+                  : theme.colors.accent,
               },
             ]}
             onPress={handleLoginPress}
@@ -213,7 +213,7 @@ const LoginPage = ({ navigation }) => {
             <Text
               style={[
                 styles.forgotPasswordText,
-                { color: theme.colors.primary },
+                { color: theme.colors.accent },
               ]}
             >
               {uiStrings[systemLang].forgotPassword}
@@ -226,10 +226,10 @@ const LoginPage = ({ navigation }) => {
             onPress={goToRegister}
           >
             <Text
-              style={[styles.registerText, { color: theme.colors.primary }]}
+              style={[styles.registerText, { color: theme.colors.textSecondary }]}
             >
               {uiStrings[systemLang].noAccount}
-              <Text style={{ fontWeight: "bold" }}>
+              <Text style={{ fontWeight: "bold", color: theme.colors.accent }}>
                 {" "}
                 {uiStrings[systemLang].signUp}
               </Text>
@@ -269,7 +269,9 @@ const LoginPage = ({ navigation }) => {
                 {
                   backgroundColor: loading
                     ? theme.colors.disabled
-                    : theme.colors.button,
+                    : theme.colors.card,
+                  borderColor: theme.colors.border,
+                  borderWidth: 1,
                 },
                 isSmallScreen && styles.buttonHalfSmall,
               ]}
@@ -278,14 +280,14 @@ const LoginPage = ({ navigation }) => {
             >
               {loading ? (
                 <ActivityIndicator
-                  color={theme.colors.buttonText}
+                  color={theme.colors.text}
                   size={isSmallScreen ? "small" : "large"}
                 />
               ) : (
                 <Text
                   style={[
                     styles.buttonText,
-                    { color: theme.colors.buttonText },
+                    { color: theme.colors.text },
                     isSmallScreen && styles.buttonTextSmall,
                   ]}
                 >
@@ -299,7 +301,7 @@ const LoginPage = ({ navigation }) => {
               style={[
                 styles.buttonHalf,
                 {
-                  backgroundColor: theme.colors.accent || "#4CAF50",
+                  backgroundColor: theme.colors.success,
                 },
                 isSmallScreen && styles.buttonHalfSmall,
               ]}
@@ -333,109 +335,110 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     justifyContent: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
   },
   header: {
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: 48,
   },
   logo: {
-    width: 80,
-    height: 80,
-    marginBottom: 10,
+    width: 100,
+    height: 100,
+    marginBottom: 16,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "bold",
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderRadius: 8,
-    marginBottom: 15,
-    paddingHorizontal: 10,
+    borderRadius: 12,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    height: 56,
   },
   inputIcon: {
-    marginRight: 10,
+    marginRight: 12,
   },
   input: {
     flex: 1,
-    height: 50,
     fontSize: 16,
   },
   button: {
-    paddingVertical: 15,
-    borderRadius: 8,
+    height: 56,
+    borderRadius: 12,
     alignItems: "center",
-    marginBottom: 15,
+    justifyContent: "center",
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   buttonText: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "600",
   },
   errorText: {
     fontSize: 14,
-    marginBottom: 15,
+    marginBottom: 16,
     textAlign: "center",
   },
   forgotPasswordContainer: {
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 24,
   },
   forgotPasswordText: {
     fontSize: 14,
   },
   registerContainer: {
     alignItems: "center",
-    marginTop: 5,
-    padding: 10,
+    marginTop: 8,
+    padding: 12,
   },
   registerText: {
     fontSize: 14,
   },
-  // Add these styles to your StyleSheet
   divider: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 20,
+    marginVertical: 24,
   },
   dividerLine: {
     flex: 1,
     height: 1,
   },
   dividerText: {
-    paddingHorizontal: 15,
+    paddingHorizontal: 16,
     fontSize: 14,
-  },
-  guestButton: {
-    paddingVertical: 15,
-    borderRadius: 8,
-    alignItems: "center",
-    marginBottom: 15,
-  },
-  guestButtonText: {
-    fontSize: 16,
-    fontWeight: "500",
   },
   buttonsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     width: "100%",
-    marginBottom: 15,
+    marginBottom: 16,
   },
   buttonHalf: {
     flex: 0.48,
-    paddingVertical: 15,
-    borderRadius: 8,
+    height: 50,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
   buttonHalfSmall: {
-    paddingVertical: 10,
+    height: 44,
+  },
+  buttonTextSmall: {
+    fontSize: 14,
   },
 });
 

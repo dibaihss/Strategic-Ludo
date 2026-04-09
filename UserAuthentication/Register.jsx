@@ -87,7 +87,7 @@ const RegisterPage = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: "white" }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
@@ -112,8 +112,8 @@ const RegisterPage = ({ navigation }) => {
             </Text>
             
             {/* Username Input */}
-            <View style={[styles.inputWrapper, { borderColor: theme.colors.border }]}>
-              <MaterialIcons name="person" size={20} color={theme.colors.textSecondary} style={styles.inputIcon} />
+            <View style={[styles.inputWrapper, { backgroundColor: theme.colors.inputBackground, borderColor: theme.colors.inputBorder }]}>
+              <MaterialIcons name="person" size={24} color={theme.colors.textSecondary} style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, { color: theme.colors.text }]}
                 placeholder={uiStrings[systemLang].chooseUsername || 'Choose Username'}
@@ -126,8 +126,8 @@ const RegisterPage = ({ navigation }) => {
             </View>
             
             {/* Email Input */}
-            <View style={[styles.inputWrapper, { borderColor: theme.colors.border }]}>
-              <MaterialIcons name="email" size={20} color={theme.colors.textSecondary} style={styles.inputIcon} />
+            <View style={[styles.inputWrapper, { backgroundColor: theme.colors.inputBackground, borderColor: theme.colors.inputBorder }]}>
+              <MaterialIcons name="email" size={24} color={theme.colors.textSecondary} style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, { color: theme.colors.text }]}
                 placeholder={uiStrings[systemLang].email || 'Email Address'}
@@ -141,8 +141,8 @@ const RegisterPage = ({ navigation }) => {
             </View>
             
             {/* Password Input */}
-            <View style={[styles.inputWrapper, { borderColor: theme.colors.border }]}>
-              <MaterialIcons name="lock" size={20} color={theme.colors.textSecondary} style={styles.inputIcon} />
+            <View style={[styles.inputWrapper, { backgroundColor: theme.colors.inputBackground, borderColor: theme.colors.inputBorder }]}>
+              <MaterialIcons name="lock" size={24} color={theme.colors.textSecondary} style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, { color: theme.colors.text }]}
                 placeholder={uiStrings[systemLang].password || 'Password'}
@@ -165,7 +165,7 @@ const RegisterPage = ({ navigation }) => {
           {/* Register Button */}
           <Pressable
             style={[styles.button, { 
-              backgroundColor: loading ? theme.colors.disabled : theme.colors.button 
+              backgroundColor: loading ? theme.colors.disabled : theme.colors.accent 
             }]}
             onPress={handleRegister}
             disabled={loading}
@@ -184,7 +184,7 @@ const RegisterPage = ({ navigation }) => {
             style={styles.loginLink}
             onPress={() => navigation.navigate('Login')}
           >
-            <Text style={[styles.loginText, { color: theme.colors.primary }]}>
+            <Text style={[styles.loginText, { color: theme.colors.textSecondary }]}>
               {uiStrings[systemLang].backToLogin || 'Already have an account? Log in'}
             </Text>
           </TouchableOpacity>
@@ -207,64 +207,72 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 30,
+    paddingHorizontal: 24,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: 48,
   },
   logo: {
-    width: 70,
-    height: 70,
-    marginBottom: 10,
+    width: 100,
+    height: 100,
+    marginBottom: 16,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
-    marginBottom: 15,
+    marginBottom: 20,
   },
   inputContainer: {
-    marginBottom: 25,
+    marginBottom: 24,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 8,
-    marginBottom: 15,
-    paddingHorizontal: 10,
+    borderRadius: 12,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    height: 56,
   },
   inputIcon: {
-    marginRight: 10,
+    marginRight: 12,
   },
   input: {
     flex: 1,
-    height: 50,
     fontSize: 16,
   },
   button: {
-    paddingVertical: 15,
-    borderRadius: 8,
+    height: 56,
+    borderRadius: 12,
     alignItems: 'center',
-    marginBottom: 20,
+    justifyContent: 'center',
+    marginBottom: 24,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   buttonText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   errorText: {
     fontSize: 14,
-    marginBottom: 15,
+    marginBottom: 16,
     textAlign: 'center',
   },
   loginLink: {
     alignItems: 'center',
-    padding: 10,
+    padding: 12,
   },
   loginText: {
     fontSize: 14,

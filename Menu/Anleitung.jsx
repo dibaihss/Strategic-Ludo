@@ -1,12 +1,12 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { View, Text, StyleSheet, Pressable, Modal, ScrollView, Dimensions, Platform } from 'react-native';
 import { useSelector } from 'react-redux';
 import { gameInstructions, uiStrings } from '../assets/shared/hardCodedData.js';
 
-export default function Anleitung() {
-
+export default function Anleitung({ mode }) {
     const [showModal, setShowModal] = useState(true);
     const systemLang = useSelector(state => state.language.systemLang);
+    const theme = useSelector(state => state.theme.current);
 
 
   const styles = StyleSheet.create({
@@ -14,25 +14,35 @@ export default function Anleitung() {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        padding: 20,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        padding: 24,
       },
       modalContent: {
-        backgroundColor: theme.colors.background,
-        padding: 20,
-        borderRadius: 10,
+        backgroundColor: theme.colors.card,
+        borderColor: theme.colors.border,
+        borderWidth: 1,
+        padding: 24,
+        borderRadius: 20,
         maxHeight: '80%',
         width: '90%',
         overflow: 'hidden',
+        shadowColor: "#000",
+        shadowOffset: {
+          width: 0,
+          height: 8,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 16,
+        elevation: 10,
         ...Platform.select({
           ios: {
             shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.25,
-            shadowRadius: 3.84,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 8,
           },
           android: {
-            elevation: 5,
+            elevation: 8,
           },
         }),
       },
@@ -40,29 +50,38 @@ export default function Anleitung() {
         maxHeight: '100%',
       },
       modalTitle: {
-        fontSize: 24,
+        fontSize: 28,
         fontWeight: 'bold',
-        marginBottom: 15,
-        color: theme.colors.buttonText,
+        marginBottom: 20,
+        color: theme.colors.text,
         textAlign: 'center',
       },
       modalText: {
         fontSize: 16,
-        color: theme.colors.buttonText,
+        color: theme.colors.text,
         marginBottom: 20,
         lineHeight: 24,
       },
       closeButton: {
-        backgroundColor: theme.colors.button,
-        padding: 10,
-        borderRadius: 5,
+        backgroundColor: theme.colors.accent,
+        paddingVertical: 16,
+        paddingHorizontal: 24,
+        borderRadius: 12,
         alignItems: 'center',
-        marginTop: 10,
+        marginTop: 16,
+        shadowColor: "#000",
+        shadowOffset: {
+          width: 0,
+          height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
       },
       closeButtonText: {
         color: theme.colors.buttonText,
         fontSize: 16,
-        fontWeight: 'bold',
+        fontWeight: '600',
       },
     })
 

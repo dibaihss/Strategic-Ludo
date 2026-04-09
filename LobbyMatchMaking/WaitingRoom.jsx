@@ -286,7 +286,7 @@ const WaitingRoom = ({ navigation, route }) => {
   }
 
   return (
-    <View testID="waiting-room-screen" style={[styles.container, { backgroundColor: "white" }]}>
+    <View testID="waiting-room-screen" style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Render countdown timer if showCountdown is true */}
       {showCountdown && (
         <View style={styles.countdownContainer}>
@@ -306,7 +306,7 @@ const WaitingRoom = ({ navigation, route }) => {
         </Text>
       </View>
 
-      <View style={[styles.playersContainer, { backgroundColor: theme.colors.card }]}>
+      <View style={[styles.playersContainer, { backgroundColor: theme.colors.card, borderColor: theme.colors.border, borderWidth: 1 }]}>
         <View style={styles.playersHeader}>
           <Text style={[styles.playersTitle, { color: theme.colors.text }]}>
             {uiStrings[systemLang].players || 'Players'} ({currentMatch.users?.length || 0}/4)
@@ -319,8 +319,8 @@ const WaitingRoom = ({ navigation, route }) => {
           >
             <MaterialIcons
               name="refresh"
-              size={20}
-              color={refreshing ? theme.colors.disabled : theme.colors.primary}
+              size={24}
+              color={refreshing ? theme.colors.disabled : theme.colors.accent}
             />
           </Pressable>
         </View>
@@ -328,7 +328,7 @@ const WaitingRoom = ({ navigation, route }) => {
         {refreshing && (
           <ActivityIndicator
             size="small"
-            color={theme.colors.primary}
+            color={theme.colors.accent}
             style={styles.refreshIndicator}
           />
         )}
@@ -337,9 +337,9 @@ const WaitingRoom = ({ navigation, route }) => {
           data={currentMatch.users || []}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item, index }) => (
-            <View style={[styles.playerItem]}>
+            <View style={[styles.playerItem, { backgroundColor: theme.colors.inputBackground }]}>
               <View style={styles.playerDetails}>
-                <View style={[styles.playerAvatar, { backgroundColor: getPlayerColor(index) }]}>
+                <View style={[styles.playerAvatar, { backgroundColor: getPlayerColor(index, theme) }]}>
                   <Text style={styles.playerInitial}>
                     {(item.name || item.username || "User").charAt(0).toUpperCase()}
                   </Text>
@@ -348,14 +348,14 @@ const WaitingRoom = ({ navigation, route }) => {
                 <Text style={[styles.playerName, { color: theme.colors.text }]}>
                   {item.name || item.username || "User"}
                   {item.id === user.id && (
-                    <Text style={{ color: theme.colors.primary }}> {uiStrings[systemLang].you || '(You)'}</Text>
+                    <Text style={{ color: theme.colors.accent }}> {uiStrings[systemLang].you || '(You)'}</Text>
                   )}
                 </Text>
               </View>
 
               {index === 0 && (
-                <View style={styles.hostBadge}>
-                  <Text style={styles.hostBadgeText}>
+                <View style={[styles.hostBadge, { backgroundColor: theme.colors.yellow }]}>
+                  <Text style={[styles.hostBadgeText, { color: theme.colors.text }]}>
                     {uiStrings[systemLang].host || 'Host'}
                   </Text>
                 </View>
@@ -387,11 +387,11 @@ const WaitingRoom = ({ navigation, route }) => {
         {(currentMatch?.users?.length >= 2) && (
           <Pressable
             testID="waiting-room-start-button"
-            style={[styles.startButton, { backgroundColor: theme.colors.primary }]}
+            style={[styles.startButton, { backgroundColor: theme.colors.success, borderColor: theme.colors.border }]}
             onPress={startGame}
           >
-            <MaterialIcons name="play-arrow" size={24} color="black" />
-            <Text style={styles.startButtonText}>
+            <MaterialIcons name="play-arrow" size={24} color={theme.colors.buttonText} />
+            <Text style={[styles.startButtonText, { color: theme.colors.buttonText }]}>
               {uiStrings[systemLang].startGame || 'Start Game'}
             </Text>
           </Pressable>
@@ -399,11 +399,11 @@ const WaitingRoom = ({ navigation, route }) => {
 
         <Pressable
           testID="waiting-room-leave-button"
-          style={[styles.leaveButton, { backgroundColor: theme.colors.error }]}
+          style={[styles.leaveButton, { backgroundColor: theme.colors.error, borderColor: theme.colors.border }]}
           onPress={handleLeaveMatch}
         >
-          <MaterialIcons name="exit-to-app" size={20} color="black" />
-          <Text style={styles.leaveButtonText}>
+          <MaterialIcons name="exit-to-app" size={20} color={theme.colors.buttonText} />
+          <Text style={[styles.leaveButtonText, { color: theme.colors.buttonText }]}>
             {uiStrings[systemLang].leaveMatch || 'Leave Match'}
           </Text>
         </Pressable>
@@ -414,103 +414,109 @@ const WaitingRoom = ({ navigation, route }) => {
 };
 
 // Helper function to get color for player avatars
-const getPlayerColor = (index) => {
-  const colors = ['#3498db', '#e74c3c', '#f1c40f', '#2ecc71'];
+const getPlayerColor = (index, theme) => {
+  const colors = [theme.colors.blue, theme.colors.red, theme.colors.yellow, theme.colors.green];
   return colors[index % colors.length];
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: 24,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 32,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 5,
+    marginBottom: 8,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 16,
   },
   playersContainer: {
     flex: 1,
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 20,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
   },
   playersHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 16,
   },
   playersTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   refreshButton: {
-    padding: 5,
+    padding: 8,
   },
   refreshIndicator: {
-    marginBottom: 10,
+    marginBottom: 16,
   },
   playerItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    marginVertical: 4,
-    borderRadius: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    marginVertical: 6,
+    borderRadius: 12,
   },
   playerDetails: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   playerAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+    marginRight: 16,
   },
   playerInitial: {
     color: 'white',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   playerName: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 18,
+    fontWeight: '600',
   },
   hostBadge: {
-    backgroundColor: '#f1c40f',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
   },
   hostBadgeText: {
-    color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
   },
   emptyText: {
     textAlign: 'center',
-    padding: 20,
+    padding: 24,
     fontStyle: 'italic',
   },
   joinInfo: {
-    marginTop: 15,
-    padding: 10,
+    marginTop: 20,
+    padding: 16,
   },
   joinInfoText: {
     textAlign: 'center',
-    marginBottom: 5,
+    marginBottom: 8,
   },
   footer: {
     flexDirection: 'row',
@@ -519,41 +525,47 @@ const styles = StyleSheet.create({
   startButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
     justifyContent: 'center',
     flex: 0.7,
-    border: 1,
-    borderColor: "black",
-    borderRadius: 8,
-    padding: 5,
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   startButtonText: {
-    color: "black",
     fontSize: 16,
     fontWeight: 'bold',
     marginLeft: 10,
-
   },
   leaveButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    marginLeft: 10,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    marginLeft: 12,
     justifyContent: 'center',
-    border: 1,
-    borderColor: "black",
-    borderRadius: 8,
-    padding: 5,
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   leaveButtonText: {
-    color: "black",
     fontSize: 14,
-    marginLeft: 5,
-
+    marginLeft: 8,
   },
   loadingText: {
     marginTop: 20,
@@ -566,9 +578,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   button: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
     alignItems: 'center',
   },
   buttonText: {
@@ -576,19 +588,27 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   countdownContainer: {
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    padding: 15,
-    borderRadius: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    padding: 20,
+    borderRadius: 16,
     alignItems: 'center',
     position: 'absolute',
-    top: '80%',
+    top: '75%',
     alignSelf: 'center',
     zIndex: 1000,
-    width: '80%',
+    width: '85%',
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
   },
   countdownText: {
     color: 'white',
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
   }

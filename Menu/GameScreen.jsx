@@ -39,7 +39,7 @@ export default function GameScreen({ route, navigation }) {
   useEffect(() => {
     let mounted = true;
 
-    if(mode === "local"){
+    if (mode === "local") {
       setOnlineModus(false);
     }
     setCurrentUserPage('Game');
@@ -65,13 +65,13 @@ export default function GameScreen({ route, navigation }) {
       });
     };
   }, []);
-  
+
   useEffect(() => {
     console.log(playerColors)
 
-      console.log(user)
-      setGameIsStarted(true);
-      setLoading(false);
+    console.log(user)
+    setGameIsStarted(true);
+    setLoading(false);
   }, [mode, matchId, dispatch]);
 
   useEffect(() => {
@@ -79,7 +79,7 @@ export default function GameScreen({ route, navigation }) {
       const players = currentMatch.users;
       setOnlineModus(true);
       if (players.length >= 2) {
-        dispatch(setCurrentPlayerColor(findUserColors())) 
+        dispatch(setCurrentPlayerColor(findUserColors()))
         dispatch(setOnlineModus(true));
         setGameIsStarted(true);
       }
@@ -144,25 +144,25 @@ export default function GameScreen({ route, navigation }) {
     handleLeaveMatch(); // Call the function to leave the match
   };
 
- const handleLeaveMatch = () => {
-      if (currentMatch && currentMatch.id) {
-        console.log("Leaving match", currentMatch.id)
-        sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userLeft', userId: user.id, colors: currentPlayerColor })
-        dispatch(leaveMatch({matchId: currentMatch.id, playerId: user.id}))
-          .unwrap()
-          .then(() => {
-            console.log('User left successfully');
-          })
-          .catch(error => {
-            console.error('Failed to leave match:', error);
-          });
-      }
-    };
+  const handleLeaveMatch = () => {
+    if (currentMatch && currentMatch.id) {
+      console.log("Leaving match", currentMatch.id)
+      sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userLeft', userId: user.id, colors: currentPlayerColor })
+      dispatch(leaveMatch({ matchId: currentMatch.id, playerId: user.id }))
+        .unwrap()
+        .then(() => {
+          console.log('User left successfully');
+        })
+        .catch(error => {
+          console.error('Failed to leave match:', error);
+        });
+    }
+  };
 
   const cancelExitGame = () => {
     setShowExitModal(false); // Close the modal
   };
-  
+
   const styles = StyleSheet.create({
     container: {
       padding: isSmallScreen ? 1 : 10,
@@ -350,43 +350,43 @@ export default function GameScreen({ route, navigation }) {
           </Pressable>
         </View>
       )}
-       {/* Exit Confirmation Modal */}
-  <Modal
-    visible={showExitModal}
-    transparent={true}
-    animationType="fade"
-    onRequestClose={cancelExitGame} // Handle back button on Android
-  >
-    <View style={styles.modalOverlay}>
-      <View style={[styles.modalContainer, { backgroundColor: theme.colors.background }]}>
-        <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
-          {uiStrings[systemLang].exitGameTitle || 'Exit Game?'}
-        </Text>
-        <Text style={[styles.modalMessage, { color: theme.colors.textSecondary }]}>
-          {uiStrings[systemLang].exitGameConfirm || 'Are you sure you want to leave the current game?'}
-        </Text>
-        <View style={styles.modalButtonRow}>
-          <Pressable
-            style={[styles.modalButton, styles.cancelButton, { borderColor: theme.colors.border }]}
-            onPress={cancelExitGame}
-          >
-            <Text style={[styles.modalButtonText, { color: theme.colors.textSecondary }]}>
-              {uiStrings[systemLang].cancel || 'Cancel'}
+      {/* Exit Confirmation Modal */}
+      <Modal
+        visible={showExitModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={cancelExitGame} // Handle back button on Android
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContainer, { backgroundColor: theme.colors.background }]}>
+            <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
+              {uiStrings[systemLang].exitGameTitle || 'Exit Game?'}
             </Text>
-          </Pressable>
-          <Pressable
-            style={[styles.modalButton, styles.confirmButton, { backgroundColor: theme.colors.danger || '#dc3545' }]} // Use a danger color
-            onPress={confirmExitGame}
-          >
-            <Text style={[styles.modalButtonText, { color: '#fff' }]}>
-              {uiStrings[systemLang].exit || 'Exit'}
+            <Text style={[styles.modalMessage, { color: theme.colors.textSecondary }]}>
+              {uiStrings[systemLang].exitGameConfirm || 'Are you sure you want to leave the current game?'}
             </Text>
-          </Pressable>
+            <View style={styles.modalButtonRow}>
+              <Pressable
+                style={[styles.modalButton, styles.cancelButton, { borderColor: theme.colors.border }]}
+                onPress={cancelExitGame}
+              >
+                <Text style={[styles.modalButtonText, { color: theme.colors.textSecondary }]}>
+                  {uiStrings[systemLang].cancel || 'Cancel'}
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[styles.modalButton, styles.confirmButton, { backgroundColor: theme.colors.danger || '#dc3545' }]} // Use a danger color
+                onPress={confirmExitGame}
+              >
+                <Text style={[styles.modalButtonText, { color: '#fff' }]}>
+                  {uiStrings[systemLang].exit || 'Exit'}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
         </View>
-      </View>
-    </View>
-  </Modal>
-  {/* End Exit Confirmation Modal */}
+      </Modal>
+      {/* End Exit Confirmation Modal */}
     </View>
   );
 }

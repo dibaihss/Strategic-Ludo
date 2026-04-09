@@ -49,6 +49,30 @@ const themes = {
             shadowColor: "#fff"
         }
     },
+    modernDark: {
+        name: 'modernDark',
+        colors: {
+            blue: '#3b82f6',
+            red: '#ef4444',
+            yellow: 'rgb(220 87 250)',
+            green: '#22c55e',
+            background: '#000000',
+            card: 'rgba(255, 255, 255, 0.05)',
+            border: '#ffffff',
+            button: '#3d3d3d',
+            buttonText: '#ffffff',
+            buttonBorder: '#555555',
+            text: '#ffffff',
+            textSecondary: 'rgba(255, 255, 255, 0.7)',
+            inputBackground: 'rgba(255, 255, 255, 0.1)',
+            inputBorder: 'rgba(255, 255, 255, 0.2)',
+            shadowColor: "#fff",
+            accent: '#8b5cf6',
+            error: '#f87171',
+            success: '#34d399',
+            disabled: 'rgba(255, 255, 255, 0.3)'
+        }
+    },
     // pastel: {
     //     name: 'pastel',
     //     colors: {
@@ -138,7 +162,7 @@ const themes = {
 const themeSlice = createSlice({
     name: 'theme',
     initialState: {
-        current: themes.dark,
+        current: themes.modernDark,
         themes
     },
     reducers: {

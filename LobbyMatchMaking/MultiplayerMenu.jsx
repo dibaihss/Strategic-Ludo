@@ -153,14 +153,14 @@ const MatchListPage = ({ navigation }) => {
   }
 
   return (
-    <View testID="match-list-screen" style={[styles.container, { backgroundColor: "white" }]}>
+    <View testID="match-list-screen" style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Header */}
       <View style={styles.header}>
         <Pressable
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <MaterialIcons name="arrow-back" size={24} color={theme.colors.primary} />
+          <MaterialIcons name="arrow-back" size={24} color={theme.colors.accent} />
         </Pressable>
         <Text style={[styles.title, { color: theme.colors.text }]}>
           {uiStrings[systemLang].availableMatches || 'Available Matches'}
@@ -175,7 +175,7 @@ const MatchListPage = ({ navigation }) => {
           <MaterialIcons 
             name="refresh" 
             size={24} 
-            color={(refreshing || loading) ? theme.colors.disabled : theme.colors.primary} 
+            color={(refreshing || loading) ? theme.colors.disabled : theme.colors.accent} 
           />
         </Pressable>
       </View>
@@ -185,7 +185,7 @@ const MatchListPage = ({ navigation }) => {
         <View style={styles.errorContainer}>
           <Text style={[styles.errorText, { color: theme.colors.error }]}>{error}</Text>
           <Pressable
-            style={[styles.retryButton, { backgroundColor: theme.colors.button }]}
+            style={[styles.retryButton, { backgroundColor: theme.colors.accent, borderColor: theme.colors.border, borderWidth: 1 }]}
             onPress={() => dispatch(fetchMatches())}
           >
             <Text style={[styles.retryText, { color: theme.colors.buttonText }]}>
@@ -205,14 +205,14 @@ const MatchListPage = ({ navigation }) => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[theme.colors.primary]}
-            tintColor={theme.colors.primary}
+            colors={[theme.colors.accent]}
+            tintColor={theme.colors.accent}
           />
         }
         ListEmptyComponent={
           !loading && !error ? (
             <View style={styles.emptyContainer}>
-              <MaterialIcons name="sports-esports" size={60} color={theme.colors.textSecondary} />
+              <MaterialIcons name="sports-esports" size={72} color={theme.colors.textSecondary} />
               <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
                 {uiStrings[systemLang].noMatches || 'No matches available'}
               </Text>
@@ -231,7 +231,9 @@ const MatchListPage = ({ navigation }) => {
           style={[
             styles.createButton,
             {
-              backgroundColor: loading ? theme.colors.disabled : theme.colors.button,
+              backgroundColor: loading ? theme.colors.disabled : theme.colors.accent,
+              borderColor: theme.colors.border,
+              borderWidth: 1,
               opacity: loading ? 0.7 : 1
             }
           ]}
@@ -265,50 +267,51 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    paddingTop: 20,
-    justifyContent: 'space-between', // Adjust layout
+    padding: 24,
+    paddingTop: 32,
+    justifyContent: 'space-between',
   },
   backButton: {
-    // Keep existing styles or adjust if needed
+    padding: 8,
   },
   title: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
-    flex: 1, // Allow title to take available space
-    textAlign: 'center', // Center title
-    marginHorizontal: 10, // Add some margin around title
+    flex: 1,
+    textAlign: 'center',
+    marginHorizontal: 16,
   },
   refreshButtonHeader: {
-    padding: 8, // Add padding for easier pressing
+    padding: 8,
   },
   listContent: {
-    padding: 16,
+    padding: 24,
     flexGrow: 1,
   },
   matchItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    marginBottom: 12,
-    borderRadius: 12,
+    padding: 20,
+    marginBottom: 16,
+    borderRadius: 16,
+    borderWidth: 1,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 2,
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
   },
   matchInfo: {
     flex: 1,
   },
   matchTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   matchStatus: {
     fontSize: 14,
@@ -318,41 +321,52 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   playersCount: {
-    marginRight: 8,
-    fontSize: 14,
+    marginRight: 12,
+    fontSize: 16,
+    fontWeight: '500',
   },
   footer: {
-    padding: 16,
-    paddingBottom: 24,
+    padding: 24,
+    paddingBottom: 32,
   },
   createButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
     borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   createButtonText: {
-    marginLeft: 8,
+    marginLeft: 12,
     fontSize: 16,
     fontWeight: '600',
   },
   loadingText: {
-    marginTop: 12,
+    marginTop: 16,
     fontSize: 16,
   },
   errorContainer: {
-    padding: 16,
+    padding: 24,
     alignItems: 'center',
   },
   errorText: {
-    marginBottom: 12,
+    marginBottom: 16,
     textAlign: 'center',
+    fontSize: 16,
   },
   retryButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
   },
   retryText: {
     fontWeight: '600',
@@ -360,17 +374,17 @@ const styles = StyleSheet.create({
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 40,
+    padding: 48,
   },
   emptyText: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '600',
-    marginTop: 16,
+    marginTop: 20,
     textAlign: 'center',
   },
   emptySubtext: {
-    fontSize: 14,
-    marginTop: 8,
+    fontSize: 16,
+    marginTop: 12,
     textAlign: 'center',
   },
 });
