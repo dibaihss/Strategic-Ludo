@@ -19,8 +19,8 @@ import { uiStrings } from "../assets/shared/hardCodedData.js";
 import {
   loginUser,
   loginGuest,
-  setOfflineModus,
 } from "../assets/store/authSlice.jsx";
+import { setIsOnline } from "../assets/store/gameSlice.jsx";
 import Toast from "react-native-toast-message";
 
 const LoginPage = ({ navigation }) => {
@@ -30,7 +30,7 @@ const LoginPage = ({ navigation }) => {
   const systemLang = useSelector((state) => state.language.systemLang);
   const authError = useSelector((state) => state.auth.error);
   const loading = useSelector((state) => state.auth.loading);
-  const offlineModus = useSelector((state) => state.auth.offlineModus);
+  const isOnline = useSelector((state) => state.game.isOnline);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -69,6 +69,7 @@ const LoginPage = ({ navigation }) => {
   };
   const handleGuestLogin = () => {
     console.log("Logging in as guest");
+    dispatch(setIsOnline(true)); // Set offline mode for guest login
     dispatch(loginGuest())
       .unwrap()
       .then((result) => {
@@ -96,11 +97,7 @@ const LoginPage = ({ navigation }) => {
   };
 
   const goDirectlyToGame = () => {
-   dispatch(setOfflineModus(true)); // Set offline mode in the store
-    setTimeout(() => {
-      console.log(offlineModus);
-      navigation.navigate("Game", { mode: "local" }); // This should be 'Game', not 'GameScreen'
-    }, 1000); // Wait for 1 second before navigating
+      navigation.navigate("Game", { mode: "local" }); 
   };
 
   return (

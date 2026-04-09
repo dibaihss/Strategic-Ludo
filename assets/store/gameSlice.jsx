@@ -6,10 +6,10 @@ import { setBoxesPosition } from './animationSlice.jsx'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const initialState = {
-    currentPlayer: null,
+    currentPlayer: "blue",
     activePlayer: "blue",
     stateVersion: null,
-    onlineModus: false,
+    isOnline: false,
     timeRemaining: 35,
     isTimerRunning: false,
     unActivePlayers: [],
@@ -21,7 +21,7 @@ const initialState = {
         yellow: 1,
         green: 1
     },
-    currentPlayerColor: null,
+    currentPlayerColor: "blue",
     blueSoldiers: [
         { id: 1, position: '1a', color: "blue", initialPosition: '1blue', onBoard: true, isOut: false },
         { id: 2, position: '2blue', color: "blue", initialPosition: '2blue', onBoard: false, isOut: false },
@@ -298,6 +298,7 @@ export const gameSlice = createSlice({
             state.currentPlayer = action.payload;
         },
         setActivePlayer: (state, action) => {
+
             const newActivePlayer = getNextPlayerType(state.activePlayer,state.availableTypes);
             state.activePlayer = newActivePlayer;
 
@@ -456,8 +457,8 @@ export const gameSlice = createSlice({
         resetTimer: (state) => {
             state.timeRemaining = 35;
         },
-        setOnlineModus: (state, action) => {
-            state.onlineModus = action.payload;
+        setIsOnline: (state, action) => {
+            state.isOnline = action.payload;
         },
         setPlayerColors: (state, action) => {
             console.log(action.payload)
@@ -585,7 +586,7 @@ export const gameSlice = createSlice({
                     state.greenSoldiers = action.payload.greenSoldiers;
                     state.isTimerRunning = action.payload.isTimerRunning;
                     state.timeRemaining = action.payload.timeRemaining;
-                    state.onlineModus = action.payload.onlineModus; // Restore online mode status
+                    state.isOnline = action.payload.isOnline; // Restore online mode status
                 }
             })
             // Optional: Add a case for saveGameState.fulfilled if you want to take action after saving
@@ -600,7 +601,7 @@ export const {
     setCurrentPlayer,
     setActivePlayer,
     moveSoldier,
-    setOnlineModus,
+    setIsOnline,
     updateBlueCards,
     updateRedCards,
     updateYellowCards,

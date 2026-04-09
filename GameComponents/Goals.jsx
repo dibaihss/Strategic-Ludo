@@ -1,6 +1,6 @@
 import { View, StyleSheet, Platform, Dimensions } from "react-native";
 import React, { useEffect, useState } from 'react';
-import Player from './Player';
+import Soldier from './Soldier';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
 import { uiStrings, getLocalizedColor } from "../assets/shared/hardCodedData.js";
@@ -120,25 +120,25 @@ export default function Goals() {
                 <View style={[styles.quadrant, styles.yellow]}>
                     <MaterialIcons name="home" size={24} color="goldenrod" />
                     {yellowSoldiers.find(obj => obj.isOut === true) &&
-                        <Player color={yellowSoldiers[0].color} />}
+                        <Soldier color={yellowSoldiers[0].color} />}
                 </View>
 
                 <View style={[styles.quadrant, styles.green]}>
                     <MaterialIcons name="home" size={24} color="darkgreen" />
                     {greenSoldiers.find(obj => obj.isOut === true) &&
-                        <Player color={greenSoldiers[0].color} />}
+                        <Soldier color={greenSoldiers[0].color} />}
                 </View>
 
                 <View style={[styles.quadrant, styles.red]}>
                     <MaterialIcons name="home" size={24} color="darkred" />
                     {redSoldiers.find(obj => obj.isOut === true) &&
-                        <Player color={redSoldiers[0].color} />}
+                        <Soldier color={redSoldiers[0].color} />}
                 </View>
 
                 <View style={[styles.quadrant, styles.blue]}>
                     <MaterialIcons name="home" size={24} color="darkblue" />
                     {blueSoldiers.find(obj => obj.isOut === true) &&
-                        <Player color={blueSoldiers[0].color} />}
+                        <Soldier color={blueSoldiers[0].color} />}
                 </View>
             </View>
         </View>

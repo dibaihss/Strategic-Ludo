@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Platform, Dimensions } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateTimer, setTimerRunning, resetTimer, setActivePlayer } from '../assets/store/gameSlice';
 import { uiStrings } from "../assets/shared/hardCodedData.js";
-import ActivePlayerIndicator from './ActivePlayerIndicator.jsx';
+import TurnIndicator from './TurnIndicator.jsx';
 
 export default function Timer() {
     const dispatch = useDispatch();
@@ -74,7 +74,7 @@ export default function Timer() {
                     {uiStrings[systemLang].timer.replace('{time}', timeRemaining)}
                 </Text>
             </View>
-            <ActivePlayerIndicator />
+            <TurnIndicator />
         </View>
     );
 }

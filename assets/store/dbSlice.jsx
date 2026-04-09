@@ -9,7 +9,6 @@ export {
   setUser,
   setLoggedIn,
   setCurrentUserPage,
-  setOfflineModus,
   selectUser,
   selectIsLoggedIn,
 } from "./authSlice.jsx";
