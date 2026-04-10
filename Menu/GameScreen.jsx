@@ -15,7 +15,7 @@ import { leaveMatch } from '../assets/store/sessionSlice.jsx';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { createGameScreenStyles } from './GameScreen.styles.js';
 import Instructions from './Instructions.jsx';
-import { runBotTurn } from './botLogic.js';
+import { isBotControlledPlayer, runBotTurn } from './botLogic.js';
 
 export default function GameScreen({ route, navigation }) {
   const dispatch = useDispatch();
@@ -127,9 +127,17 @@ export default function GameScreen({ route, navigation }) {
     green: greenSoldiers,
   }), [blueSoldiers, redSoldiers, yellowSoldiers, greenSoldiers]);
 
+  const isMultiplayerBotTurn = useMemo(
+    () => mode === 'multiplayer' && isBotControlledPlayer(currentMatch?.users, playerColors, activePlayer),
+    [activePlayer, currentMatch?.users, mode, playerColors]
+  );
+
   useEffect(() => {
-    if (mode !== 'bot' || winnerDetected || loading) return;
-    if (activePlayer === 'blue') return;
+    if (winnerDetected || loading) return;
+
+    const isOfflineBotTurn = mode === 'bot' && activePlayer !== 'blue';
+
+    if (!isOfflineBotTurn && !isMultiplayerBotTurn) return;
 
     const botTimer = setTimeout(() => {
       runBotTurn({
@@ -144,7 +152,7 @@ export default function GameScreen({ route, navigation }) {
     }, 1000);
 
     return () => clearTimeout(botTimer);
-  }, [mode, activePlayer, loading, winnerDetected, cardsByColor, soldiersByColor, showClone, systemLang, dispatch]);
+  }, [mode, activePlayer, isMultiplayerBotTurn, loading, winnerDetected, cardsByColor, soldiersByColor, showClone, systemLang, dispatch]);
 
   useEffect(() => {
     if (winnerDetected || loading) return;

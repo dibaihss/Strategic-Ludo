@@ -1,7 +1,9 @@
 import {
   chooseBotAction,
   getFirstAvailableBotPlayer,
+  getPlayerOwner,
   getSoldiersForColor,
+  isBotControlledPlayer,
   runBotTurn,
 } from './botLogic';
 import { resetTimer, setActivePlayer, setCurrentPlayer } from '../assets/store/gameSlice.jsx';
@@ -38,6 +40,31 @@ describe('botLogic', () => {
     expect(getSoldiersForColor(soldiersByColor, 'red')).toEqual([
       { id: 5, color: 'red', onBoard: true, isOut: false },
     ]);
+  });
+
+  test('getPlayerOwner returns the mapped owner for a color', () => {
+    const users = [
+      { id: 'user-1', name: 'Host' },
+      { id: 'bot-1', name: 'Bot 1', isBot: true },
+    ];
+    const playerColors = { blue: 'user-1', red: 'bot-1' };
+
+    expect(getPlayerOwner(users, playerColors, 'red')).toEqual({
+      id: 'bot-1',
+      name: 'Bot 1',
+      isBot: true,
+    });
+  });
+
+  test('isBotControlledPlayer detects bot-owned colors in multiplayer matches', () => {
+    const users = [
+      { id: 'user-1', name: 'Host' },
+      { id: 'bot-1', name: 'Bot 1', isBot: true },
+    ];
+    const playerColors = { blue: 'user-1', red: 'bot-1' };
+
+    expect(isBotControlledPlayer(users, playerColors, 'red')).toBe(true);
+    expect(isBotControlledPlayer(users, playerColors, 'blue')).toBe(false);
   });
 
   test('getFirstAvailableBotPlayer prefers an active on-board soldier', () => {

@@ -5,6 +5,16 @@ export const getCardsForColor = (cardsByColor, color) => cardsByColor[color] || 
 
 export const getSoldiersForColor = (soldiersByColor, color) => soldiersByColor[color] || [];
 
+export const getPlayerOwner = (users, playerColors, color) => {
+  const ownerId = playerColors?.[color];
+  if (!ownerId || !Array.isArray(users)) return null;
+
+  return users.find((user) => String(user.id) === String(ownerId)) || null;
+};
+
+export const isBotControlledPlayer = (users, playerColors, color) =>
+  Boolean(getPlayerOwner(users, playerColors, color)?.isBot);
+
 export const getFirstAvailableBotPlayer = (soldiersByColor, color) => {
   const soldiers = getSoldiersForColor(soldiersByColor, color);
 

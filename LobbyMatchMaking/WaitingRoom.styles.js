@@ -52,6 +52,31 @@ export const createWaitingRoomStyles = (theme) =>
     refreshIndicator: {
       marginBottom: 16,
     },
+    hostControls: {
+      borderRadius: 14,
+      padding: 14,
+      marginBottom: 16,
+      gap: 12,
+    },
+    hostControlsText: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+    },
+    addBotButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderRadius: 12,
+      borderWidth: 1,
+      gap: 8,
+    },
+    addBotButtonText: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: theme.colors.buttonText,
+    },
     playerItem: {
       flexDirection: 'row',
       justifyContent: 'space-between',
@@ -82,6 +107,20 @@ export const createWaitingRoomStyles = (theme) =>
       fontSize: 18,
       fontWeight: '600',
       color: theme.colors.text,
+    },
+    playerBadges: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    botBadge: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 16,
+    },
+    botBadgeText: {
+      fontSize: 12,
+      fontWeight: 'bold',
     },
     hostBadge: {
       paddingHorizontal: 12,

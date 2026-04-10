@@ -9,7 +9,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { createWaitingRoomStyles } from './WaitingRoom.styles.js';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchCurrentMatch, updateMatch, updateMatchStatus, leaveMatch } from '../assets/store/sessionSlice.jsx';
+import { addBotToMatch, fetchCurrentMatch, updateMatch, updateMatchStatus, leaveMatch } from '../assets/store/sessionSlice.jsx';
 import { setPlayerColors, updateSoldiersPosition, removeColorFromAvailableColors, setActivePlayer } from '../assets/store/gameSlice.jsx';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
@@ -38,6 +38,10 @@ const WaitingRoom = ({ navigation, route }) => {
   const [showCountdown, setShowCountdown] = useState(false)
 
   let join = route.params?.join || false;
+  const players = Array.isArray(currentMatch?.users) ? currentMatch.users : [];
+  const botCount = players.filter((player) => player?.isBot).length;
+  const isHost = Boolean(currentMatch && user && String(currentMatch.users?.[0]?.id) === String(user.id));
+  const canAddBot = isHost && !showCountdown && players.length < 4 && botCount < 3;
 
   useEffect(() => {
     let mounted = true;
@@ -109,6 +113,10 @@ const WaitingRoom = ({ navigation, route }) => {
             debounceHandleRefresh();
         } else if (data.type === 'userJoined') {
           debounceHandleRefresh();
+        } else if (data.type === 'botAdded') {
+          if (data.bot) {
+            dispatch(addBotToMatch({ matchId: currentMatch.id, bot: data.bot }));
+          }
         } else if (data.type === 'userDisconnected') {
           debounceHandleRefresh();
         } else if (data.type === 'userLeft' || data.type === 'userKicked') {
@@ -156,11 +164,32 @@ const WaitingRoom = ({ navigation, route }) => {
   const joinRef = useRef(join);
   const refreshTimeoutRef = useRef(null);
 
-  const isUserHost = () => {
-    if (!currentMatch || !user) return false;
+  const handleAddBot = () => {
+    if (!currentMatch?.id || !isHost) return;
 
-    // Assuming the first user in the array is the host
-    return currentMatch.users?.[0]?.id === user.id;
+    if (!canAddBot) {
+      const message = players.length >= 4
+        ? (uiStrings[systemLang].lobbyFull || 'Lobby is full')
+        : (uiStrings[systemLang].maxBotsReached || 'You can add up to 3 bots');
+      Toast.show({
+        type: 'info',
+        text1: uiStrings[systemLang].addBot || 'Add Bot',
+        text2: message,
+      });
+      return;
+    }
+
+    const nextBotNumber = botCount + 1;
+    const bot = {
+      id: `bot-${currentMatch.id}-${nextBotNumber}`,
+      name: `${uiStrings[systemLang].bot || 'Bot'} ${nextBotNumber}`,
+      username: `${uiStrings[systemLang].bot || 'Bot'} ${nextBotNumber}`,
+      isBot: true,
+      isGuest: true,
+    };
+
+    dispatch(addBotToMatch({ matchId: currentMatch.id, bot }));
+    sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'botAdded', bot });
   };
 
   const handleRefresh = () => {
@@ -213,7 +242,6 @@ const WaitingRoom = ({ navigation, route }) => {
   };
 
   const handleStartGame = () => {
-    const players = Array.isArray(currentMatch?.users) ? currentMatch.users : [];
     if (players.length < 2) return;
     const playerColors = {
       blue: players[0].id,
@@ -334,8 +362,33 @@ const WaitingRoom = ({ navigation, route }) => {
           />
         )}
 
+        {isHost && (
+          <View style={[styles.hostControls, { backgroundColor: theme.colors.inputBackground }]}>
+            <Text style={[styles.hostControlsText, { color: theme.colors.textSecondary }]}>
+              {uiStrings[systemLang].hostCanAddBots || 'Host can add up to 3 bots'}
+            </Text>
+            <Pressable
+              testID="waiting-room-add-bot-button"
+              style={[
+                styles.addBotButton,
+                {
+                  backgroundColor: canAddBot ? theme.colors.accent : theme.colors.disabled,
+                  borderColor: theme.colors.border,
+                },
+              ]}
+              onPress={handleAddBot}
+              disabled={!canAddBot}
+            >
+              <MaterialIcons name="smart-toy" size={20} color={theme.colors.buttonText} />
+              <Text style={[styles.addBotButtonText, { color: theme.colors.buttonText }]}>
+                {uiStrings[systemLang].addBot || 'Add Bot'}
+              </Text>
+            </Pressable>
+          </View>
+        )}
+
         <FlatList
-          data={currentMatch.users || []}
+          data={players}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item, index }) => (
             <View style={[styles.playerItem, { backgroundColor: theme.colors.inputBackground }]}>
@@ -354,13 +407,22 @@ const WaitingRoom = ({ navigation, route }) => {
                 </Text>
               </View>
 
-              {index === 0 && (
-                <View style={[styles.hostBadge, { backgroundColor: theme.colors.yellow }]}>
-                  <Text style={[styles.hostBadgeText, { color: theme.colors.text }]}>
-                    {uiStrings[systemLang].host || 'Host'}
-                  </Text>
-                </View>
-              )}
+              <View style={styles.playerBadges}>
+                {item.isBot && (
+                  <View style={[styles.botBadge, { backgroundColor: theme.colors.accent }]}>
+                    <Text style={[styles.botBadgeText, { color: theme.colors.buttonText }]}>
+                      {uiStrings[systemLang].bot || 'Bot'}
+                    </Text>
+                  </View>
+                )}
+                {index === 0 && (
+                  <View style={[styles.hostBadge, { backgroundColor: theme.colors.yellow }]}>
+                    <Text style={[styles.hostBadgeText, { color: theme.colors.text }]}>
+                      {uiStrings[systemLang].host || 'Host'}
+                    </Text>
+                  </View>
+                )}
+              </View>
             </View>
           )}
           ListEmptyComponent={
@@ -375,7 +437,7 @@ const WaitingRoom = ({ navigation, route }) => {
               {uiStrings[systemLang].waitingForPlayers || 'Waiting for more players to join...'}
             </Text>
             <Text style={[styles.joinInfoText, { color: theme.colors.textSecondary }]}>
-              {currentMatch.users?.length === 1
+              {players.length === 1
                 ? uiStrings[systemLang].needMorePlayers || 'Need at least one more player to start'
                 : null}
             </Text>
@@ -385,7 +447,7 @@ const WaitingRoom = ({ navigation, route }) => {
       </View>
 
       <View style={styles.footer}>
-        {(currentMatch?.users?.length >= 2) && (
+        {(players.length >= 2) && (
           <Pressable
             testID="waiting-room-start-button"
             style={[styles.startButton, { backgroundColor: theme.colors.success, borderColor: theme.colors.border }]}
