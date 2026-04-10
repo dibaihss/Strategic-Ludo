@@ -159,7 +159,6 @@ describe('GameScreen', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.useFakeTimers();
     dispatchMock = jest.fn();
     sendMessageMock = jest.fn();
     sendMatchCommandMock = jest.fn();
@@ -173,7 +172,6 @@ describe('GameScreen', () => {
   });
 
   afterEach(() => {
-    jest.runOnlyPendingTimers();
     jest.useRealTimers();
   });
 
@@ -246,6 +244,8 @@ describe('GameScreen', () => {
   });
 
   test('host emits multiplayer bot moves through the websocket flow instead of local bot execution', async () => {
+    jest.useFakeTimers();
+
     const state = createState({
       game: {
         playerColors: {
@@ -327,6 +327,8 @@ describe('GameScreen', () => {
   });
 
   test('non-host clients do not emit multiplayer bot moves', async () => {
+    jest.useFakeTimers();
+
     const state = createState({
       game: {
         playerColors: {
