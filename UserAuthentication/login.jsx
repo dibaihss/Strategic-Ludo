@@ -97,7 +97,7 @@ const LoginPage = ({ navigation }) => {
   };
 
   const goDirectlyToGame = () => {
-      navigation.navigate("Game", { mode: "local" }); 
+      navigation.navigate("Home");
   };
 
   return (

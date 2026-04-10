@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import HomePage from './Home.jsx';
 import { resetTimer, setActivePlayer } from '../assets/store/gameSlice.jsx';
@@ -6,19 +6,22 @@ import { logout, clearAuth} from '../assets/store/authSlice.jsx';
 
 export default function HomeScreen({ navigation }) {
   const dispatch = useDispatch();
+  const [showOfflineOptions, setShowOfflineOptions] = useState(false);
 
 
-
-  const handleStartLocalGame = () => {
-    dispatch(resetTimer());
-    dispatch(setActivePlayer());
-    navigation.navigate('Game', { mode: 'local' });
+  const handleStartOffline = () => {
+    setShowOfflineOptions(true);
   };
 
-  const handleStartBotGame = () => {
+  const handleChooseOfflineMode = (selectedMode) => {
+    setShowOfflineOptions(false);
     dispatch(resetTimer());
     dispatch(setActivePlayer());
-    navigation.navigate('Game', { mode: 'bot' });
+    navigation.navigate('Game', { mode: selectedMode });
+  };
+
+  const handleCancelOfflineChoice = () => {
+    setShowOfflineOptions(false);
   };
 
   const handleStartMultiplayerGame = () => {
@@ -43,9 +46,11 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <HomePage
-      onStartLocalGame={handleStartLocalGame}
-      onStartBotGame={handleStartBotGame}
       onStartMultiplayerGame={handleStartMultiplayerGame}
+      onStartOffline={handleStartOffline}
+      showOfflineOptions={showOfflineOptions}
+      onChooseOfflineMode={handleChooseOfflineMode}
+      onCancelOfflineChoice={handleCancelOfflineChoice}
       onLogout={handleLogout}
     />
   );

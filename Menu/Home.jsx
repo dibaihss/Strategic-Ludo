@@ -4,14 +4,15 @@ import {
   Text, 
   Pressable, 
   Image, 
-  SafeAreaView 
+  SafeAreaView,
+  Modal
 } from 'react-native';
 import { useSelector } from 'react-redux';
 import { MaterialIcons } from '@expo/vector-icons';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 import { createHomeStyles } from './Home.styles.js';
 
-const HomePage = ({ onStartLocalGame, onStartBotGame, onStartMultiplayerGame, onLogout }) => {
+const HomePage = ({ onStartMultiplayerGame, onStartOffline, showOfflineOptions, onChooseOfflineMode, onCancelOfflineChoice, onLogout }) => {
 
   const theme = useSelector(state => state.theme.current);
   const systemLang = useSelector(state => state.language.systemLang);
@@ -103,24 +104,13 @@ const HomePage = ({ onStartLocalGame, onStartBotGame, onStartMultiplayerGame, on
       {/* Game Mode Buttons */}
       <View style={styles.buttonsContainer}>
         <Pressable
-          testID="home-play-local-button"
-          style={[styles.button, styles.buttonPrimary]}
-          onPress={onStartLocalGame}
-        >
-          <MaterialIcons name="people" size={28} color={theme.colors.buttonText} />
-          <Text style={[styles.buttonText, styles.buttonTextPrimary]}>
-            {uiStrings[systemLang].playLocal}
-          </Text>
-        </Pressable>
-        
-        <Pressable
-          testID="home-play-bots-button"
+          testID="home-play-offline-button"
           style={[styles.button, styles.buttonSecondary]}
-          onPress={onStartBotGame}
+          onPress={onStartOffline}
         >
-          <MaterialIcons name="sports_esports" size={28} color={theme.colors.text} />
+          <MaterialIcons name="devices" size={28} color={theme.colors.text} />
           <Text style={[styles.buttonText, styles.buttonTextSecondary]}>
-            {uiStrings[systemLang].playBots}
+            {uiStrings[systemLang].playOffline}
           </Text>
         </Pressable>
 
@@ -136,6 +126,43 @@ const HomePage = ({ onStartLocalGame, onStartBotGame, onStartMultiplayerGame, on
         </Pressable>
       </View>
       
+      {/* Offline options modal */}
+      <Modal
+        visible={showOfflineOptions}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={onCancelOfflineChoice}
+      >
+        <View style={styles.modalOverlay} testID="offline-choice-modal">
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>{uiStrings[systemLang].offlineChoiceTitle}</Text>
+            <Text style={styles.modalMessage}>{uiStrings[systemLang].offlineChoiceMessage}</Text>
+            <View style={styles.modalButtonsRow}>
+              <Pressable
+                testID="offline-choice-local-button"
+                style={[styles.button, styles.optionButton]}
+                onPress={() => onChooseOfflineMode('local')}
+              >
+                <Text style={styles.optionButtonText}>{uiStrings[systemLang].playWithFamily}</Text>
+              </Pressable>
+              <Pressable
+                testID="offline-choice-bot-button"
+                style={[styles.button, styles.optionButton]}
+                onPress={() => onChooseOfflineMode('bot')}
+              >
+                <Text style={styles.optionButtonText}>{uiStrings[systemLang].playVsBot}</Text>
+              </Pressable>
+            </View>
+            <Pressable
+              style={[styles.button, styles.cancelButton]}
+              onPress={onCancelOfflineChoice}
+            >
+              <Text style={styles.buttonTextSecondary}>{uiStrings[systemLang].cancel}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
       {/* Version Footer */}
       <View style={styles.footer}>
         <Text style={styles.footerText}>
