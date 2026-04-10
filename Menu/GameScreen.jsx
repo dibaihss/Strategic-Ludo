@@ -15,7 +15,7 @@ import { leaveMatch } from '../assets/store/sessionSlice.jsx';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { createGameScreenStyles } from './GameScreen.styles.js';
 import Instructions from './Instructions.jsx';
-import { getBotDifficultyForTurn, isBotControlledPlayer, runBotTurn } from './botLogic.js';
+import { emitMultiplayerBotTurn, getBotDifficultyForTurn, isBotControlledPlayer, runBotTurn } from './botLogic.js';
 
 const buildPlayerColorsFromPlayers = (players = []) => {
   if (!Array.isArray(players) || players.length < 2) return null;
@@ -80,6 +80,10 @@ export default function GameScreen({ route, navigation }) {
   const multiplayerPlayerColors = useMemo(
     () => routePlayerColors || buildPlayerColorsFromPlayers(currentMatch?.users),
     [currentMatch?.users, routePlayerColors]
+  );
+  const isHost = useMemo(
+    () => Boolean(currentMatch && user && String(currentMatch.users?.[0]?.id) === String(user.id)),
+    [currentMatch, user]
   );
 
   useEffect(() => {
@@ -156,6 +160,14 @@ export default function GameScreen({ route, navigation }) {
     () => mode === 'multiplayer' && isBotControlledPlayer(currentMatch?.users, playerColors, activePlayer),
     [activePlayer, currentMatch?.users, mode, playerColors]
   );
+  const isOfflineBotTurn = useMemo(
+    () => mode === 'bot' && activePlayer !== 'blue',
+    [activePlayer, mode]
+  );
+  const shouldEmitMultiplayerBotTurn = useMemo(
+    () => mode === 'multiplayer' && connected && isHost && isMultiplayerBotTurn,
+    [connected, isHost, isMultiplayerBotTurn, mode]
+  );
   const botDifficulty = useMemo(
     () => getBotDifficultyForTurn({
       mode,
@@ -169,26 +181,55 @@ export default function GameScreen({ route, navigation }) {
 
   useEffect(() => {
     if (winnerDetected || loading) return;
-
-    const isOfflineBotTurn = mode === 'bot' && activePlayer !== 'blue';
-
-    if (!isOfflineBotTurn && !isMultiplayerBotTurn) return;
+    if (!isOfflineBotTurn && !shouldEmitMultiplayerBotTurn) return;
 
     const botTimer = setTimeout(() => {
-      runBotTurn({
+      if (isOfflineBotTurn) {
+        runBotTurn({
+          color: activePlayer,
+          difficulty: botDifficulty,
+          activePlayer,
+          systemLang,
+          showClone,
+          dispatch,
+          cardsByColor,
+          soldiersByColor,
+        });
+        return;
+      }
+
+      emitMultiplayerBotTurn({
         color: activePlayer,
         difficulty: botDifficulty,
-        activePlayer,
-        systemLang,
-        showClone,
-        dispatch,
         cardsByColor,
         soldiersByColor,
+        connected,
+        currentMatch,
+        user,
+        sendMessage,
+        sendMatchCommand,
       });
     }, 1000);
 
     return () => clearTimeout(botTimer);
-  }, [mode, activePlayer, botDifficulty, isMultiplayerBotTurn, loading, winnerDetected, cardsByColor, soldiersByColor, showClone, systemLang, dispatch]);
+  }, [
+    activePlayer,
+    botDifficulty,
+    cardsByColor,
+    connected,
+    currentMatch,
+    dispatch,
+    isOfflineBotTurn,
+    loading,
+    sendMatchCommand,
+    sendMessage,
+    shouldEmitMultiplayerBotTurn,
+    showClone,
+    soldiersByColor,
+    systemLang,
+    user,
+    winnerDetected,
+  ]);
 
   useEffect(() => {
     if (winnerDetected || loading) return;

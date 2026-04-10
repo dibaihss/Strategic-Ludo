@@ -1,5 +1,7 @@
 import {
+  buildBotMultiplayerMessages,
   chooseBotAction,
+  emitMultiplayerBotTurn,
   getFirstAvailableBotPlayer,
   getBotDifficultyForTurn,
   getPlayerOwner,
@@ -148,6 +150,119 @@ describe('botLogic', () => {
       type: 'skipTurn',
       payload: {},
     }));
+  });
+
+  test('buildBotMultiplayerMessages keeps the human move contract for move actions', () => {
+    const action = {
+      type: 'movePlayer',
+      payload: {
+        color: 'yellow',
+        steps: 4,
+        soldier: { id: 9, color: 'yellow', position: '1c', onBoard: true, isOut: false },
+      },
+    };
+
+    expect(buildBotMultiplayerMessages(action)).toEqual({
+      selectedPlayer: { id: 9, color: 'yellow', position: '1c', onBoard: true, isOut: false },
+      moveMessage: {
+        type: 'movePlayer',
+        payload: {
+          color: 'yellow',
+          steps: 4,
+        },
+      },
+    });
+  });
+
+  test('emitMultiplayerBotTurn sends selected player first and then the move command', () => {
+    const sendMessage = jest.fn();
+    const sendMatchCommand = jest.fn();
+    const cardsByColor = createCardsByColor({
+      red: [{ id: 8, value: 2, used: false }],
+    });
+    const soldiersByColor = createSoldiersByColor({
+      red: [{ id: 6, color: 'red', position: '1b', onBoard: true, isOut: false }],
+    });
+
+    const action = emitMultiplayerBotTurn({
+      color: 'red',
+      difficulty: 'hard',
+      cardsByColor,
+      soldiersByColor,
+      connected: true,
+      currentMatch: { id: 'match-1' },
+      user: { id: 'host-1' },
+      sendMessage,
+      sendMatchCommand,
+      disableNoise: true,
+    });
+
+    expect(action).toEqual(expect.objectContaining({ type: 'movePlayer' }));
+    expect(sendMessage).toHaveBeenCalledWith('/app/player.getPlayer/match-1', {
+      id: 6,
+      color: 'red',
+      position: '1b',
+      onBoard: true,
+      isOut: false,
+    });
+    expect(sendMatchCommand).toHaveBeenCalledWith({
+      type: 'movePlayer',
+      payload: { color: 'red', steps: 2 },
+      matchId: 'match-1',
+      playerId: 'host-1',
+    });
+    expect(sendMessage.mock.invocationCallOrder[0]).toBeLessThan(sendMatchCommand.mock.invocationCallOrder[0]);
+  });
+
+  test('emitMultiplayerBotTurn sends enter and skip actions without a selected-player sync message', () => {
+    const sendMessage = jest.fn();
+    const sendMatchCommand = jest.fn();
+
+    emitMultiplayerBotTurn({
+      color: 'red',
+      difficulty: 'hard',
+      cardsByColor: createCardsByColor({
+        red: [{ id: 7, value: 2, used: true }],
+      }),
+      soldiersByColor: createSoldiersByColor({
+        red: [{ id: 5, color: 'red', onBoard: false, isOut: false }],
+      }),
+      connected: true,
+      currentMatch: { id: 'match-1' },
+      user: { id: 'host-1' },
+      sendMessage,
+      sendMatchCommand,
+      disableNoise: true,
+    });
+
+    emitMultiplayerBotTurn({
+      color: 'green',
+      difficulty: 'hard',
+      cardsByColor: createCardsByColor(),
+      soldiersByColor: createSoldiersByColor({
+        green: [{ id: 16, color: 'green', onBoard: false, isOut: true }],
+      }),
+      connected: true,
+      currentMatch: { id: 'match-1' },
+      user: { id: 'host-1' },
+      sendMessage,
+      sendMatchCommand,
+      disableNoise: true,
+    });
+
+    expect(sendMessage).not.toHaveBeenCalled();
+    expect(sendMatchCommand).toHaveBeenNthCalledWith(1, {
+      type: 'enterNewSoldier',
+      payload: { color: 'red' },
+      matchId: 'match-1',
+      playerId: 'host-1',
+    });
+    expect(sendMatchCommand).toHaveBeenNthCalledWith(2, {
+      type: 'skipTurn',
+      payload: {},
+      matchId: 'match-1',
+      playerId: 'host-1',
+    });
   });
 
   test('runBotTurn dispatches current player and executes a move action', () => {

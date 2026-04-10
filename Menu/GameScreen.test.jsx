@@ -1,12 +1,13 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { act, render } from '@testing-library/react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import * as RN from 'react-native';
 
 RN.Modal = ({ children }) => children;
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
+import { emitMultiplayerBotTurn, runBotTurn } from './botLogic.js';
 import GameScreen from './GameScreen';
-import { setCurrentPlayerColor } from '../assets/store/gameSlice.jsx';
+import { setCurrentPlayer, setCurrentPlayerColor } from '../assets/store/gameSlice.jsx';
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   setItem: jest.fn(),
@@ -29,6 +30,15 @@ jest.mock('react-redux', () => ({
 jest.mock('../assets/shared/webSocketConnection.jsx', () => ({
   useWebSocket: jest.fn(),
 }));
+
+jest.mock('./botLogic.js', () => {
+  const actual = jest.requireActual('./botLogic.js');
+  return {
+    ...actual,
+    emitMultiplayerBotTurn: jest.fn(() => ({ type: 'movePlayer' })),
+    runBotTurn: jest.fn(() => ({ type: 'movePlayer' })),
+  };
+});
 
 jest.mock('@expo/vector-icons', () => ({
   MaterialIcons: 'MaterialIcons',
@@ -144,17 +154,27 @@ const configureSelectors = (state) => {
 
 describe('GameScreen', () => {
   let dispatchMock;
+  let sendMessageMock;
+  let sendMatchCommandMock;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.useFakeTimers();
     dispatchMock = jest.fn();
+    sendMessageMock = jest.fn();
+    sendMatchCommandMock = jest.fn();
     useDispatch.mockReturnValue(dispatchMock);
     useWebSocket.mockReturnValue({
       connected: false,
       subscribe: jest.fn(),
-      sendMessage: jest.fn(),
-      sendMatchCommand: jest.fn(),
+      sendMessage: sendMessageMock,
+      sendMatchCommand: sendMatchCommandMock,
     });
+  });
+
+  afterEach(() => {
+    jest.runOnlyPendingTimers();
+    jest.useRealTimers();
   });
 
   test('shows winner popup when a player has all soldiers finished', async () => {
@@ -223,5 +243,149 @@ describe('GameScreen', () => {
       type: 'game/setPlayerColors',
       payload: multiplayerPlayerColors,
     });
+  });
+
+  test('host emits multiplayer bot moves through the websocket flow instead of local bot execution', async () => {
+    const state = createState({
+      game: {
+        playerColors: {
+          blue: 'user-1',
+          red: 'bot-1',
+          yellow: 'user-2',
+          green: 'user-1',
+        },
+        activePlayer: 'red',
+        currentPlayerColor: ['blue', 'green'],
+        isOnline: true,
+        blueSoldiers: [
+          { id: 1, color: 'blue', isOut: true },
+          { id: 2, color: 'blue', isOut: true },
+          { id: 3, color: 'blue', isOut: true },
+          { id: 4, color: 'blue', isOut: false },
+        ],
+        redSoldiers: [
+          { id: 5, color: 'red', position: '1b', onBoard: true, isOut: false },
+          { id: 6, color: 'red', position: '2red', onBoard: false, isOut: false },
+          { id: 7, color: 'red', position: '3red', onBoard: false, isOut: false },
+          { id: 8, color: 'red', position: '4red', onBoard: false, isOut: false },
+        ],
+        redCards: [
+          { id: 7, value: 2, used: false },
+        ],
+      },
+      auth: { user: { id: 'user-1' } },
+      session: {
+        currentMatch: {
+          id: 'match-1',
+          users: [
+            { id: 'user-1', name: 'Host' },
+            { id: 'bot-1', name: 'Bot 1', isBot: true, botDifficulty: 'hard' },
+            { id: 'user-2', name: 'Guest' },
+          ],
+        },
+      },
+    });
+
+    configureSelectors(state);
+    useWebSocket.mockReturnValue({
+      connected: true,
+      subscribe: jest.fn(),
+      sendMessage: sendMessageMock,
+      sendMatchCommand: sendMatchCommandMock,
+    });
+
+    const { findByTestId } = render(
+      <GameScreen
+        route={{ params: { mode: 'multiplayer', matchId: 'match-1', playerColors: state.game.playerColors } }}
+        navigation={{ navigate: jest.fn() }}
+      />
+    );
+
+    expect(await findByTestId('game-screen')).toBeTruthy();
+
+    act(() => {
+      jest.advanceTimersByTime(1000);
+    });
+
+    expect(emitMultiplayerBotTurn).toHaveBeenCalledWith(expect.objectContaining({
+      color: 'red',
+      difficulty: 'hard',
+      connected: true,
+      currentMatch: state.session.currentMatch,
+      user: { id: 'user-1' },
+      sendMessage: sendMessageMock,
+      sendMatchCommand: sendMatchCommandMock,
+    }));
+    expect(runBotTurn).not.toHaveBeenCalled();
+    expect(dispatchMock).not.toHaveBeenCalledWith(setCurrentPlayer({
+      id: 5,
+      color: 'red',
+      position: '1b',
+      onBoard: true,
+      isOut: false,
+    }));
+  });
+
+  test('non-host clients do not emit multiplayer bot moves', async () => {
+    const state = createState({
+      game: {
+        playerColors: {
+          blue: 'user-1',
+          red: 'bot-1',
+          yellow: 'user-2',
+          green: 'user-1',
+        },
+        activePlayer: 'red',
+        currentPlayerColor: 'yellow',
+        isOnline: true,
+        blueSoldiers: [
+          { id: 1, color: 'blue', isOut: true },
+          { id: 2, color: 'blue', isOut: true },
+          { id: 3, color: 'blue', isOut: true },
+          { id: 4, color: 'blue', isOut: false },
+        ],
+        redSoldiers: [
+          { id: 5, color: 'red', position: '1b', onBoard: true, isOut: false },
+        ],
+        redCards: [
+          { id: 7, value: 2, used: false },
+        ],
+      },
+      auth: { user: { id: 'user-2' } },
+      session: {
+        currentMatch: {
+          id: 'match-1',
+          users: [
+            { id: 'user-1', name: 'Host' },
+            { id: 'user-2', name: 'Guest' },
+            { id: 'bot-1', name: 'Bot 1', isBot: true, botDifficulty: 'hard' },
+          ],
+        },
+      },
+    });
+
+    configureSelectors(state);
+    useWebSocket.mockReturnValue({
+      connected: true,
+      subscribe: jest.fn(),
+      sendMessage: sendMessageMock,
+      sendMatchCommand: sendMatchCommandMock,
+    });
+
+    const { findByTestId } = render(
+      <GameScreen
+        route={{ params: { mode: 'multiplayer', matchId: 'match-1', playerColors: state.game.playerColors } }}
+        navigation={{ navigate: jest.fn() }}
+      />
+    );
+
+    expect(await findByTestId('game-screen')).toBeTruthy();
+
+    act(() => {
+      jest.advanceTimersByTime(1000);
+    });
+
+    expect(emitMultiplayerBotTurn).not.toHaveBeenCalled();
+    expect(runBotTurn).not.toHaveBeenCalled();
   });
 });
