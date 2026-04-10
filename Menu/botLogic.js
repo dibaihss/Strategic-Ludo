@@ -95,6 +95,8 @@ export const buildBotMultiplayerMessages = (action) => {
   };
 };
 
+
+let botTimeout = null;
 export const emitMultiplayerBotTurn = ({
   color,
   difficulty = 'normal',
@@ -113,6 +115,9 @@ export const emitMultiplayerBotTurn = ({
     randomFn,
     disableNoise,
   });
+  if (botTimeout) {
+    clearTimeout(botTimeout);
+  }
   const { selectedPlayer, moveMessage } = buildBotMultiplayerMessages(action);
 
   if (connected && currentMatch?.id && selectedPlayer) {
@@ -120,16 +125,21 @@ export const emitMultiplayerBotTurn = ({
   }
 
   if (moveMessage) {
-    sendMoveUpdateCore({
-      connected,
-      message: moveMessage,
-      sendMatchCommand,
-      currentMatch,
-      user,
-      sendMessage,
-    });
+      // Clear previous pending bot action
+  
+      botTimeout = setTimeout(() => {
+      console.log("Bot action:", action); // Debugging line
+      sendMoveUpdateCore({
+        connected,
+        message: moveMessage,
+        sendMatchCommand,
+        currentMatch,
+        user,
+        sendMessage,
+      });
+    } , 1500); // Simulate thinking time
   }
-
+  
   return action;
 };
 

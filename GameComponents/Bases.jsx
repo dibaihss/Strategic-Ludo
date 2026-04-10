@@ -208,6 +208,7 @@ export default function Bases() {
         if (connected) {
         if(!currentMatch || !currentMatch.id) return;
             const subscription = subscribe(`/topic/playerMove/${currentMatch.id}`, (data) => {
+                console.log("Received move update:", data); // Debugging line
                 const parsedData = data;
                 if (parsedData?.type === 'movePlayer') {
                     const { color, steps } = parsedData.payload || {};
