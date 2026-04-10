@@ -6,9 +6,8 @@ import Timer from '../GameComponents/Timer.jsx';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { View, Text, Pressable, ActivityIndicator, Modal, Animated } from 'react-native';
-import { setActivePlayer, resetTimer, setIsOnline, resetGameState, setCurrentPlayerColor, setCurrentPlayer } from '../assets/store/gameSlice.jsx';
+import { setActivePlayer, resetTimer, setIsOnline, resetGameState, setCurrentPlayerColor } from '../assets/store/gameSlice.jsx';
 import { uiStrings, getLocalizedColor } from '../assets/shared/hardCodedData.js';
-import { handleEnterNewSoldierCore, movePlayerCore } from '../GameComponents/Bases.logic';
 
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx'; // Import useWebSocket
 import { setCurrentUserPage } from '../assets/store/authSlice.jsx';
@@ -16,6 +15,7 @@ import { leaveMatch } from '../assets/store/sessionSlice.jsx';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { createGameScreenStyles } from './GameScreen.styles.js';
 import Instructions from './Instructions.jsx';
+import { runBotTurn } from './botLogic.js';
 
 export default function GameScreen({ route, navigation }) {
   const dispatch = useDispatch();
@@ -27,7 +27,6 @@ export default function GameScreen({ route, navigation }) {
   const activePlayer = useSelector(state => state.game.activePlayer);
   const isOnline = useSelector(state => state.game.isOnline);
   const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
-  const currentPlayer = useSelector(state => state.game.currentPlayer);
   const blueSoldiers = useSelector(state => state.game.blueSoldiers);
   const redSoldiers = useSelector(state => state.game.redSoldiers);
   const yellowSoldiers = useSelector(state => state.game.yellowSoldiers);
@@ -114,83 +113,38 @@ export default function GameScreen({ route, navigation }) {
     }
   }, [mode, activePlayer, dispatch]);
 
-  const getCardsForColor = (color) => ({
+  const cardsByColor = useMemo(() => ({
     blue: blueCards,
     red: redCards,
     yellow: yellowCards,
     green: greenCards,
-  }[color] || []);
+  }), [blueCards, redCards, yellowCards, greenCards]);
 
-  const getSoldiersForColor = (color) => ({
+  const soldiersByColor = useMemo(() => ({
     blue: blueSoldiers,
     red: redSoldiers,
     yellow: yellowSoldiers,
     green: greenSoldiers,
-  }[color] || []);
-
-  const getFirstAvailableBotPlayer = (color) => {
-    const soldiers = getSoldiersForColor(color);
-    return soldiers.find((soldier) => soldier.onBoard && !soldier.isOut)
-      || soldiers.find((soldier) => !soldier.onBoard && !soldier.isOut);
-  };
-
-  const getBotMove = (color) => {
-    const cards = getCardsForColor(color).filter((card) => !card.used);
-    const soldiers = getSoldiersForColor(color);
-    const onBoardSoldiers = soldiers.filter((soldier) => soldier.onBoard && !soldier.isOut);
-
-    if (onBoardSoldiers.length > 0 && cards.length > 0) {
-      return { type: 'movePlayer', payload: { color, steps: cards[0].value } };
-    }
-
-    const offBoardSoldier = soldiers.find((soldier) => !soldier.onBoard && !soldier.isOut);
-    if (offBoardSoldier) {
-      return { type: 'enterNewSoldier', payload: { color } };
-    }
-
-    return { type: 'skipTurn', payload: {} };
-  };
-
-  const handleBotTurn = (color) => {
-    const botPlayer = getFirstAvailableBotPlayer(color);
-    const action = getBotMove(color);
-
-    if (botPlayer && botPlayer.color === color) {
-      dispatch(setCurrentPlayer(botPlayer));
-    }
-
-    if (action.type === 'movePlayer') {
-      movePlayerCore({
-        color,
-        steps: action.payload.steps,
-        currentPlayer: botPlayer,
-        activePlayer,
-        systemLang,
-        showClone,
-        dispatch,
-      });
-      return;
-    }
-
-    if (action.type === 'enterNewSoldier') {
-      handleEnterNewSoldierCore({ activePlayer: color, color, systemLang, dispatch });
-      return;
-    }
-
-    dispatch(setActivePlayer());
-    dispatch(resetTimer());
-  };
+  }), [blueSoldiers, redSoldiers, yellowSoldiers, greenSoldiers]);
 
   useEffect(() => {
     if (mode !== 'bot' || winnerDetected || loading) return;
     if (activePlayer === 'blue') return;
 
     const botTimer = setTimeout(() => {
-      handleBotTurn(activePlayer);
+      runBotTurn({
+        color: activePlayer,
+        activePlayer,
+        systemLang,
+        showClone,
+        dispatch,
+        cardsByColor,
+        soldiersByColor,
+      });
     }, 1000);
 
     return () => clearTimeout(botTimer);
-  }, [mode, activePlayer, loading, winnerDetected, blueCards, redCards, yellowCards, greenCards, currentPlayer, showClone, systemLang, dispatch]);
+  }, [mode, activePlayer, loading, winnerDetected, cardsByColor, soldiersByColor, showClone, systemLang, dispatch]);
 
   useEffect(() => {
     if (winnerDetected || loading) return;
