@@ -37,10 +37,7 @@ export default function HomeScreen({ navigation }) {
         setTimeout(() => {
           navigation.navigate('Login');
         }
-        , 1000); // Wait for 1 second before navigating
-        // You could navigate here, but it's usually not necessary
-        // If you do need to, use:
-        
+        , 1000); 
       });
   };
 

@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
-import { 
-  View, 
-  Text, 
-  Pressable, 
-  Image, 
+import {
+  View,
+  Text,
+  Pressable,
+  Image,
   SafeAreaView,
   Modal
 } from 'react-native';
@@ -34,13 +34,13 @@ const HomePage = ({ onStartMultiplayerGame, onStartOffline, showOfflineOptions, 
         <Text style={styles.title}>
           Strategic Ludo
         </Text>
-        <Image 
-          source={require('../assets/iconPWA.png')} 
+        <Image
+          source={require('../assets/iconPWA.png')}
           style={styles.logo}
           resizeMode="contain"
         />
       </View>
-      
+
       {/* User Profile Section */}
       <View style={styles.profileCard}>
         <View style={styles.profileHeader}>
@@ -57,8 +57,8 @@ const HomePage = ({ onStartMultiplayerGame, onStartOffline, showOfflineOptions, 
               )}
             </Text>
           </View>
-          
-          <Pressable 
+
+          <Pressable
             testID="home-logout-button"
             style={styles.logoutButton}
             onPress={handleLogout}
@@ -67,13 +67,13 @@ const HomePage = ({ onStartMultiplayerGame, onStartOffline, showOfflineOptions, 
           </Pressable>
         </View>
       </View>
-      
+
       {/* User Dashboard */}
       <View style={styles.dashboard}>
         <Text style={styles.dashboardTitle}>
           {uiStrings[systemLang].dashboard}
         </Text>
-        
+
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
             <MaterialIcons name="emoji-events" size={28} color={theme.colors.accent} />
@@ -82,7 +82,7 @@ const HomePage = ({ onStartMultiplayerGame, onStartOffline, showOfflineOptions, 
               {uiStrings[systemLang].wins}
             </Text>
           </View>
-          
+
           <View style={styles.statItem}>
             <MaterialIcons name="history" size={28} color={theme.colors.accent} />
             <Text style={styles.statValue}>12</Text>
@@ -90,7 +90,7 @@ const HomePage = ({ onStartMultiplayerGame, onStartOffline, showOfflineOptions, 
               {uiStrings[systemLang].gamesPlayed}
             </Text>
           </View>
-          
+
           <View style={styles.statItem}>
             <MaterialIcons name="star" size={28} color={theme.colors.accent} />
             <Text style={styles.statValue}>1024</Text>
@@ -100,12 +100,12 @@ const HomePage = ({ onStartMultiplayerGame, onStartOffline, showOfflineOptions, 
           </View>
         </View>
       </View>
-      
+
       {/* Game Mode Buttons */}
       <View style={styles.buttonsContainer}>
         <Pressable
           testID="home-play-offline-button"
-          style={[styles.button, styles.buttonSecondary]}
+          style={[styles.button, styles.buttonPrimary]}
           onPress={onStartOffline}
         >
           <MaterialIcons name="devices" size={28} color={theme.colors.text} />
@@ -125,7 +125,7 @@ const HomePage = ({ onStartMultiplayerGame, onStartOffline, showOfflineOptions, 
           </Text>
         </Pressable>
       </View>
-      
+
       {/* Offline options modal */}
       <Modal
         visible={showOfflineOptions}
@@ -139,18 +139,20 @@ const HomePage = ({ onStartMultiplayerGame, onStartOffline, showOfflineOptions, 
             <Text style={styles.modalMessage}>{uiStrings[systemLang].offlineChoiceMessage}</Text>
             <View style={styles.modalButtonsRow}>
               <Pressable
-                testID="offline-choice-local-button"
-                style={[styles.button, styles.optionButton]}
-                onPress={() => onChooseOfflineMode('local')}
-              >
-                <Text style={styles.optionButtonText}>{uiStrings[systemLang].playWithFamily}</Text>
-              </Pressable>
-              <Pressable
                 testID="offline-choice-bot-button"
                 style={[styles.button, styles.optionButton]}
                 onPress={() => onChooseOfflineMode('bot')}
               >
+                <MaterialIcons name="android" size={24} color={theme.colors.buttonText} />
                 <Text style={styles.optionButtonText}>{uiStrings[systemLang].playVsBot}</Text>
+              </Pressable>
+              <Pressable
+                testID="offline-choice-local-button"
+                style={[styles.button, styles.optionButton, { backgroundColor: theme.colors.accent }]}
+                onPress={() => onChooseOfflineMode('local')}
+              >
+                <MaterialIcons name="group" size={24} color={theme.colors.buttonText} />
+                <Text style={styles.optionButtonText}>{uiStrings[systemLang].playWithFamily}</Text>
               </Pressable>
             </View>
             <Pressable
