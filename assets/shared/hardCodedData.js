@@ -168,6 +168,8 @@ const uiStrings = {
         playOffline: 'Play Offline',
         offlineChoiceTitle: 'Offline Play Options',
         offlineChoiceMessage: 'Choose whether to play with family locally or against the bot.',
+        loginRequiredTitle: 'Login required',
+        loginRequiredMessage: 'You are not logged in yet. Go to the login screen to sign in before starting multiplayer.',
         developmentPhase: 'The game is in development phase',
         // --- Waiting Room Strings ---
         loadingMatch: 'Loading match details...',
@@ -242,6 +244,8 @@ const uiStrings = {
         playOffline: 'لعب دون اتصال',
         offlineChoiceTitle: 'خيارات اللعب دون اتصال',
         offlineChoiceMessage: 'اختر ما إذا كنت تريد اللعب مع العائلة محليًا أو ضد البوت.',
+        loginRequiredTitle: 'تسجيل الدخول مطلوب',
+        loginRequiredMessage: 'أنت غير مسجل الدخول بعد. انتقل إلى شاشة تسجيل الدخول قبل بدء اللعب متعدد اللاعبين.',
         developmentPhase: 'اللعبة في مرحلة التطوير',
         // --- Waiting Room Strings ---
         loadingMatch: 'جارٍ تحميل تفاصيل المباراة...',
@@ -316,6 +320,8 @@ const uiStrings = {
         playOffline: 'Offline spielen',
         offlineChoiceTitle: 'Offline-Spieloptionen',
         offlineChoiceMessage: 'Wählen Sie, ob Sie lokal mit der Familie oder gegen den Bot spielen möchten.',
+        loginRequiredTitle: 'Anmeldung erforderlich',
+        loginRequiredMessage: 'Sie sind noch nicht angemeldet. Wechseln Sie zum Anmeldebildschirm, bevor Sie ein Mehrspielerspiel starten.',
         developmentPhase: 'Das Spiel befindet sich in der Entwicklungsphase',
         // --- Waiting Room Strings ---
         loadingMatch: 'Lade Matchdetails...',

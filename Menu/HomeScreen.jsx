@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import HomePage from './Home.jsx';
 import { resetTimer, setActivePlayer } from '../assets/store/gameSlice.jsx';
 import { logout, clearAuth} from '../assets/store/authSlice.jsx';
 
 export default function HomeScreen({ navigation }) {
   const dispatch = useDispatch();
+  const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
   const [showOfflineOptions, setShowOfflineOptions] = useState(false);
-
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   const handleStartOffline = () => {
     setShowOfflineOptions(true);
@@ -25,8 +26,21 @@ export default function HomeScreen({ navigation }) {
   };
 
   const handleStartMultiplayerGame = () => {
-    // Navigate to the match list page
+    if (!isLoggedIn) {
+      setShowLoginPrompt(true);
+      return;
+    }
+
     navigation.navigate('MatchList');
+  };
+
+  const handleCancelLoginPrompt = () => {
+    setShowLoginPrompt(false);
+  };
+
+  const handleConfirmLoginPrompt = () => {
+    setShowLoginPrompt(false);
+    navigation.navigate('Login');
   };
 
   const handleLogout = () => {
@@ -48,6 +62,9 @@ export default function HomeScreen({ navigation }) {
       showOfflineOptions={showOfflineOptions}
       onChooseOfflineMode={handleChooseOfflineMode}
       onCancelOfflineChoice={handleCancelOfflineChoice}
+      showLoginPrompt={showLoginPrompt}
+      onCancelLoginPrompt={handleCancelLoginPrompt}
+      onConfirmLoginPrompt={handleConfirmLoginPrompt}
       onLogout={handleLogout}
     />
   );

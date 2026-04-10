@@ -12,7 +12,17 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 import { createHomeStyles } from './Home.styles.js';
 
-const HomePage = ({ onStartMultiplayerGame, onStartOffline, showOfflineOptions, onChooseOfflineMode, onCancelOfflineChoice, onLogout }) => {
+const HomePage = ({
+  onStartMultiplayerGame,
+  onStartOffline,
+  showOfflineOptions,
+  onChooseOfflineMode,
+  onCancelOfflineChoice,
+  showLoginPrompt,
+  onCancelLoginPrompt,
+  onConfirmLoginPrompt,
+  onLogout,
+}) => {
 
   const theme = useSelector(state => state.theme.current);
   const systemLang = useSelector(state => state.language.systemLang);
@@ -158,6 +168,37 @@ const HomePage = ({ onStartMultiplayerGame, onStartOffline, showOfflineOptions, 
             <Pressable
               style={[styles.button, styles.cancelButton]}
               onPress={onCancelOfflineChoice}
+            >
+              <Text style={styles.buttonTextSecondary}>{uiStrings[systemLang].cancel}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showLoginPrompt}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={onCancelLoginPrompt}
+      >
+        <View style={styles.modalOverlay} testID="login-required-modal">
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>{uiStrings[systemLang].loginRequiredTitle}</Text>
+            <Text style={styles.modalMessage}>{uiStrings[systemLang].loginRequiredMessage}</Text>
+            <View style={styles.modalButtonsRow}>
+              <Pressable
+                testID="login-required-confirm-button"
+                style={[styles.button, styles.optionButton, { backgroundColor: theme.colors.accent }]}
+                onPress={onConfirmLoginPrompt}
+              >
+                <MaterialIcons name="login" size={24} color={theme.colors.buttonText} />
+                <Text style={styles.optionButtonText}>{uiStrings[systemLang].login}</Text>
+              </Pressable>
+            </View>
+            <Pressable
+              testID="login-required-cancel-button"
+              style={[styles.button, styles.cancelButton]}
+              onPress={onCancelLoginPrompt}
             >
               <Text style={styles.buttonTextSecondary}>{uiStrings[systemLang].cancel}</Text>
             </Pressable>
