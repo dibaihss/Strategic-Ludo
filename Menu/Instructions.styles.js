@@ -6,7 +6,7 @@ export const createInstructionsStyles = (theme) =>
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      backgroundColor: 'rgba(0, 0, 0, 0.6)',
+      backgroundColor: theme.colors.background,
       padding: 24,
     },
     modalContent: {
@@ -16,7 +16,8 @@ export const createInstructionsStyles = (theme) =>
       padding: 24,
       borderRadius: 20,
       maxHeight: '80%',
-      width: '90%',
+      width: '100%',
+      maxWidth: 720,
       overflow: 'hidden',
       ...Platform.select({
         ios: {

@@ -6,6 +6,8 @@ const openAppInE2EMode = async (page) => {
 
 const guestLogin = async (page) => {
   await page.getByTestId("login-guest-button").click();
+  await page.getByTestId("guest-name-input").fill("E2E Guest");
+  await page.getByTestId("guest-name-confirm-button").click();
   await expect(page.getByTestId("home-screen")).toBeVisible();
 };
 
@@ -29,7 +31,9 @@ test("local game flow can perform turn action", async ({ page }) => {
   await openAppInE2EMode(page);
   await guestLogin(page);
 
-  await page.getByTestId("home-play-local-button").click();
+  await page.getByTestId("home-play-offline-button").click();
+  await expect(page.getByTestId("offline-choice-modal")).toBeVisible();
+  await page.getByTestId("offline-choice-local-button").click();
   await expect(page.getByTestId("game-screen")).toBeVisible();
 
   await page.getByTestId("game-skip-turn-button").click();

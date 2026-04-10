@@ -5,9 +5,9 @@ import Bases from '../GameComponents/Bases.jsx';
 import Timer from '../GameComponents/Timer.jsx';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { View, Text, Pressable, ActivityIndicator, Modal } from 'react-native';
-import { setActivePlayer, resetTimer, setIsOnline, resetGameState, setCurrentPlayerColor } from '../assets/store/gameSlice.jsx';
-import { uiStrings } from '../assets/shared/hardCodedData.js';
+import { View, Text, Pressable, ActivityIndicator, Modal, Animated } from 'react-native';
+import { setActivePlayer, resetTimer, setIsOnline, resetGameState, setCurrentPlayerColor, setPlayerColors } from '../assets/store/gameSlice.jsx';
+import { uiStrings, getLocalizedColor } from '../assets/shared/hardCodedData.js';
 
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx'; // Import useWebSocket
 import { setCurrentUserPage } from '../assets/store/authSlice.jsx';
@@ -15,6 +15,26 @@ import { leaveMatch } from '../assets/store/sessionSlice.jsx';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { createGameScreenStyles } from './GameScreen.styles.js';
 import Instructions from './Instructions.jsx';
+import { emitMultiplayerBotTurn, getBotDifficultyForTurn, isBotControlledPlayer, runBotTurn } from './botLogic.js';
+
+const buildPlayerColorsFromPlayers = (players = []) => {
+  if (!Array.isArray(players) || players.length < 2) return null;
+
+  return {
+    blue: players[0].id,
+    red: players[1].id,
+    yellow: players[2] ? players[2].id : players[1].id,
+    green: players[3] ? players[3].id : players[0].id,
+  };
+};
+
+const getUserColorsFromPlayerColors = (userId, colors) => {
+  if (!userId || !colors) return [];
+
+  return Object.entries(colors)
+    .filter(([, ownerId]) => String(ownerId) === String(userId))
+    .map(([color]) => color);
+};
 
 export default function GameScreen({ route, navigation }) {
   const dispatch = useDispatch();
@@ -26,18 +46,45 @@ export default function GameScreen({ route, navigation }) {
   const activePlayer = useSelector(state => state.game.activePlayer);
   const isOnline = useSelector(state => state.game.isOnline);
   const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
+  const blueSoldiers = useSelector(state => state.game.blueSoldiers);
+  const redSoldiers = useSelector(state => state.game.redSoldiers);
+  const yellowSoldiers = useSelector(state => state.game.yellowSoldiers);
+  const greenSoldiers = useSelector(state => state.game.greenSoldiers);
+  const blueCards = useSelector(state => state.game.blueCards);
+  const redCards = useSelector(state => state.game.redCards);
+  const yellowCards = useSelector(state => state.game.yellowCards);
+  const greenCards = useSelector(state => state.game.greenCards);
+  const showClone = useSelector(state => state.animation?.showClone || false);
 
   const [gameIsStarted, setGameIsStarted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showExitModal, setShowExitModal] = useState(false); // <-- Add this state
+  const [showWinnerModal, setShowWinnerModal] = useState(false);
+  const [winnerResults, setWinnerResults] = useState([]);
+  const [winningColor, setWinningColor] = useState(null);
+  const [winnerDetected, setWinnerDetected] = useState(false);
+  const winnerScale = useRef(new Animated.Value(0.7)).current;
   const keepAwakeActivatedRef = useRef(false);
 
   // Memoize styles to avoid recreating on every render
   const styles = useMemo(() => createGameScreenStyles(theme), [theme]);
 
   // Get the game mode from navigation params
-  const { mode, matchId } = route.params || { mode: 'local', matchId: 1 };
+  const {
+    mode,
+    matchId,
+    playerColors: routePlayerColors,
+    botDifficulty: routeBotDifficulty,
+  } = route.params || { mode: 'local', matchId: 1 };
   const { connected, sendMessage, sendMatchCommand } = useWebSocket();
+  const multiplayerPlayerColors = useMemo(
+    () => routePlayerColors || buildPlayerColorsFromPlayers(currentMatch?.users),
+    [currentMatch?.users, routePlayerColors]
+  );
+  const isHost = useMemo(
+    () => Boolean(currentMatch && user && String(currentMatch.users?.[0]?.id) === String(user.id)),
+    [currentMatch, user]
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -46,7 +93,6 @@ export default function GameScreen({ route, navigation }) {
     dispatch(resetGameState());
 
     if (isOnline == false) {
-      console.log(isOnline)
       dispatch(setActivePlayer("blue"));
       dispatch(setCurrentPlayerColor("blue"));
     }
@@ -72,24 +118,153 @@ export default function GameScreen({ route, navigation }) {
   }, []);
 
   useEffect(() => {
-    console.log(playerColors)
-
-    console.log(user)
     setGameIsStarted(true);
     setLoading(false);
   }, [mode, matchId, dispatch]);
 
   useEffect(() => {
-    if (mode === 'multiplayer' && currentMatch && currentMatch.users) {
-      const players = currentMatch.users;
-      setIsOnline(true);
-      if (players.length >= 2) {
-        dispatch(setCurrentPlayerColor(findUserColors()))
-        dispatch(setIsOnline(true));
-        setGameIsStarted(true);
-      }
+    if (mode === 'multiplayer' && multiplayerPlayerColors) {
+      dispatch(setPlayerColors(multiplayerPlayerColors));
+      dispatch(setCurrentPlayerColor(getUserColorsFromPlayerColors(user?.id, multiplayerPlayerColors)));
+      dispatch(setIsOnline(true));
+      setGameIsStarted(true);
     }
-  }, [currentMatch?.users, mode, dispatch]);
+  }, [dispatch, mode, multiplayerPlayerColors, user?.id]);
+
+  useEffect(() => {
+    if (mode === 'bot') {
+      dispatch(setCurrentPlayerColor('blue'));
+      return;
+    }
+
+    if (mode === 'local') {
+      dispatch(setCurrentPlayerColor(activePlayer));
+    }
+  }, [mode, activePlayer, dispatch]);
+
+  const cardsByColor = useMemo(() => ({
+    blue: blueCards,
+    red: redCards,
+    yellow: yellowCards,
+    green: greenCards,
+  }), [blueCards, redCards, yellowCards, greenCards]);
+
+  const soldiersByColor = useMemo(() => ({
+    blue: blueSoldiers,
+    red: redSoldiers,
+    yellow: yellowSoldiers,
+    green: greenSoldiers,
+  }), [blueSoldiers, redSoldiers, yellowSoldiers, greenSoldiers]);
+
+  const isMultiplayerBotTurn = useMemo(
+    () => mode === 'multiplayer' && isBotControlledPlayer(currentMatch?.users, playerColors, activePlayer),
+    [activePlayer, currentMatch?.users, mode, playerColors]
+  );
+  const isOfflineBotTurn = useMemo(
+    () => mode === 'bot' && activePlayer !== 'blue',
+    [activePlayer, mode]
+  );
+  const shouldEmitMultiplayerBotTurn = useMemo(
+    () => mode === 'multiplayer' && connected && isHost && isMultiplayerBotTurn,
+    [connected, isHost, isMultiplayerBotTurn, mode]
+  );
+  const botDifficulty = useMemo(
+    () => getBotDifficultyForTurn({
+      mode,
+      routeBotDifficulty,
+      users: currentMatch?.users,
+      playerColors,
+      activePlayer,
+    }),
+    [activePlayer, currentMatch?.users, mode, playerColors, routeBotDifficulty]
+  );
+
+  useEffect(() => {
+    if (winnerDetected || loading) return;
+    if (!isOfflineBotTurn && !shouldEmitMultiplayerBotTurn) return;
+
+    const botTimer = setTimeout(() => {
+      if (isOfflineBotTurn) {
+        runBotTurn({
+          color: activePlayer,
+          difficulty: botDifficulty,
+          activePlayer,
+          systemLang,
+          showClone,
+          dispatch,
+          cardsByColor,
+          soldiersByColor,
+        });
+        return;
+      }
+
+      emitMultiplayerBotTurn({
+        color: activePlayer,
+        difficulty: botDifficulty,
+        cardsByColor,
+        soldiersByColor,
+        connected,
+        currentMatch,
+        user,
+        sendMessage,
+        sendMatchCommand,
+      });
+    }, 1000);
+
+    return () => clearTimeout(botTimer);
+  }, [
+    activePlayer,
+    botDifficulty,
+    cardsByColor,
+    connected,
+    currentMatch,
+    dispatch,
+    isOfflineBotTurn,
+    loading,
+    sendMatchCommand,
+    sendMessage,
+    shouldEmitMultiplayerBotTurn,
+    showClone,
+    soldiersByColor,
+    systemLang,
+    user,
+    winnerDetected,
+  ]);
+
+  useEffect(() => {
+    if (winnerDetected || loading) return;
+
+    const players = [
+      { color: 'blue', soldiers: blueSoldiers },
+      { color: 'red', soldiers: redSoldiers },
+      { color: 'yellow', soldiers: yellowSoldiers },
+      { color: 'green', soldiers: greenSoldiers },
+    ];
+
+    const results = players.map(player => {
+      const completed = player.soldiers.filter(obj => obj.isOut === true).length;
+      return {
+        color: player.color,
+        completed,
+        isWinner: player.soldiers.length > 0 && player.soldiers.every(obj => obj.isOut === true),
+      };
+    });
+
+    const winner = results.find(player => player.isWinner);
+    if (!winner) return;
+
+    const sorted = [...results].sort((a, b) => b.completed - a.completed);
+    setWinningColor(winner.color);
+    setWinnerResults(sorted.slice(0, 3));
+    setShowWinnerModal(true);
+    setWinnerDetected(true);
+    Animated.spring(winnerScale, {
+      toValue: 1,
+      friction: 6,
+      tension: 80,
+      useNativeDriver: true,
+    }).start();
+  }, [blueSoldiers, redSoldiers, yellowSoldiers, greenSoldiers, loading, winnerDetected, winnerScale]);
 
   const sendMoveUpdate = (message) => {
     if (connected && message?.type) {
@@ -105,7 +280,7 @@ export default function GameScreen({ route, navigation }) {
   };
 
   const findUserColor = () => {
-    if (!user || !user.id || !playerColors) {
+    if (!user?.id || !playerColors) {
       return null; // Return null if user or playerColors aren't available
     }
     // Object.entries converts { blue: 'id1', red: 'id2' } to [ ['blue', 'id1'], ['red', 'id2'] ]
@@ -114,14 +289,6 @@ export default function GameScreen({ route, navigation }) {
     console.log(userEntry)
     return userEntry ? userEntry[0] : null; // Return the color (first element) or null
   };
-  const findUserColors = () => {
-    if (!user || !user.id || !playerColors) {
-      return []; // Return an empty array if user or playerColors aren't available
-    }
-    const userEntries = Object.entries(playerColors).filter(([color, userId]) => userId === user.id);
-    return userEntries.map(([color]) => color); // Return an array of colors
-  };
-
   const skipTurn = () => {
     if (connected) {
       const userColor = findUserColor();
@@ -232,7 +399,42 @@ export default function GameScreen({ route, navigation }) {
           </Pressable>
         </View>
       )}
-      {/* Exit Confirmation Modal */}
+      {/* Winner Popup Modal */}
+      <Modal
+        visible={showWinnerModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowWinnerModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <Animated.View style={[styles.winnerModalCard, { transform: [{ scale: winnerScale }] }]}> 
+            <Text style={styles.winnerHeader}>
+              🎉 {uiStrings[systemLang].wonGame ? uiStrings[systemLang].wonGame.replace('{color}', getLocalizedColor(winningColor, systemLang)) : `${getLocalizedColor(winningColor, systemLang)} won the Game`} 🎉
+            </Text>
+            <Text style={styles.winnerSubtitle}>
+              {uiStrings[systemLang].topRankings || 'Top rankings'}
+            </Text>
+            <View style={styles.winnerList}>
+              {winnerResults.map((result, index) => (
+                <View key={result.color} style={styles.winnerItem}>
+                  <View style={[styles.winnerBadge, { backgroundColor: theme.colors[result.color] || '#888' }]}>
+                    <Text style={styles.winnerBadgeText}>{index + 1}</Text>
+                  </View>
+                  <Text style={styles.winnerItemText} selectable>
+                    {getLocalizedColor(result.color, systemLang)} • {result.completed} {uiStrings[systemLang].completedSoldiers || 'completed'}
+                  </Text>
+                </View>
+              ))}
+            </View>
+            <Pressable style={[styles.modalButton, styles.confirmButton, styles.winnerCloseButton]} onPress={() => setShowWinnerModal(false)}>
+              <Text style={[styles.modalButtonText, { color: '#fff' }]}> 
+                {uiStrings[systemLang].gotIt || 'Got it'}
+              </Text>
+            </Pressable>
+          </Animated.View>
+        </View>
+      </Modal>
+
       <Modal
         visible={showExitModal}
         transparent={true}

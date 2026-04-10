@@ -9,6 +9,53 @@ import {
 } from "./sessionApiShared.jsx";
 import { clearAuth, logout, updateUserStatus } from "./authSlice.jsx";
 
+const MAX_MATCH_PLAYERS = 4;
+const MAX_MATCH_BOTS = 3;
+
+const isBotUser = (user) => Boolean(user?.isBot);
+
+const mergeBotUsersIntoMatch = (incomingMatch, existingMatch) => {
+  if (!incomingMatch) return incomingMatch;
+
+  const incomingUsers = Array.isArray(incomingMatch.users) ? incomingMatch.users : [];
+  const existingUsers = Array.isArray(existingMatch?.users) ? existingMatch.users : [];
+  const existingBots = existingUsers.filter(isBotUser);
+
+  if (existingBots.length === 0) {
+    return incomingMatch;
+  }
+
+  const mergedUsers = [...incomingUsers];
+  existingBots.forEach((bot) => {
+    const alreadyExists = mergedUsers.some((user) => String(user.id) === String(bot.id));
+    if (!alreadyExists) {
+      mergedUsers.push(bot);
+    }
+  });
+
+  return {
+    ...incomingMatch,
+    users: mergedUsers.slice(0, MAX_MATCH_PLAYERS),
+  };
+};
+
+const addBotUserToMatch = (match, bot) => {
+  if (!match || !bot) return match;
+
+  const users = Array.isArray(match.users) ? match.users : [];
+  const alreadyExists = users.some((user) => String(user.id) === String(bot.id));
+  const botCount = users.filter(isBotUser).length;
+
+  if (alreadyExists || users.length >= MAX_MATCH_PLAYERS || botCount >= MAX_MATCH_BOTS) {
+    return match;
+  }
+
+  return {
+    ...match,
+    users: [...users, bot],
+  };
+};
+
 export const fetchMatches = createAsyncThunk(
   "session/fetchMatches",
   async (_, { rejectWithValue }) => {
@@ -348,15 +395,33 @@ const sessionSlice = createSlice({
         return;
       }
 
-      const index = state.matches.findIndex((m) => m.id === action.payload.id);
+      const existingMatch =
+        state.currentMatch?.id === action.payload.id
+          ? state.currentMatch
+          : state.matches.find((m) => m.id === action.payload.id);
+      const mergedMatch = mergeBotUsersIntoMatch(action.payload, existingMatch);
+
+      const index = state.matches.findIndex((m) => m.id === mergedMatch.id);
       if (index !== -1) {
-        state.matches[index] = action.payload;
+        state.matches[index] = mergedMatch;
       } else {
-        state.matches.push(action.payload);
+        state.matches.push(mergedMatch);
       }
-      if (state.currentMatch?.id === action.payload.id) {
-        state.currentMatch = action.payload;
+      if (state.currentMatch?.id === mergedMatch.id) {
+        state.currentMatch = mergedMatch;
       }
+    },
+    addBotToMatch: (state, action) => {
+      const { matchId, bot } = action.payload || {};
+      if (!matchId || !bot) return;
+
+      if (state.currentMatch?.id === matchId) {
+        state.currentMatch = addBotUserToMatch(state.currentMatch, bot);
+      }
+
+      state.matches = state.matches.map((match) =>
+        match.id === matchId ? addBotUserToMatch(match, bot) : match
+      );
     },
     setCurrentMatchState: (state, action) => {
       state.currentMatchState = action.payload;
@@ -505,7 +570,7 @@ const sessionSlice = createSlice({
   },
 });
 
-export const { updateMatch, setCurrentMatchState, clearCommandStatus } = sessionSlice.actions;
+export const { updateMatch, addBotToMatch, setCurrentMatchState, clearCommandStatus } = sessionSlice.actions;
 
 export const selectMatches = (state) => state.session.matches;
 export const selectCurrentMatch = (state) => state.session.currentMatch;

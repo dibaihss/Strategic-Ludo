@@ -67,7 +67,8 @@ export const createGameScreenStyles = (theme) => {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      backgroundColor: 'rgba(0, 0, 0, 0.6)', // Darker overlay
+      backgroundColor: theme.colors.background,
+      padding: 24,
     },
     modalContainer: {
       width: '85%',
@@ -120,6 +121,71 @@ export const createGameScreenStyles = (theme) => {
     modalButtonText: {
       fontSize: 16,
       fontWeight: '500',
+    },
+    winnerModalCard: {
+      width: '90%',
+      maxWidth: 360,
+      padding: 24,
+      borderRadius: 20,
+      backgroundColor: theme.colors.background,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.2,
+      shadowRadius: 16,
+      elevation: 8,
+    },
+    winnerHeader: {
+      fontSize: 20,
+      fontWeight: '800',
+      textAlign: 'center',
+      marginBottom: 16,
+      color: theme.colors.text,
+    },
+    winnerSubtitle: {
+      fontSize: 15,
+      marginBottom: 18,
+      color: theme.colors.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    winnerList: {
+      width: '100%',
+      gap: 12,
+      marginBottom: 20,
+    },
+    winnerItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingVertical: 12,
+      paddingHorizontal: 14,
+      borderRadius: 14,
+      backgroundColor: theme.colors.card || '#f5f5f5',
+      width: '100%',
+    },
+    winnerBadge: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    winnerBadgeText: {
+      color: '#fff',
+      fontWeight: '700',
+    },
+    winnerItemText: {
+      color: theme.colors.text,
+      fontSize: 15,
+      flex: 1,
+      flexWrap: 'wrap',
+    },
+    winnerCloseButton: {
+      width: '100%',
+      marginTop: 8,
     },
   });
 };

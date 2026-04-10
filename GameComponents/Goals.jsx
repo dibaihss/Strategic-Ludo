@@ -29,7 +29,7 @@ export default function Goals() {
     // Check for winners and show toasts
     useEffect(() => {
         const checkAndShowToast = (soldiers, color) => {
-            if (soldiers.some(obj => obj.isOut === false) === undefined && !winners[color.toLowerCase()]) {
+            if (soldiers.length > 0 && soldiers.every(obj => obj.isOut === true) && !winners[color.toLowerCase()]) {
                 // Use getLocalizedColor to translate the color name
                 const localizedColor = getLocalizedColor(color.toLowerCase(), systemLang);
                 Toast.show({
@@ -50,7 +50,7 @@ export default function Goals() {
         checkAndShowToast(greenSoldiers, 'Green');
         checkAndShowToast(redSoldiers, 'Red');
         checkAndShowToast(blueSoldiers, 'Blue');
-    }, [yellowSoldiers, greenSoldiers, redSoldiers, blueSoldiers, systemLang]);
+    }, [yellowSoldiers, greenSoldiers, redSoldiers, blueSoldiers, systemLang, winners]);
 
     const styles = StyleSheet.create({
         centerCircle: {
