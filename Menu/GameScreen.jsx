@@ -6,7 +6,7 @@ import Timer from '../GameComponents/Timer.jsx';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { View, Text, Pressable, ActivityIndicator, Modal, Animated } from 'react-native';
-import { setActivePlayer, resetTimer, setIsOnline, resetGameState, setCurrentPlayerColor } from '../assets/store/gameSlice.jsx';
+import { setActivePlayer, resetTimer, setIsOnline, resetGameState, setCurrentPlayerColor, setPlayerColors } from '../assets/store/gameSlice.jsx';
 import { uiStrings, getLocalizedColor } from '../assets/shared/hardCodedData.js';
 
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx'; // Import useWebSocket
@@ -16,6 +16,25 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { createGameScreenStyles } from './GameScreen.styles.js';
 import Instructions from './Instructions.jsx';
 import { isBotControlledPlayer, runBotTurn } from './botLogic.js';
+
+const buildPlayerColorsFromPlayers = (players = []) => {
+  if (!Array.isArray(players) || players.length < 2) return null;
+
+  return {
+    blue: players[0].id,
+    red: players[1].id,
+    yellow: players[2] ? players[2].id : players[1].id,
+    green: players[3] ? players[3].id : players[0].id,
+  };
+};
+
+const getUserColorsFromPlayerColors = (userId, colors) => {
+  if (!userId || !colors) return [];
+
+  return Object.entries(colors)
+    .filter(([, ownerId]) => String(ownerId) === String(userId))
+    .map(([color]) => color);
+};
 
 export default function GameScreen({ route, navigation }) {
   const dispatch = useDispatch();
@@ -51,8 +70,12 @@ export default function GameScreen({ route, navigation }) {
   const styles = useMemo(() => createGameScreenStyles(theme), [theme]);
 
   // Get the game mode from navigation params
-  const { mode, matchId } = route.params || { mode: 'local', matchId: 1 };
+  const { mode, matchId, playerColors: routePlayerColors } = route.params || { mode: 'local', matchId: 1 };
   const { connected, sendMessage, sendMatchCommand } = useWebSocket();
+  const multiplayerPlayerColors = useMemo(
+    () => routePlayerColors || buildPlayerColorsFromPlayers(currentMatch?.users),
+    [currentMatch?.users, routePlayerColors]
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -91,16 +114,13 @@ export default function GameScreen({ route, navigation }) {
   }, [mode, matchId, dispatch]);
 
   useEffect(() => {
-    if (mode === 'multiplayer' && currentMatch && currentMatch.users) {
-      const players = currentMatch.users;
-      setIsOnline(true);
-      if (players.length >= 2) {
-        dispatch(setCurrentPlayerColor(findUserColors()))
-        dispatch(setIsOnline(true));
-        setGameIsStarted(true);
-      }
+    if (mode === 'multiplayer' && multiplayerPlayerColors) {
+      dispatch(setPlayerColors(multiplayerPlayerColors));
+      dispatch(setCurrentPlayerColor(getUserColorsFromPlayerColors(user?.id, multiplayerPlayerColors)));
+      dispatch(setIsOnline(true));
+      setGameIsStarted(true);
     }
-  }, [currentMatch?.users, mode, dispatch]);
+  }, [dispatch, mode, multiplayerPlayerColors, user?.id]);
 
   useEffect(() => {
     if (mode === 'bot') {
@@ -212,14 +232,6 @@ export default function GameScreen({ route, navigation }) {
     console.log(userEntry)
     return userEntry ? userEntry[0] : null; // Return the color (first element) or null
   };
-  const findUserColors = () => {
-    if (!user?.id || !playerColors) {
-      return []; // Return an empty array if user or playerColors aren't available
-    }
-    const userEntries = Object.entries(playerColors).filter(([color, userId]) => userId === user.id);
-    return userEntries.map(([color]) => color); // Return an array of colors
-  };
-
   const skipTurn = () => {
     if (connected) {
       const userColor = findUserColor();

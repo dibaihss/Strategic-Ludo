@@ -196,4 +196,32 @@ describe('GameScreen', () => {
 
     expect(dispatchMock).toHaveBeenCalledWith(setCurrentPlayerColor('blue'));
   });
+
+  test('restores multiplayer player colors passed from the waiting room', async () => {
+    configureSelectors(createState({
+      game: {
+        playerColors: { blue: 1, red: 1, yellow: 1, green: 1 },
+      },
+      auth: { user: { id: 'user-1' } },
+    }));
+
+    const multiplayerPlayerColors = {
+      blue: 'user-1',
+      red: 'bot-1',
+      yellow: 'bot-2',
+      green: 'user-1',
+    };
+
+    render(
+      <GameScreen
+        route={{ params: { mode: 'multiplayer', matchId: 1, playerColors: multiplayerPlayerColors } }}
+        navigation={{ navigate: jest.fn() }}
+      />
+    );
+
+    expect(dispatchMock).toHaveBeenCalledWith({
+      type: 'game/setPlayerColors',
+      payload: multiplayerPlayerColors,
+    });
+  });
 });

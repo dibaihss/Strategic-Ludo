@@ -266,6 +266,7 @@ const WaitingRoom = ({ navigation, route }) => {
     navigation.navigate('Game', {
       mode: 'multiplayer',
       matchId: currentMatch.id,
+      playerColors,
     });
   };
 
