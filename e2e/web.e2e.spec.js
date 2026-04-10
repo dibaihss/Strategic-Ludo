@@ -6,6 +6,8 @@ const openAppInE2EMode = async (page) => {
 
 const guestLogin = async (page) => {
   await page.getByTestId("login-guest-button").click();
+  await page.getByTestId("guest-name-input").fill("E2E Guest");
+  await page.getByTestId("guest-name-confirm-button").click();
   await expect(page.getByTestId("home-screen")).toBeVisible();
 };
 

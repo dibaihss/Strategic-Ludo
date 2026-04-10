@@ -129,15 +129,22 @@ export const loginUser = createAsyncThunk(
 
 export const loginGuest = createAsyncThunk(
   "auth/loginGuest",
-  async (_, { rejectWithValue }) => {
+  async (guestNameInput, { rejectWithValue }) => {
     try {
+      const guestName = typeof guestNameInput === "string" ? guestNameInput.trim() : "";
+
+      if (!guestName) {
+        return rejectWithValue("Guest name is required");
+      }
+
       if (isE2EMode) {
-        const user = createE2EUser();
+        const user = {
+          ...createE2EUser(),
+          name: guestName,
+        };
         await AsyncStorage.setItem("user", JSON.stringify(user));
         return user;
       }
-
-      const guestName = `Guest_${Math.floor(Math.random() * 10000)}`;
 
       const response = await fetch(`${API_URL}/guest-login`, {
         method: "POST",
