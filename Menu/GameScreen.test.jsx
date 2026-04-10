@@ -6,6 +6,7 @@ import * as RN from 'react-native';
 RN.Modal = ({ children }) => children;
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
 import GameScreen from './GameScreen';
+import { setCurrentPlayerColor } from '../assets/store/gameSlice.jsx';
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   setItem: jest.fn(),
@@ -186,5 +187,13 @@ describe('GameScreen', () => {
     );
 
     expect(queryByText(/won the Game/i)).toBeNull();
+  });
+
+  test('initializes bot mode with blue human control', async () => {
+    configureSelectors(createState());
+
+    render(<GameScreen route={{ params: { mode: 'bot', matchId: 1 } }} navigation={{ navigate: jest.fn() }} />);
+
+    expect(dispatchMock).toHaveBeenCalledWith(setCurrentPlayerColor('blue'));
   });
 });

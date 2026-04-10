@@ -11,7 +11,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 import { createHomeStyles } from './Home.styles.js';
 
-const HomePage = ({ onStartLocalGame, onStartMultiplayerGame, onLogout }) => {
+const HomePage = ({ onStartLocalGame, onStartBotGame, onStartMultiplayerGame, onLogout }) => {
 
   const theme = useSelector(state => state.theme.current);
   const systemLang = useSelector(state => state.language.systemLang);
@@ -113,6 +113,17 @@ const HomePage = ({ onStartLocalGame, onStartMultiplayerGame, onLogout }) => {
           </Text>
         </Pressable>
         
+        <Pressable
+          testID="home-play-bots-button"
+          style={[styles.button, styles.buttonSecondary]}
+          onPress={onStartBotGame}
+        >
+          <MaterialIcons name="sports_esports" size={28} color={theme.colors.text} />
+          <Text style={[styles.buttonText, styles.buttonTextSecondary]}>
+            {uiStrings[systemLang].playBots}
+          </Text>
+        </Pressable>
+
         <Pressable
           testID="home-play-multiplayer-button"
           style={[styles.button, styles.buttonSecondary]}

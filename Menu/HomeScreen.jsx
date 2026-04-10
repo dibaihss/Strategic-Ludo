@@ -15,6 +15,12 @@ export default function HomeScreen({ navigation }) {
     navigation.navigate('Game', { mode: 'local' });
   };
 
+  const handleStartBotGame = () => {
+    dispatch(resetTimer());
+    dispatch(setActivePlayer());
+    navigation.navigate('Game', { mode: 'bot' });
+  };
+
   const handleStartMultiplayerGame = () => {
     // Navigate to the match list page
     navigation.navigate('MatchList');
@@ -38,6 +44,7 @@ export default function HomeScreen({ navigation }) {
   return (
     <HomePage
       onStartLocalGame={handleStartLocalGame}
+      onStartBotGame={handleStartBotGame}
       onStartMultiplayerGame={handleStartMultiplayerGame}
       onLogout={handleLogout}
     />

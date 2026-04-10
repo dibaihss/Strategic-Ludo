@@ -6,8 +6,9 @@ import Timer from '../GameComponents/Timer.jsx';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { View, Text, Pressable, ActivityIndicator, Modal, Animated } from 'react-native';
-import { setActivePlayer, resetTimer, setIsOnline, resetGameState, setCurrentPlayerColor } from '../assets/store/gameSlice.jsx';
+import { setActivePlayer, resetTimer, setIsOnline, resetGameState, setCurrentPlayerColor, setCurrentPlayer } from '../assets/store/gameSlice.jsx';
 import { uiStrings, getLocalizedColor } from '../assets/shared/hardCodedData.js';
+import { handleEnterNewSoldierCore, movePlayerCore } from '../GameComponents/Bases.logic';
 
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx'; // Import useWebSocket
 import { setCurrentUserPage } from '../assets/store/authSlice.jsx';
@@ -26,10 +27,16 @@ export default function GameScreen({ route, navigation }) {
   const activePlayer = useSelector(state => state.game.activePlayer);
   const isOnline = useSelector(state => state.game.isOnline);
   const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
+  const currentPlayer = useSelector(state => state.game.currentPlayer);
   const blueSoldiers = useSelector(state => state.game.blueSoldiers);
   const redSoldiers = useSelector(state => state.game.redSoldiers);
   const yellowSoldiers = useSelector(state => state.game.yellowSoldiers);
   const greenSoldiers = useSelector(state => state.game.greenSoldiers);
+  const blueCards = useSelector(state => state.game.blueCards);
+  const redCards = useSelector(state => state.game.redCards);
+  const yellowCards = useSelector(state => state.game.yellowCards);
+  const greenCards = useSelector(state => state.game.greenCards);
+  const showClone = useSelector(state => state.animation?.showClone || false);
 
   const [gameIsStarted, setGameIsStarted] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -55,7 +62,6 @@ export default function GameScreen({ route, navigation }) {
     dispatch(resetGameState());
 
     if (isOnline == false) {
-      console.log(isOnline)
       dispatch(setActivePlayer("blue"));
       dispatch(setCurrentPlayerColor("blue"));
     }
@@ -81,9 +87,6 @@ export default function GameScreen({ route, navigation }) {
   }, []);
 
   useEffect(() => {
-    console.log(playerColors)
-
-    console.log(user)
     setGameIsStarted(true);
     setLoading(false);
   }, [mode, matchId, dispatch]);
@@ -99,6 +102,95 @@ export default function GameScreen({ route, navigation }) {
       }
     }
   }, [currentMatch?.users, mode, dispatch]);
+
+  useEffect(() => {
+    if (mode === 'bot') {
+      dispatch(setCurrentPlayerColor('blue'));
+      return;
+    }
+
+    if (mode === 'local') {
+      dispatch(setCurrentPlayerColor(activePlayer));
+    }
+  }, [mode, activePlayer, dispatch]);
+
+  const getCardsForColor = (color) => ({
+    blue: blueCards,
+    red: redCards,
+    yellow: yellowCards,
+    green: greenCards,
+  }[color] || []);
+
+  const getSoldiersForColor = (color) => ({
+    blue: blueSoldiers,
+    red: redSoldiers,
+    yellow: yellowSoldiers,
+    green: greenSoldiers,
+  }[color] || []);
+
+  const getFirstAvailableBotPlayer = (color) => {
+    const soldiers = getSoldiersForColor(color);
+    return soldiers.find((soldier) => soldier.onBoard && !soldier.isOut)
+      || soldiers.find((soldier) => !soldier.onBoard && !soldier.isOut);
+  };
+
+  const getBotMove = (color) => {
+    const cards = getCardsForColor(color).filter((card) => !card.used);
+    const soldiers = getSoldiersForColor(color);
+    const onBoardSoldiers = soldiers.filter((soldier) => soldier.onBoard && !soldier.isOut);
+
+    if (onBoardSoldiers.length > 0 && cards.length > 0) {
+      return { type: 'movePlayer', payload: { color, steps: cards[0].value } };
+    }
+
+    const offBoardSoldier = soldiers.find((soldier) => !soldier.onBoard && !soldier.isOut);
+    if (offBoardSoldier) {
+      return { type: 'enterNewSoldier', payload: { color } };
+    }
+
+    return { type: 'skipTurn', payload: {} };
+  };
+
+  const handleBotTurn = (color) => {
+    const botPlayer = getFirstAvailableBotPlayer(color);
+    const action = getBotMove(color);
+
+    if (botPlayer && botPlayer.color === color) {
+      dispatch(setCurrentPlayer(botPlayer));
+    }
+
+    if (action.type === 'movePlayer') {
+      movePlayerCore({
+        color,
+        steps: action.payload.steps,
+        currentPlayer: botPlayer,
+        activePlayer,
+        systemLang,
+        showClone,
+        dispatch,
+      });
+      return;
+    }
+
+    if (action.type === 'enterNewSoldier') {
+      handleEnterNewSoldierCore({ activePlayer: color, color, systemLang, dispatch });
+      return;
+    }
+
+    dispatch(setActivePlayer());
+    dispatch(resetTimer());
+  };
+
+  useEffect(() => {
+    if (mode !== 'bot' || winnerDetected || loading) return;
+    if (activePlayer === 'blue') return;
+
+    const botTimer = setTimeout(() => {
+      handleBotTurn(activePlayer);
+    }, 1000);
+
+    return () => clearTimeout(botTimer);
+  }, [mode, activePlayer, loading, winnerDetected, blueCards, redCards, yellowCards, greenCards, currentPlayer, showClone, systemLang, dispatch]);
 
   useEffect(() => {
     if (winnerDetected || loading) return;
@@ -149,7 +241,7 @@ export default function GameScreen({ route, navigation }) {
   };
 
   const findUserColor = () => {
-    if (!user || !user.id || !playerColors) {
+    if (!user?.id || !playerColors) {
       return null; // Return null if user or playerColors aren't available
     }
     // Object.entries converts { blue: 'id1', red: 'id2' } to [ ['blue', 'id1'], ['red', 'id2'] ]
@@ -159,7 +251,7 @@ export default function GameScreen({ route, navigation }) {
     return userEntry ? userEntry[0] : null; // Return the color (first element) or null
   };
   const findUserColors = () => {
-    if (!user || !user.id || !playerColors) {
+    if (!user?.id || !playerColors) {
       return []; // Return an empty array if user or playerColors aren't available
     }
     const userEntries = Object.entries(playerColors).filter(([color, userId]) => userId === user.id);
