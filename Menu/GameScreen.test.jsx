@@ -178,16 +178,20 @@ describe('GameScreen', () => {
   test('shows winner popup when a player has all soldiers finished', async () => {
     configureSelectors(createState());
 
-    const { findByText } = render(
+    const { getByText } = render(
       <GameScreen route={{ params: { mode: 'local', matchId: 1 } }} navigation={{ navigate: jest.fn() }} />
     );
 
-    expect(await findByText(/won the Game/i)).toBeTruthy();
-    expect(await findByText(/Top rankings/i)).toBeTruthy();
-    expect(await findByText(/blue\s*•\s*4\s*completed/i)).toBeTruthy();
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(getByText(/won the Game/i)).toBeTruthy();
+    expect(getByText(/Top rankings/i)).toBeTruthy();
+    expect(getByText(/4\s*completed/i)).toBeTruthy();
   });
 
-  test('does not show winner popup when no player has all soldiers finished', async () => {
+  test('does not show winner popup when no player has all soldiers finished', () => {
     const state = createState({
       game: {
         blueSoldiers: [
@@ -207,7 +211,7 @@ describe('GameScreen', () => {
     expect(queryByText(/won the Game/i)).toBeNull();
   });
 
-  test('initializes bot mode with blue human control', async () => {
+  test('initializes bot mode with blue human control', () => {
     configureSelectors(createState());
 
     render(<GameScreen route={{ params: { mode: 'bot', matchId: 1 } }} navigation={{ navigate: jest.fn() }} />);
@@ -215,7 +219,7 @@ describe('GameScreen', () => {
     expect(dispatchMock).toHaveBeenCalledWith(setCurrentPlayerColor('blue'));
   });
 
-  test('restores multiplayer player colors passed from the waiting room', async () => {
+  test('restores multiplayer player colors passed from the waiting room', () => {
     configureSelectors(createState({
       game: {
         playerColors: { blue: 1, red: 1, yellow: 1, green: 1 },

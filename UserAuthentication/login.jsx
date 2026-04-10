@@ -1,25 +1,20 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import {
   View,
   Text,
-  TextInput,
   Pressable,
   SafeAreaView,
   Image,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  TouchableOpacity,
-  Dimensions,
+  useWindowDimensions,
 } from "react-native";
-import { createLoginStyles } from './login.styles.js';
+import { createLoginStyles } from "./login.styles.js";
 import { useDispatch, useSelector } from "react-redux";
 import { MaterialIcons } from "@expo/vector-icons";
 import { uiStrings } from "../assets/shared/hardCodedData.js";
-import {
-  loginUser,
-  loginGuest,
-} from "../assets/store/authSlice.jsx";
+import { loginGuest } from "../assets/store/authSlice.jsx";
 import { setIsOnline } from "../assets/store/gameSlice.jsx";
 import Toast from "react-native-toast-message";
 
@@ -30,46 +25,12 @@ const LoginPage = ({ navigation }) => {
   const systemLang = useSelector((state) => state.language.systemLang);
   const authError = useSelector((state) => state.auth.error);
   const loading = useSelector((state) => state.auth.loading);
-  const isOnline = useSelector((state) => state.game.isOnline);
+  const { width, height } = useWindowDimensions();
+  const isSmallScreen = width < 375 || height < 667;
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  const windowWidth = Dimensions.get("window").width;
-  const windowHeight = Dimensions.get("window").height;
-  const isSmallScreen = windowWidth < 375 || windowHeight < 667;
-
-  const handleLoginPress = () => {
-    console.log("Registering user:", { email, password }); // Debugging line
-
-    // Basic validation
-    if (!email.trim() || !password.trim()) {
-      Toast.show({
-        type: "error",
-        text1: uiStrings[systemLang].error,
-        text2: uiStrings[systemLang].fillFields,
-        position: "bottom",
-      });
-      return;
-    }
-
-    dispatch(
-      loginUser({
-        email,
-        password,
-      })
-    )
-      .unwrap()
-      .then((result) => {
-        console.log("Login successful:", result);
-      })
-      .catch((error) => {
-        console.error("Login failed:", error);
-      });
-  };
   const handleGuestLogin = () => {
     console.log("Logging in as guest");
-    dispatch(setIsOnline(true)); // Set offline mode for guest login
+    dispatch(setIsOnline(true));
     dispatch(loginGuest())
       .unwrap()
       .then((result) => {
@@ -92,229 +53,96 @@ const LoginPage = ({ navigation }) => {
       });
   };
 
-  const goToRegister = () => {
-    navigation.navigate("Register");
-  };
-
   const goDirectlyToGame = () => {
-      navigation.navigate("Home");
+    navigation.navigate("Home");
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
       >
-        <View style={styles.content}>
-          {/* Logo and Title */}
+        <View style={[styles.content, isSmallScreen && styles.contentCompact]}>
           <View style={styles.header}>
-            <Image
-              source={require("../assets/iconPWA.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <Text style={[styles.title, { color: theme.colors.text }]}>
-              {uiStrings[systemLang].loginTitle}
-            </Text>
-          </View>
-
-          {/* Input Fields */}
-          <View style={styles.inputContainer}>
-            {/* Email Input */}
-            <View
-              style={[
-                styles.inputWrapper,
-                { backgroundColor: theme.colors.inputBackground, borderColor: theme.colors.inputBorder },
-              ]}
-              testID="login-email-wrapper"
-            >
-              <MaterialIcons
-                name="email"
-                size={24}
-                color={theme.colors.textSecondary}
-                style={styles.inputIcon}
-              />
-              <TextInput
-                testID="login-email-input"
-                style={[styles.input, { color: theme.colors.text }]}
-                placeholder={uiStrings[systemLang].email}
-                placeholderTextColor={theme.colors.textSecondary}
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                editable={!loading}
+            <View style={styles.logoShell}>
+              <Image
+                source={require("../assets/iconPWA.png")}
+                style={styles.logo}
+                resizeMode="contain"
               />
             </View>
-
-            {/* Password Input */}
-            <View
-              style={[
-                styles.inputWrapper,
-                { backgroundColor: theme.colors.inputBackground, borderColor: theme.colors.inputBorder },
-              ]}
-              testID="login-password-wrapper"
-            >
-              <MaterialIcons
-                name="lock"
-                size={24}
-                color={theme.colors.textSecondary}
-                style={styles.inputIcon}
-              />
-              <TextInput
-                testID="login-password-input"
-                style={[styles.input, { color: theme.colors.text }]}
-                placeholder={uiStrings[systemLang].password}
-                placeholderTextColor={theme.colors.textSecondary}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                editable={!loading}
-              />
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{uiStrings[systemLang].guest}</Text>
             </View>
+            <Text style={styles.title}>Strategic Ludo</Text>
+            <Text style={styles.subtitle}>
+              {`${uiStrings[systemLang].continueAsGuest} ${uiStrings[systemLang].or} ${uiStrings[systemLang].playOffline}`}
+            </Text>
           </View>
 
-          {/* Error message */}
-          {authError && (
-            <Text style={[styles.errorText, { color: theme.colors.error }]}>
-              {authError}
-            </Text>
-          )}
-
-          {/* Login Button */}
-          <Pressable
-            testID="login-submit-button"
-            style={[
-              styles.button,
-              {
-                backgroundColor: loading
-                  ? theme.colors.disabled
-                  : theme.colors.accent,
-              },
-            ]}
-            onPress={handleLoginPress}
-          >
-            {loading ? (
-              <ActivityIndicator color={theme.colors.buttonText} />
-            ) : (
-              <Text
-                style={[styles.buttonText, { color: theme.colors.buttonText }]}
-              >
-                {uiStrings[systemLang].login}
-              </Text>
-            )}
-          </Pressable>
-
-          {/* Forgot Password */}
-          <TouchableOpacity style={styles.forgotPasswordContainer}>
-            <Text
-              style={[
-                styles.forgotPasswordText,
-                { color: theme.colors.accent },
-              ]}
-            >
-              {uiStrings[systemLang].forgotPassword}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Register Link */}
-          <TouchableOpacity
-            style={styles.registerContainer}
-            onPress={goToRegister}
-          >
-            <Text
-              style={[styles.registerText, { color: theme.colors.textSecondary }]}
-            >
-              {uiStrings[systemLang].noAccount}
-              <Text style={{ fontWeight: "bold", color: theme.colors.accent }}>
-                {" "}
-                {uiStrings[systemLang].signUp}
-              </Text>
-            </Text>
-          </TouchableOpacity>
-          {/* Divider */}
-          <View style={styles.divider}>
-            <View
-              style={[
-                styles.dividerLine,
-                { backgroundColor: theme.colors.border },
-              ]}
-            />
-            <Text
-              style={[
-                styles.dividerText,
-                { color: theme.colors.textSecondary },
-              ]}
-            >
-              {uiStrings[systemLang].or}
-            </Text>
-            <View
-              style={[
-                styles.dividerLine,
-                { backgroundColor: theme.colors.border },
-              ]}
-            />
-          </View>
-
-          {/* Guest Login */}
-          {/* Guest Login and Play Offline buttons in the same row */}
-          <View style={styles.buttonsRow}>
+          <View style={styles.actionsCard}>
             <Pressable
               testID="login-guest-button"
               style={[
-                styles.buttonHalf,
-                {
-                  backgroundColor: loading
-                    ? theme.colors.disabled
-                    : theme.colors.card,
-                  borderColor: theme.colors.border,
-                  borderWidth: 1,
-                },
-                isSmallScreen && styles.buttonHalfSmall,
+                styles.actionButton,
+                styles.primaryAction,
+                isSmallScreen && styles.actionButtonCompact,
+                loading && styles.actionButtonDisabled,
               ]}
               onPress={handleGuestLogin}
               disabled={loading}
             >
-              {loading ? (
-                <ActivityIndicator
-                  color={theme.colors.text}
-                  size={isSmallScreen ? "small" : "large"}
-                />
-              ) : (
-                <Text
-                  style={[
-                    styles.buttonText,
-                    { color: theme.colors.text },
-                    isSmallScreen && styles.buttonTextSmall,
-                  ]}
-                >
-                  {uiStrings[systemLang].continueAsGuest}
-                </Text>
-              )}
+              <View style={styles.actionIconWrap}>
+                {loading ? (
+                  <ActivityIndicator color={theme.colors.buttonText} />
+                ) : (
+                  <MaterialIcons
+                    name="person-outline"
+                    size={24}
+                    color={theme.colors.buttonText}
+                  />
+                )}
+              </View>
+              <Text style={[styles.actionText, styles.primaryActionText]}>
+                {uiStrings[systemLang].continueAsGuest}
+              </Text>
+              <MaterialIcons
+                name="arrow-forward-ios"
+                size={18}
+                color={theme.colors.buttonText}
+              />
             </Pressable>
 
             <Pressable
               testID="login-offline-button"
               style={[
-                styles.buttonHalf,
-                {
-                  backgroundColor: theme.colors.success,
-                },
-                isSmallScreen && styles.buttonHalfSmall,
+                styles.actionButton,
+                styles.secondaryAction,
+                isSmallScreen && styles.actionButtonCompact,
               ]}
               onPress={goDirectlyToGame}
             >
-              <Text
-                style={[
-                  styles.buttonText,
-                  { color: "#FFFFFF" },
-                  isSmallScreen && styles.buttonTextSmall,
-                ]}
-              >
-                {uiStrings[systemLang]?.playOffline || "Play Offline"}
+              <View style={styles.secondaryActionIconWrap}>
+                <MaterialIcons
+                  name="sports-esports"
+                  size={24}
+                  color={theme.colors.success}
+                />
+              </View>
+              <Text style={[styles.actionText, styles.secondaryActionText]}>
+                {uiStrings[systemLang].playOffline}
               </Text>
+              <MaterialIcons
+                name="arrow-forward-ios"
+                size={18}
+                color={theme.colors.success}
+              />
             </Pressable>
+
+            {authError ? (
+              <Text style={styles.errorText}>{authError}</Text>
+            ) : null}
           </View>
         </View>
       </KeyboardAvoidingView>
