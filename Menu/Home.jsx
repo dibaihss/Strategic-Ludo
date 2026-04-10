@@ -18,6 +18,9 @@ const HomePage = ({
   showOfflineOptions,
   onChooseOfflineMode,
   onCancelOfflineChoice,
+  showBotDifficultyPrompt,
+  onChooseBotDifficulty,
+  onCancelBotDifficultyPrompt,
   showLoginPrompt,
   onCancelLoginPrompt,
   onConfirmLoginPrompt,
@@ -168,6 +171,53 @@ const HomePage = ({
             <Pressable
               style={[styles.button, styles.cancelButton]}
               onPress={onCancelOfflineChoice}
+            >
+              <Text style={styles.buttonTextSecondary}>{uiStrings[systemLang].cancel}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showBotDifficultyPrompt}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={onCancelBotDifficultyPrompt}
+      >
+        <View style={styles.modalOverlay} testID="bot-difficulty-modal">
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>{uiStrings[systemLang].chooseBotDifficultyTitle}</Text>
+            <Text style={styles.modalMessage}>{uiStrings[systemLang].chooseBotDifficultyMessage}</Text>
+            <View style={styles.modalButtonsRow}>
+              <Pressable
+                testID="bot-difficulty-easy-button"
+                style={[styles.button, styles.optionButton]}
+                onPress={() => onChooseBotDifficulty('easy')}
+              >
+                <MaterialIcons name="sentiment-satisfied-alt" size={24} color={theme.colors.buttonText} />
+                <Text style={styles.optionButtonText}>{uiStrings[systemLang].easy}</Text>
+              </Pressable>
+              <Pressable
+                testID="bot-difficulty-normal-button"
+                style={[styles.button, styles.optionButton, { backgroundColor: theme.colors.accent }]}
+                onPress={() => onChooseBotDifficulty('normal')}
+              >
+                <MaterialIcons name="smart-toy" size={24} color={theme.colors.buttonText} />
+                <Text style={styles.optionButtonText}>{uiStrings[systemLang].normal}</Text>
+              </Pressable>
+              <Pressable
+                testID="bot-difficulty-hard-button"
+                style={[styles.button, styles.optionButton, { backgroundColor: theme.colors.error }]}
+                onPress={() => onChooseBotDifficulty('hard')}
+              >
+                <MaterialIcons name="bolt" size={24} color={theme.colors.buttonText} />
+                <Text style={styles.optionButtonText}>{uiStrings[systemLang].hard}</Text>
+              </Pressable>
+            </View>
+            <Pressable
+              testID="bot-difficulty-cancel-button"
+              style={[styles.button, styles.cancelButton]}
+              onPress={onCancelBotDifficultyPrompt}
             >
               <Text style={styles.buttonTextSecondary}>{uiStrings[systemLang].cancel}</Text>
             </Pressable>

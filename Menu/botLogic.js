@@ -1,9 +1,11 @@
 import { handleEnterNewSoldierCore, movePlayerCore } from '../GameComponents/Bases.logic';
 import { resetTimer, setActivePlayer, setCurrentPlayer } from '../assets/store/gameSlice.jsx';
-
-export const getCardsForColor = (cardsByColor, color) => cardsByColor[color] || [];
-
-export const getSoldiersForColor = (soldiersByColor, color) => soldiersByColor[color] || [];
+import {
+  chooseScoredBotAction,
+  getCardsForColor,
+  getSoldiersForColor,
+  normalizeBotDifficulty,
+} from './botStrategy.js';
 
 export const getPlayerOwner = (users, playerColors, color) => {
   const ownerId = playerColors?.[color];
@@ -15,6 +17,24 @@ export const getPlayerOwner = (users, playerColors, color) => {
 export const isBotControlledPlayer = (users, playerColors, color) =>
   Boolean(getPlayerOwner(users, playerColors, color)?.isBot);
 
+export const getBotDifficultyForTurn = ({
+  mode,
+  routeBotDifficulty,
+  users,
+  playerColors,
+  activePlayer,
+}) => {
+  if (mode === 'bot') {
+    return normalizeBotDifficulty(routeBotDifficulty);
+  }
+
+  if (mode === 'multiplayer') {
+    return normalizeBotDifficulty(getPlayerOwner(users, playerColors, activePlayer)?.botDifficulty);
+  }
+
+  return normalizeBotDifficulty();
+};
+
 export const getFirstAvailableBotPlayer = (soldiersByColor, color) => {
   const soldiers = getSoldiersForColor(soldiersByColor, color);
 
@@ -23,25 +43,19 @@ export const getFirstAvailableBotPlayer = (soldiersByColor, color) => {
     || null;
 };
 
-export const chooseBotAction = (cardsByColor, soldiersByColor, color) => {
-  const cards = getCardsForColor(cardsByColor, color).filter((card) => !card.used);
-  const soldiers = getSoldiersForColor(soldiersByColor, color);
-  const onBoardSoldiers = soldiers.filter((soldier) => soldier.onBoard && !soldier.isOut);
-
-  if (onBoardSoldiers.length > 0 && cards.length > 0) {
-    return { type: 'movePlayer', payload: { color, steps: cards[0].value } };
-  }
-
-  const offBoardSoldier = soldiers.find((soldier) => !soldier.onBoard && !soldier.isOut);
-  if (offBoardSoldier) {
-    return { type: 'enterNewSoldier', payload: { color } };
-  }
-
-  return { type: 'skipTurn', payload: {} };
-};
+export const chooseBotAction = (cardsByColor, soldiersByColor, color, options = {}) =>
+  chooseScoredBotAction({
+    color,
+    cardsByColor,
+    soldiersByColor,
+    difficulty: options.difficulty,
+    randomFn: options.randomFn,
+    disableNoise: options.disableNoise,
+  });
 
 export const runBotTurn = ({
   color,
+  difficulty = 'normal',
   activePlayer,
   systemLang,
   showClone,
@@ -53,9 +67,15 @@ export const runBotTurn = ({
   setCurrentPlayerAction = setCurrentPlayer,
   setActivePlayerAction = setActivePlayer,
   resetTimerAction = resetTimer,
+  randomFn,
+  disableNoise = false,
 }) => {
-  const botPlayer = getFirstAvailableBotPlayer(soldiersByColor, color);
-  const action = chooseBotAction(cardsByColor, soldiersByColor, color);
+  const action = chooseBotAction(cardsByColor, soldiersByColor, color, {
+    difficulty,
+    randomFn,
+    disableNoise,
+  });
+  const botPlayer = action.payload?.soldier || getFirstAvailableBotPlayer(soldiersByColor, color);
 
   if (botPlayer && botPlayer.color === color) {
     dispatch(setCurrentPlayerAction(botPlayer));
@@ -65,7 +85,7 @@ export const runBotTurn = ({
     movePlayer({
       color,
       steps: action.payload.steps,
-      currentPlayer: botPlayer,
+      currentPlayer: action.payload.soldier || botPlayer,
       activePlayer,
       systemLang,
       showClone,

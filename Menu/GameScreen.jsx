@@ -15,7 +15,7 @@ import { leaveMatch } from '../assets/store/sessionSlice.jsx';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { createGameScreenStyles } from './GameScreen.styles.js';
 import Instructions from './Instructions.jsx';
-import { isBotControlledPlayer, runBotTurn } from './botLogic.js';
+import { getBotDifficultyForTurn, isBotControlledPlayer, runBotTurn } from './botLogic.js';
 
 const buildPlayerColorsFromPlayers = (players = []) => {
   if (!Array.isArray(players) || players.length < 2) return null;
@@ -70,7 +70,12 @@ export default function GameScreen({ route, navigation }) {
   const styles = useMemo(() => createGameScreenStyles(theme), [theme]);
 
   // Get the game mode from navigation params
-  const { mode, matchId, playerColors: routePlayerColors } = route.params || { mode: 'local', matchId: 1 };
+  const {
+    mode,
+    matchId,
+    playerColors: routePlayerColors,
+    botDifficulty: routeBotDifficulty,
+  } = route.params || { mode: 'local', matchId: 1 };
   const { connected, sendMessage, sendMatchCommand } = useWebSocket();
   const multiplayerPlayerColors = useMemo(
     () => routePlayerColors || buildPlayerColorsFromPlayers(currentMatch?.users),
@@ -151,6 +156,16 @@ export default function GameScreen({ route, navigation }) {
     () => mode === 'multiplayer' && isBotControlledPlayer(currentMatch?.users, playerColors, activePlayer),
     [activePlayer, currentMatch?.users, mode, playerColors]
   );
+  const botDifficulty = useMemo(
+    () => getBotDifficultyForTurn({
+      mode,
+      routeBotDifficulty,
+      users: currentMatch?.users,
+      playerColors,
+      activePlayer,
+    }),
+    [activePlayer, currentMatch?.users, mode, playerColors, routeBotDifficulty]
+  );
 
   useEffect(() => {
     if (winnerDetected || loading) return;
@@ -162,6 +177,7 @@ export default function GameScreen({ route, navigation }) {
     const botTimer = setTimeout(() => {
       runBotTurn({
         color: activePlayer,
+        difficulty: botDifficulty,
         activePlayer,
         systemLang,
         showClone,
@@ -172,7 +188,7 @@ export default function GameScreen({ route, navigation }) {
     }, 1000);
 
     return () => clearTimeout(botTimer);
-  }, [mode, activePlayer, isMultiplayerBotTurn, loading, winnerDetected, cardsByColor, soldiersByColor, showClone, systemLang, dispatch]);
+  }, [mode, activePlayer, botDifficulty, isMultiplayerBotTurn, loading, winnerDetected, cardsByColor, soldiersByColor, showClone, systemLang, dispatch]);
 
   useEffect(() => {
     if (winnerDetected || loading) return;

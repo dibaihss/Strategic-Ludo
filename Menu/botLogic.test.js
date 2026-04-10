@@ -1,11 +1,12 @@
 import {
   chooseBotAction,
   getFirstAvailableBotPlayer,
+  getBotDifficultyForTurn,
   getPlayerOwner,
-  getSoldiersForColor,
   isBotControlledPlayer,
   runBotTurn,
 } from './botLogic';
+import { getSoldiersForColor } from './botStrategy';
 import { resetTimer, setActivePlayer, setCurrentPlayer } from '../assets/store/gameSlice.jsx';
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
@@ -67,6 +68,29 @@ describe('botLogic', () => {
     expect(isBotControlledPlayer(users, playerColors, 'blue')).toBe(false);
   });
 
+  test('getBotDifficultyForTurn resolves offline and multiplayer bot difficulty', () => {
+    const users = [
+      { id: 'user-1', name: 'Host' },
+      { id: 'bot-1', name: 'Bot 1', isBot: true, botDifficulty: 'hard' },
+    ];
+    const playerColors = { blue: 'user-1', red: 'bot-1' };
+
+    expect(getBotDifficultyForTurn({
+      mode: 'bot',
+      routeBotDifficulty: 'easy',
+      users,
+      playerColors,
+      activePlayer: 'red',
+    })).toBe('easy');
+
+    expect(getBotDifficultyForTurn({
+      mode: 'multiplayer',
+      users,
+      playerColors,
+      activePlayer: 'red',
+    })).toBe('hard');
+  });
+
   test('getFirstAvailableBotPlayer prefers an active on-board soldier', () => {
     const soldiersByColor = createSoldiersByColor({
       green: [
@@ -88,13 +112,17 @@ describe('botLogic', () => {
       yellow: [{ id: 15, value: 4, used: false }],
     });
     const soldiersByColor = createSoldiersByColor({
-      yellow: [{ id: 9, color: 'yellow', onBoard: true, isOut: false }],
+      yellow: [{ id: 9, color: 'yellow', position: '1c', onBoard: true, isOut: false }],
     });
 
-    expect(chooseBotAction(cardsByColor, soldiersByColor, 'yellow')).toEqual({
+    expect(chooseBotAction(cardsByColor, soldiersByColor, 'yellow', { difficulty: 'hard', disableNoise: true })).toEqual(expect.objectContaining({
       type: 'movePlayer',
-      payload: { color: 'yellow', steps: 4 },
-    });
+      payload: expect.objectContaining({
+        color: 'yellow',
+        steps: 4,
+        soldier: { id: 9, color: 'yellow', position: '1c', onBoard: true, isOut: false },
+      }),
+    }));
   });
 
   test('chooseBotAction enters a new soldier when none are on the board', () => {
@@ -105,10 +133,10 @@ describe('botLogic', () => {
       red: [{ id: 5, color: 'red', onBoard: false, isOut: false }],
     });
 
-    expect(chooseBotAction(cardsByColor, soldiersByColor, 'red')).toEqual({
+    expect(chooseBotAction(cardsByColor, soldiersByColor, 'red', { difficulty: 'hard', disableNoise: true })).toEqual(expect.objectContaining({
       type: 'enterNewSoldier',
-      payload: { color: 'red' },
-    });
+      payload: expect.objectContaining({ color: 'red' }),
+    }));
   });
 
   test('chooseBotAction skips when no playable soldier is available', () => {
@@ -116,10 +144,10 @@ describe('botLogic', () => {
       blue: [{ id: 1, color: 'blue', onBoard: false, isOut: true }],
     });
 
-    expect(chooseBotAction(createCardsByColor(), soldiersByColor, 'blue')).toEqual({
+    expect(chooseBotAction(createCardsByColor(), soldiersByColor, 'blue', { difficulty: 'hard', disableNoise: true })).toEqual(expect.objectContaining({
       type: 'skipTurn',
       payload: {},
-    });
+    }));
   });
 
   test('runBotTurn dispatches current player and executes a move action', () => {
@@ -130,11 +158,12 @@ describe('botLogic', () => {
       red: [{ id: 8, value: 2, used: false }],
     });
     const soldiersByColor = createSoldiersByColor({
-      red: [{ id: 6, color: 'red', onBoard: true, isOut: false }],
+      red: [{ id: 6, color: 'red', position: '1b', onBoard: true, isOut: false }],
     });
 
     const action = runBotTurn({
       color: 'red',
+      difficulty: 'hard',
       activePlayer: 'red',
       systemLang: 'en',
       showClone: false,
@@ -147,18 +176,28 @@ describe('botLogic', () => {
 
     expect(action).toEqual({
       type: 'movePlayer',
-      payload: { color: 'red', steps: 2 },
+      payload: {
+        color: 'red',
+        steps: 2,
+        soldier: { id: 6, color: 'red', position: '1b', onBoard: true, isOut: false },
+        card: { id: 8, value: 2, used: false },
+        targetPosition: '3b',
+      },
+      score: expect.any(Number),
+      reasons: expect.any(Array),
+      metrics: expect.any(Object),
     });
     expect(dispatch).toHaveBeenCalledWith(setCurrentPlayer({
       id: 6,
       color: 'red',
+      position: '1b',
       onBoard: true,
       isOut: false,
     }));
     expect(movePlayer).toHaveBeenCalledWith({
       color: 'red',
       steps: 2,
-      currentPlayer: { id: 6, color: 'red', onBoard: true, isOut: false },
+      currentPlayer: { id: 6, color: 'red', position: '1b', onBoard: true, isOut: false },
       activePlayer: 'red',
       systemLang: 'en',
       showClone: false,
@@ -177,6 +216,7 @@ describe('botLogic', () => {
 
     const action = runBotTurn({
       color: 'green',
+      difficulty: 'hard',
       activePlayer: 'green',
       systemLang: 'en',
       showClone: false,
@@ -187,7 +227,7 @@ describe('botLogic', () => {
       enterNewSoldier,
     });
 
-    expect(action).toEqual({ type: 'skipTurn', payload: {} });
+    expect(action).toEqual(expect.objectContaining({ type: 'skipTurn', payload: {} }));
     expect(dispatch).toHaveBeenCalledWith(setActivePlayer());
     expect(dispatch).toHaveBeenCalledWith(resetTimer());
     expect(movePlayer).not.toHaveBeenCalled();

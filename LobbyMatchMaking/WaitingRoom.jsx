@@ -5,6 +5,7 @@ import {
   Pressable,
   ActivityIndicator,
   FlatList,
+  Modal,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { createWaitingRoomStyles } from './WaitingRoom.styles.js';
@@ -31,6 +32,7 @@ const WaitingRoom = ({ navigation, route }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const keepAwakeActivatedRef = useRef(false);
+  const [showBotDifficultyPrompt, setShowBotDifficultyPrompt] = useState(false);
 
 
   const { connected, subscribe, sendMessage } = useWebSocket();
@@ -179,6 +181,16 @@ const WaitingRoom = ({ navigation, route }) => {
       return;
     }
 
+    setShowBotDifficultyPrompt(true);
+  };
+
+  const handleCancelBotDifficultyPrompt = () => {
+    setShowBotDifficultyPrompt(false);
+  };
+
+  const handleChooseBotDifficulty = (botDifficulty) => {
+    setShowBotDifficultyPrompt(false);
+
     const nextBotNumber = botCount + 1;
     const bot = {
       id: `bot-${currentMatch.id}-${nextBotNumber}`,
@@ -186,6 +198,7 @@ const WaitingRoom = ({ navigation, route }) => {
       username: `${uiStrings[systemLang].bot || 'Bot'} ${nextBotNumber}`,
       isBot: true,
       isGuest: true,
+      botDifficulty,
     };
 
     dispatch(addBotToMatch({ matchId: currentMatch.id, bot }));
@@ -326,6 +339,60 @@ const WaitingRoom = ({ navigation, route }) => {
         </View>
 
       )}
+      <Modal
+        visible={showBotDifficultyPrompt}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleCancelBotDifficultyPrompt}
+      >
+        <View style={styles.modalOverlay} testID="waiting-room-bot-difficulty-modal">
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>{uiStrings[systemLang].chooseBotDifficultyTitle}</Text>
+            <Text style={styles.modalMessage}>{uiStrings[systemLang].chooseBotDifficultyMessage}</Text>
+            <View style={styles.modalButtonsColumn}>
+              <Pressable
+                testID="waiting-room-bot-difficulty-easy-button"
+                style={[styles.addBotButton, { backgroundColor: theme.colors.success, borderColor: theme.colors.border }]}
+                onPress={() => handleChooseBotDifficulty('easy')}
+              >
+                <MaterialIcons name="sentiment-satisfied-alt" size={20} color={theme.colors.buttonText} />
+                <Text style={[styles.addBotButtonText, { color: theme.colors.buttonText }]}>
+                  {uiStrings[systemLang].easy}
+                </Text>
+              </Pressable>
+              <Pressable
+                testID="waiting-room-bot-difficulty-normal-button"
+                style={[styles.addBotButton, { backgroundColor: theme.colors.accent, borderColor: theme.colors.border }]}
+                onPress={() => handleChooseBotDifficulty('normal')}
+              >
+                <MaterialIcons name="smart-toy" size={20} color={theme.colors.buttonText} />
+                <Text style={[styles.addBotButtonText, { color: theme.colors.buttonText }]}>
+                  {uiStrings[systemLang].normal}
+                </Text>
+              </Pressable>
+              <Pressable
+                testID="waiting-room-bot-difficulty-hard-button"
+                style={[styles.addBotButton, { backgroundColor: theme.colors.error, borderColor: theme.colors.border }]}
+                onPress={() => handleChooseBotDifficulty('hard')}
+              >
+                <MaterialIcons name="bolt" size={20} color={theme.colors.buttonText} />
+                <Text style={[styles.addBotButtonText, { color: theme.colors.buttonText }]}>
+                  {uiStrings[systemLang].hard}
+                </Text>
+              </Pressable>
+            </View>
+            <Pressable
+              testID="waiting-room-bot-difficulty-cancel-button"
+              style={[styles.secondaryButton, { borderColor: theme.colors.border, backgroundColor: theme.colors.card }]}
+              onPress={handleCancelBotDifficultyPrompt}
+            >
+              <Text style={[styles.secondaryButtonText, { color: theme.colors.text }]}>
+                {uiStrings[systemLang].cancel}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
       <View style={styles.header}>
         <Text style={[styles.title, { color: theme.colors.text }]}>
           {uiStrings[systemLang].waitingRoom || 'Waiting Room'}
@@ -412,7 +479,7 @@ const WaitingRoom = ({ navigation, route }) => {
                 {item.isBot && (
                   <View style={[styles.botBadge, { backgroundColor: theme.colors.accent }]}>
                     <Text style={[styles.botBadgeText, { color: theme.colors.buttonText }]}>
-                      {uiStrings[systemLang].bot || 'Bot'}
+                      {`${uiStrings[systemLang].bot || 'Bot'} ${uiStrings[systemLang][item.botDifficulty] || uiStrings[systemLang].normal}`}
                     </Text>
                   </View>
                 )}
