@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 
-import { startingPositions } from "../shared/hardCodedData.js";
+import { startingPositions, isSafeZone } from "../shared/hardCodedData.js";
 import { setBoxesPosition } from './animationSlice.jsx'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -177,7 +177,7 @@ export const checkIfGotEnemy = ({ color, position }) => (dispatch, getState) => 
             break;
     }
 
-    if (enemyInPosition && position) {
+    if (enemyInPosition && position && !isSafeZone(position)) {
         dispatch(setCurrentPlayer(enemyInPosition));
         console.log(enemyInPosition)
         dispatch(setBoxesPosition({ ySteps: 3, xSteps: 3, returenToBase: true, kickedPlayer: enemyInPosition }))

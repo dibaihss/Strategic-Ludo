@@ -14,9 +14,17 @@ const startingPositions = {
     green: "1d"
 };
 
-const saveBoxes = [
-    "1a", "2a", "3a", "4a", "5a", "6a",
-]
+/** Board cell IDs where landing never captures an opponent. Edit this list for custom safe zones. */
+const SAFE_ZONE_CELL_IDS = Object.freeze([
+    '1a',
+    '1b',
+    '1c',
+    '1d',
+]);
+
+const safeZoneCellSet = new Set(SAFE_ZONE_CELL_IDS);
+
+const isSafeZone = (cellId) => Boolean(cellId && safeZoneCellSet.has(cellId));
 
 const directions = ["left", "top", "bottom", "right"];
 const playerType = ["red", "yellow", "blue", "green"]
@@ -383,4 +391,15 @@ const uiStrings = {
     }
 };
 
-export { boxes, categories, directions, playerType, gameInstructions, uiStrings, startingPositions, getLocalizedColor };
+export {
+    boxes,
+    categories,
+    directions,
+    playerType,
+    gameInstructions,
+    uiStrings,
+    startingPositions,
+    getLocalizedColor,
+    SAFE_ZONE_CELL_IDS,
+    isSafeZone,
+};
