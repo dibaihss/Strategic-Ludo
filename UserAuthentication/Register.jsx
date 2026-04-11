@@ -4,13 +4,13 @@ import {
   Text,
   TextInput,
   Pressable,
-  SafeAreaView,
   Image,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { createRegisterStyles } from './Register.styles.js';
 import { useDispatch, useSelector } from 'react-redux';
 import { MaterialIcons } from '@expo/vector-icons';

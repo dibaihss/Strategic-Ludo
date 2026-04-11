@@ -3,7 +3,6 @@ import {
   View,
   Text,
   Pressable,
-  SafeAreaView,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -12,6 +11,7 @@ import {
   TextInput,
   useWindowDimensions,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { createLoginStyles } from "./login.styles.js";
 import { useDispatch, useSelector } from "react-redux";
 import { MaterialIcons } from "@expo/vector-icons";

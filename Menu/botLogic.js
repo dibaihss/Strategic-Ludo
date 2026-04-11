@@ -125,10 +125,7 @@ export const emitMultiplayerBotTurn = ({
   }
 
   if (moveMessage) {
-      // Clear previous pending bot action
-  
-      botTimeout = setTimeout(() => {
-      console.log("Bot action:", action); // Debugging line
+    botTimeout = setTimeout(() => {
       sendMoveUpdateCore({
         connected,
         message: moveMessage,
@@ -137,7 +134,7 @@ export const emitMultiplayerBotTurn = ({
         user,
         sendMessage,
       });
-    } , 1500); // Simulate thinking time
+    }, 1500);
   }
   
   return action;
@@ -171,7 +168,7 @@ export const runBotTurn = ({
     dispatch(setCurrentPlayerAction(botPlayer));
   }
 
-  if (action.type === 'movePlayer') {
+  if (action.type === 'movePlayer' && botPlayer) {
     movePlayer({
       color,
       steps: action.payload.steps,

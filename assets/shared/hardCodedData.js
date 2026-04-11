@@ -14,6 +14,10 @@ const startingPositions = {
     green: "1d"
 };
 
+const saveBoxes = [
+    "1a", "2a", "3a", "4a", "5a", "6a",
+]
+
 const directions = ["left", "top", "bottom", "right"];
 const playerType = ["red", "yellow", "blue", "green"]
 const playerTypeAr = ["احمر", "زهري", "ازرق", "اخضر"]

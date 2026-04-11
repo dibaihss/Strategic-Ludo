@@ -4,9 +4,9 @@ import {
   Text,
   Pressable,
   Image,
-  SafeAreaView,
   Modal
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { MaterialIcons } from '@expo/vector-icons';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
