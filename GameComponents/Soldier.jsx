@@ -179,10 +179,10 @@ const createPointerStyle = ({ isSelected, isSmallScreen, theme }) => {
         height: 0,
         borderLeftWidth: size / 2,
         borderRightWidth: size / 2,
-        borderBottomWidth: size,
+        borderTopWidth: size,
         borderLeftColor: 'transparent',
         borderRightColor: 'transparent',
-        borderBottomColor: theme?.colors?.selected || '#FFD700',
+        borderTopColor: theme?.colors?.selected || '#FFD700',
     };
 };
 
@@ -235,6 +235,7 @@ const runAnimationSequence = ({ animatedValue, sequence, dispatch, onComplete, i
 
 export default function Player({ color, isSelected, onPress }) {
     const animatedValue = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+    const pointerBounce = useRef(new Animated.Value(0)).current;
     const currentPlayer = useSelector(state => state.game.currentPlayer);
     const boxesPosition = useSelector(state => state.animation.boxesPosition);
     const showClone = useSelector(state => state.animation.showClone);
@@ -270,6 +271,29 @@ export default function Player({ color, isSelected, onPress }) {
         });
     }, [boxesPosition]);
 
+    React.useEffect(() => {
+        if (isSelected) {
+            const bounce = Animated.loop(
+                Animated.sequence([
+                    Animated.timing(pointerBounce, {
+                        toValue: -5,
+                        duration: 300,
+                        useNativeDriver: true,
+                    }),
+                    Animated.timing(pointerBounce, {
+                        toValue: 0,
+                        duration: 300,
+                        useNativeDriver: true,
+                    }),
+                ])
+            );
+            bounce.start();
+            return () => bounce.stop();
+        } else {
+            pointerBounce.setValue(0);
+        }
+    }, [isSelected, pointerBounce]);
+
     const pointerStyle = React.useMemo(() => createPointerStyle({ isSelected, isSmallScreen, theme }), [isSelected, isSmallScreen, theme]);
 
     return (
@@ -278,7 +302,9 @@ export default function Player({ color, isSelected, onPress }) {
             top: animatedValue.y,
             left: animatedValue.x,
         }]} >
-            {isSelected && <View style={pointerStyle} />}
+            {isSelected && (
+                <Animated.View style={[pointerStyle, { transform: [{ translateY: pointerBounce }] }]} />
+            )}
             <Pressable
                 onPress={() => onPress()}
                 android_ripple={isSmallScreen ? { color: 'rgba(255,255,255,0.3)', borderless: true } : null}
