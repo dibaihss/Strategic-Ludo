@@ -1,11 +1,12 @@
 import {
     View,
     StyleSheet,
-    Dimensions
+    Dimensions,
+    Text
 } from 'react-native';
 import React, { useEffect } from 'react';
 import Soldier from './Soldier';
-import { boxes } from "../assets/shared/hardCodedData.js"
+import { boxes, isSafeZone } from "../assets/shared/hardCodedData.js"
 import { useDispatch, useSelector } from 'react-redux';
 import {
     setCurrentPlayer
@@ -170,11 +171,14 @@ export default function SmalBoard() {
             textAlign: 'center',
             fontSize: isSmallScreen ? 5 : 14,
         },
-        arrow: {
-            zIndex: 2,
-            width: isSmallScreen ? 5 : 18,
-            height: isSmallScreen ? 5 : 18,
-            fontSize: isSmallScreen ? 5 : 30,
+        safeZoneIcon: {
+            position: 'absolute',
+            zIndex: 0,
+            width: '100%',
+            height: '100%',
+            textAlign: 'center',
+            fontSize: isSmallScreen ? 10 : 30,
+            opacity: 0.3,
         },
     });
     const renderBox = (number, i) => (
@@ -184,7 +188,9 @@ export default function SmalBoard() {
             ]}
         >
     
-            {/* {renderSaveZoneIcons(number, styles.arrow)} */}
+            {isSafeZone(number) && (
+                <Text style={styles.safeZoneIcon}>🛡️</Text>
+            )}
 
             {renderSoldiersForBox({ soldiers: redSoldiers, keyPrefix: 'red', number, currentPlayer, onSelect: currentSelectedPlayer })}
             {renderSoldiersForBox({ soldiers: blueSoldiers, keyPrefix: 'blue', number, currentPlayer, onSelect: currentSelectedPlayer })}
