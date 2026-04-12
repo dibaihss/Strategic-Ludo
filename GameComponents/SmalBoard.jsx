@@ -161,7 +161,7 @@ export default function SmalBoard() {
             height: '100%',
             textAlign: 'center',
             fontSize: isSmallScreen ? 15 : 30,
-            opacity: 0.5,
+            opacity: 0.6,
         },
     });
     const renderBox = (number, i) => (

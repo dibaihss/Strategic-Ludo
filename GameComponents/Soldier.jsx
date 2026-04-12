@@ -3,7 +3,8 @@ import {
     StyleSheet,
     Pressable,
     Animated,
-    Dimensions
+    Dimensions,
+    View
 } from 'react-native';
 import {
     setCurrentPlayer,
@@ -166,6 +167,25 @@ const createPieceStyle = ({ isSelected, isSmallScreen, theme, color }) => ({
     shadowRadius: isSelected ? 50 : 0,
 });
 
+const createPointerStyle = ({ isSelected, isSmallScreen, theme }) => {
+    if (!isSelected) return { display: 'none' };
+    const size = isSmallScreen ? 8 : 16;
+    return {
+        position: 'absolute',
+        top: -(size + 2),
+        left: '50%',
+        marginLeft: -(size / 2),
+        width: 0,
+        height: 0,
+        borderLeftWidth: size / 2,
+        borderRightWidth: size / 2,
+        borderBottomWidth: size,
+        borderLeftColor: 'transparent',
+        borderRightColor: 'transparent',
+        borderBottomColor: theme?.colors?.selected || '#FFD700',
+    };
+};
+
 const moveElementWithState = ({ boxesPosition, currentPlayer, dispatch }) => {
     const { kickedPlayer, returenToBase, newPosition } = boxesPosition;
     if (returenToBase) {
@@ -250,12 +270,15 @@ export default function Player({ color, isSelected, onPress }) {
         });
     }, [boxesPosition]);
 
+    const pointerStyle = React.useMemo(() => createPointerStyle({ isSelected, isSmallScreen, theme }), [isSelected, isSmallScreen, theme]);
+
     return (
         <Animated.View style={[styles.clone, showClone ? { zIndex: 999 * 2 } : {},
         {
             top: animatedValue.y,
             left: animatedValue.x,
         }]} >
+            {isSelected && <View style={pointerStyle} />}
             <Pressable
                 onPress={() => onPress()}
                 android_ripple={isSmallScreen ? { color: 'rgba(255,255,255,0.3)', borderless: true } : null}

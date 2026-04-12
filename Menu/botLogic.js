@@ -140,7 +140,7 @@ export const emitMultiplayerBotTurn = ({
   return action;
 };
 
-export const runBotTurn = ({
+export const runBotTurn = async ({
   color,
   difficulty = 'normal',
   activePlayer,
@@ -157,6 +157,9 @@ export const runBotTurn = ({
   randomFn,
   disableNoise = false,
 }) => {
+  // Simulate thinking time
+  await new Promise(resolve => setTimeout(resolve, 500));
+
   const action = chooseBotAction(cardsByColor, soldiersByColor, color, {
     difficulty,
     randomFn,
