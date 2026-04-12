@@ -3,7 +3,8 @@ import {
     StyleSheet,
     Pressable,
     Animated,
-    Dimensions
+    Dimensions,
+    View
 } from 'react-native';
 import {
     setCurrentPlayer,
@@ -166,6 +167,25 @@ const createPieceStyle = ({ isSelected, isSmallScreen, theme, color }) => ({
     shadowRadius: isSelected ? 50 : 0,
 });
 
+const createPointerStyle = ({ isSelected, isSmallScreen, theme }) => {
+    if (!isSelected) return { display: 'none' };
+    const size = isSmallScreen ? 8 : 16;
+    return {
+        position: 'absolute',
+        top: -(size + 2),
+        left: '50%',
+        marginLeft: -(size / 2),
+        width: 0,
+        height: 0,
+        borderLeftWidth: size / 2,
+        borderRightWidth: size / 2,
+        borderTopWidth: size,
+        borderLeftColor: 'transparent',
+        borderRightColor: 'transparent',
+        borderTopColor: theme?.colors?.selected || '#FFD700',
+    };
+};
+
 const moveElementWithState = ({ boxesPosition, currentPlayer, dispatch }) => {
     const { kickedPlayer, returenToBase, newPosition } = boxesPosition;
     if (returenToBase) {
@@ -215,6 +235,7 @@ const runAnimationSequence = ({ animatedValue, sequence, dispatch, onComplete, i
 
 export default function Player({ color, isSelected, onPress }) {
     const animatedValue = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+    const pointerBounce = useRef(new Animated.Value(0)).current;
     const currentPlayer = useSelector(state => state.game.currentPlayer);
     const boxesPosition = useSelector(state => state.animation.boxesPosition);
     const showClone = useSelector(state => state.animation.showClone);
@@ -250,12 +271,40 @@ export default function Player({ color, isSelected, onPress }) {
         });
     }, [boxesPosition]);
 
+    React.useEffect(() => {
+        if (isSelected) {
+            const bounce = Animated.loop(
+                Animated.sequence([
+                    Animated.timing(pointerBounce, {
+                        toValue: -5,
+                        duration: 300,
+                        useNativeDriver: true,
+                    }),
+                    Animated.timing(pointerBounce, {
+                        toValue: 0,
+                        duration: 300,
+                        useNativeDriver: true,
+                    }),
+                ])
+            );
+            bounce.start();
+            return () => bounce.stop();
+        } else {
+            pointerBounce.setValue(0);
+        }
+    }, [isSelected, pointerBounce]);
+
+    const pointerStyle = React.useMemo(() => createPointerStyle({ isSelected, isSmallScreen, theme }), [isSelected, isSmallScreen, theme]);
+
     return (
         <Animated.View style={[styles.clone, showClone ? { zIndex: 999 * 2 } : {},
         {
             top: animatedValue.y,
             left: animatedValue.x,
         }]} >
+            {isSelected && (
+                <Animated.View style={[pointerStyle, { transform: [{ translateY: pointerBounce }] }]} />
+            )}
             <Pressable
                 onPress={() => onPress()}
                 android_ripple={isSmallScreen ? { color: 'rgba(255,255,255,0.3)', borderless: true } : null}

@@ -8,6 +8,9 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 import {
   buildBotActionCandidates,
   chooseScoredBotAction,
+  getDifficultyProfile,
+  scoreEnterCandidate,
+  scoreMoveCandidate,
   selectBotCandidate,
 } from './botStrategy';
 
@@ -80,6 +83,53 @@ describe('botStrategy', () => {
     expect(action.type).toBe('movePlayer');
     expect(action.payload.soldier.id).toBe(9);
     expect(action.reasons).toContain('capture-enemy');
+  });
+
+  test('does not treat landing on a safe zone as a capture for scoring', () => {
+    const profile = getDifficultyProfile('hard');
+    const scored = scoreMoveCandidate({
+      candidate: {
+        type: 'movePlayer',
+        payload: {
+          color: 'red',
+          steps: 1,
+          soldier: createSoldier({ id: 6, color: 'red', position: '2b' }),
+          card: { id: 8, value: 1, used: false },
+          targetPosition: '1b',
+        },
+      },
+      cardsByColor: createCardsByColor(),
+      soldiersByColor: createSoldiersByColor({
+        blue: [createSoldier({ id: 1, color: 'blue', position: '1b' })],
+      }),
+      profile,
+    });
+
+    expect(scored.reasons).not.toContain('capture-enemy');
+    expect(scored.metrics.captureTarget).toBeNull();
+  });
+
+  test('does not award spawn-capture on a safe entry square', () => {
+    const profile = getDifficultyProfile('hard');
+    const scored = scoreEnterCandidate({
+      candidate: {
+        type: 'enterNewSoldier',
+        payload: {
+          color: 'red',
+          soldier: createSoldier({ id: 14, color: 'red', position: '2red', onBoard: false }),
+          targetPosition: '1b',
+        },
+      },
+      cardsByColor: createCardsByColor(),
+      soldiersByColor: createSoldiersByColor({
+        red: [createSoldier({ id: 14, color: 'red', position: '2red', onBoard: false })],
+        blue: [createSoldier({ id: 1, color: 'blue', position: '1b' })],
+      }),
+      profile,
+    });
+
+    expect(scored.reasons).not.toContain('spawn-capture');
+    expect(scored.metrics.captureTarget).toBeNull();
   });
 
   test('avoids a risky landing square when a safer alternative exists', () => {

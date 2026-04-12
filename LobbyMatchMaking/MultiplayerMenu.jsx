@@ -84,7 +84,7 @@ const MatchListPage = ({ navigation }) => {
       });
   };
 
-  const filteredMatches = matches.filter(match => match.status !== 'started');
+  const filteredMatches = matches.filter(match => match.status !== 'in_progress');
 
   // Handle create new match
   const handleCreateMatch = () => {

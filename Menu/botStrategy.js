@@ -1,5 +1,5 @@
 import { calculateNewPositionForPlayer } from '../GameComponents/Bases.logic';
-import { startingPositions } from '../assets/shared/hardCodedData.js';
+import { startingPositions, isSafeZone } from '../assets/shared/hardCodedData.js';
 
 export const BOT_DIFFICULTIES = ['easy', 'normal', 'hard'];
 
@@ -129,7 +129,10 @@ export const scoreMoveCandidate = ({ candidate, cardsByColor, soldiersByColor, p
   let score = 0;
 
   const finishesSoldier = targetPosition === '';
-  const captureTarget = finishesSoldier ? null : findEnemyOnPosition(soldiersByColor, color, targetPosition);
+  const captureTarget =
+    finishesSoldier || isSafeZone(targetPosition)
+      ? null
+      : findEnemyOnPosition(soldiersByColor, color, targetPosition);
   const currentThreat = countThreatsForPosition({
     color,
     position: soldier.position,
@@ -207,7 +210,9 @@ export const scoreEnterCandidate = ({ candidate, cardsByColor, soldiersByColor, 
 
   const boardPresence = getBoardPresence(soldiersByColor, color);
   const spawnPosition = startingPositions[color];
-  const captureTarget = findEnemyOnPosition(soldiersByColor, color, spawnPosition);
+  const captureTarget = isSafeZone(spawnPosition)
+    ? null
+    : findEnemyOnPosition(soldiersByColor, color, spawnPosition);
   const spawnThreat = countThreatsForPosition({
     color,
     position: spawnPosition,

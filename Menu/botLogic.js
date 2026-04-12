@@ -95,6 +95,8 @@ export const buildBotMultiplayerMessages = (action) => {
   };
 };
 
+
+let botTimeout = null;
 export const emitMultiplayerBotTurn = ({
   color,
   difficulty = 'normal',
@@ -113,6 +115,9 @@ export const emitMultiplayerBotTurn = ({
     randomFn,
     disableNoise,
   });
+  if (botTimeout) {
+    clearTimeout(botTimeout);
+  }
   const { selectedPlayer, moveMessage } = buildBotMultiplayerMessages(action);
 
   if (connected && currentMatch?.id && selectedPlayer) {
@@ -120,20 +125,22 @@ export const emitMultiplayerBotTurn = ({
   }
 
   if (moveMessage) {
-    sendMoveUpdateCore({
-      connected,
-      message: moveMessage,
-      sendMatchCommand,
-      currentMatch,
-      user,
-      sendMessage,
-    });
+    botTimeout = setTimeout(() => {
+      sendMoveUpdateCore({
+        connected,
+        message: moveMessage,
+        sendMatchCommand,
+        currentMatch,
+        user,
+        sendMessage,
+      });
+    }, 1500);
   }
-
+  
   return action;
 };
 
-export const runBotTurn = ({
+export const runBotTurn = async ({
   color,
   difficulty = 'normal',
   activePlayer,
@@ -150,6 +157,9 @@ export const runBotTurn = ({
   randomFn,
   disableNoise = false,
 }) => {
+  // Simulate thinking time
+  await new Promise(resolve => setTimeout(resolve, 500));
+
   const action = chooseBotAction(cardsByColor, soldiersByColor, color, {
     difficulty,
     randomFn,
@@ -161,7 +171,7 @@ export const runBotTurn = ({
     dispatch(setCurrentPlayerAction(botPlayer));
   }
 
-  if (action.type === 'movePlayer') {
+  if (action.type === 'movePlayer' && botPlayer) {
     movePlayer({
       color,
       steps: action.payload.steps,

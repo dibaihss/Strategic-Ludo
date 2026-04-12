@@ -1,11 +1,12 @@
 import {
     View,
     StyleSheet,
-    Dimensions
+    Dimensions,
+    Text
 } from 'react-native';
 import React, { useEffect } from 'react';
 import Soldier from './Soldier';
-import { boxes } from "../assets/shared/hardCodedData.js"
+import { boxes, isSafeZone } from "../assets/shared/hardCodedData.js"
 import { useDispatch, useSelector } from 'react-redux';
 import {
     setCurrentPlayer
@@ -45,7 +46,6 @@ export default function SmalBoard() {
     const theme = useSelector(state => state.theme.current);
     const currentMatch = useSelector(state => state.session.currentMatch);
     const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
-    const availableTypes = useSelector(state => state.game.availableTypes);
 
     const { connected, subscribe, sendMessage } = useWebSocket();
 
@@ -154,17 +154,14 @@ export default function SmalBoard() {
             textAlign: 'center',
             fontSize: isSmallScreen ? 5 : 14,
         },
-        arrow: {
+        safeZoneIcon: {
             position: 'absolute',
-            // top: isSmallScreen ? 3 : 5,
-            // left: isSmallScreen ? 3 : 5,
-            left: "50%",
-            top: "50%",
-            transform: [{ translateX: -17 }, { translateY: -14 }],
-            zIndex: 2,
-            width: isSmallScreen ? 5 : 18,
-            height: isSmallScreen ? 5 : 18,
-            fontSize: isSmallScreen ? 5 : 30,
+            zIndex: 0,
+            width: '100%',
+            height: '100%',
+            textAlign: 'center',
+            fontSize: isSmallScreen ? 15 : 30,
+            opacity: 0.6,
         },
     });
     const renderBox = (number, i) => (
@@ -173,19 +170,10 @@ export default function SmalBoard() {
             style={[styles.verbBox, styles.getNumber(number),
             ]}
         >
-            {/* {number === "1a" && (
-                 <Entypo name="arrow-bold-up" size={24} color="blue" style={styles.arrow}/>
-                )}
-                
-                {number === "1d" && (
-                    <Entypo name="arrow-bold-left" size={24} color="green"  style={styles.arrow} />
-                )}
-                     {number === "1b" && (
-               <Entypo name="arrow-bold-right" size={24} color="red"  style={styles.arrow}/>
-                )}
-                {number === "1c" && (
-                  <Entypo name="arrow-bold-down" size={24} color="pink"  style={styles.arrow}/>
-                )} */}
+    
+            {isSafeZone(number) && (
+                <Text style={styles.safeZoneIcon}>🛡️</Text>
+            )}
 
             {renderSoldiersForBox({ soldiers: redSoldiers, keyPrefix: 'red', number, currentPlayer, onSelect: currentSelectedPlayer })}
             {renderSoldiersForBox({ soldiers: blueSoldiers, keyPrefix: 'blue', number, currentPlayer, onSelect: currentSelectedPlayer })}

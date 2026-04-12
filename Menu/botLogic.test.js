@@ -35,6 +35,10 @@ const createSoldiersByColor = (overrides = {}) => ({
 });
 
 describe('botLogic', () => {
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   test('getSoldiersForColor returns the soldiers for a given color', () => {
     const soldiersByColor = createSoldiersByColor({
       red: [{ id: 5, color: 'red', onBoard: true, isOut: false }],
@@ -175,6 +179,7 @@ describe('botLogic', () => {
   });
 
   test('emitMultiplayerBotTurn sends selected player first and then the move command', () => {
+    jest.useFakeTimers();
     const sendMessage = jest.fn();
     const sendMatchCommand = jest.fn();
     const cardsByColor = createCardsByColor({
@@ -205,6 +210,10 @@ describe('botLogic', () => {
       onBoard: true,
       isOut: false,
     });
+    expect(sendMatchCommand).not.toHaveBeenCalled();
+
+    jest.advanceTimersByTime(1500);
+
     expect(sendMatchCommand).toHaveBeenCalledWith({
       type: 'movePlayer',
       payload: { color: 'red', steps: 2 },
@@ -215,6 +224,7 @@ describe('botLogic', () => {
   });
 
   test('emitMultiplayerBotTurn sends enter and skip actions without a selected-player sync message', () => {
+    jest.useFakeTimers();
     const sendMessage = jest.fn();
     const sendMatchCommand = jest.fn();
 
@@ -235,6 +245,8 @@ describe('botLogic', () => {
       disableNoise: true,
     });
 
+    jest.advanceTimersByTime(1500);
+
     emitMultiplayerBotTurn({
       color: 'green',
       difficulty: 'hard',
@@ -249,6 +261,8 @@ describe('botLogic', () => {
       sendMatchCommand,
       disableNoise: true,
     });
+
+    jest.advanceTimersByTime(1500);
 
     expect(sendMessage).not.toHaveBeenCalled();
     expect(sendMatchCommand).toHaveBeenNthCalledWith(1, {
@@ -265,7 +279,7 @@ describe('botLogic', () => {
     });
   });
 
-  test('runBotTurn dispatches current player and executes a move action', () => {
+  test('runBotTurn dispatches current player and executes a move action', async () => {
     const dispatch = jest.fn();
     const movePlayer = jest.fn();
     const enterNewSoldier = jest.fn();
@@ -276,7 +290,7 @@ describe('botLogic', () => {
       red: [{ id: 6, color: 'red', position: '1b', onBoard: true, isOut: false }],
     });
 
-    const action = runBotTurn({
+    const action = await runBotTurn({
       color: 'red',
       difficulty: 'hard',
       activePlayer: 'red',
@@ -321,7 +335,7 @@ describe('botLogic', () => {
     expect(enterNewSoldier).not.toHaveBeenCalled();
   });
 
-  test('runBotTurn advances the turn when the bot must skip', () => {
+  test('runBotTurn advances the turn when the bot must skip', async () => {
     const dispatch = jest.fn();
     const movePlayer = jest.fn();
     const enterNewSoldier = jest.fn();
@@ -329,7 +343,7 @@ describe('botLogic', () => {
       green: [{ id: 16, color: 'green', onBoard: false, isOut: true }],
     });
 
-    const action = runBotTurn({
+    const action = await runBotTurn({
       color: 'green',
       difficulty: 'hard',
       activePlayer: 'green',
