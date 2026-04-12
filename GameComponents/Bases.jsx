@@ -242,11 +242,13 @@ export default function Bases() {
     };
 
     const movePlayer = (color, steps) => {
+        console.log('canControlColor', canControlColor(currentPlayerColor, color));
         movePlayerCore({ color, steps, currentPlayer, activePlayer, systemLang, showClone, dispatch });
     };
 
     // Mutliplayer Functions
     const movePlayerHanlder = (color, steps) => {
+        if(activePlayer !== color) return;
         if (!connected) {
             movePlayer(color, steps);
             return;
