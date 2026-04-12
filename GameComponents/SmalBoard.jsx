@@ -34,23 +34,6 @@ const renderSoldiersForBox = ({ soldiers, keyPrefix, number, currentPlayer, onSe
     )
 );
 
-// const renderSaveZoneIcons = (number, arrowStyle) => {
-//     const saveZoneIcons = {
-//         "1a": "↑",
-//         "2a": "↑",
-//         "3a": "↑",
-//         "4a": "↑",
-//         "5a": "↑",
-//         "6a": "↑",
-//     };
-
-//     if (saveZoneIcons[number]) {
-
-//        <Text>{saveZoneIcons[number]}</Text>
-//     }
-//     return null;
-// };
-
 export default function SmalBoard() {
 
     const dispatch = useDispatch();
@@ -177,8 +160,8 @@ export default function SmalBoard() {
             width: '100%',
             height: '100%',
             textAlign: 'center',
-            fontSize: isSmallScreen ? 10 : 30,
-            opacity: 0.3,
+            fontSize: isSmallScreen ? 15 : 30,
+            opacity: 0.5,
         },
     });
     const renderBox = (number, i) => (
