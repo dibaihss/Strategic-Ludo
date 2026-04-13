@@ -49,9 +49,13 @@ jest.mock('expo-keep-awake', () => ({
   deactivateKeepAwake: jest.fn(() => Promise.resolve()),
 }));
 
-jest.mock('../assets/store/authSlice.jsx', () => ({
-  setCurrentUserPage: jest.fn(() => ({ type: 'auth/setCurrentUserPage' })),
-}));
+jest.mock('../assets/store/authSlice.jsx', () => {
+  const actual = jest.requireActual('../assets/store/authSlice.jsx');
+  return {
+    ...actual,
+    setCurrentUserPage: jest.fn(() => ({ type: 'auth/setCurrentUserPage' })),
+  };
+});
 
 jest.mock('../assets/store/sessionApiShared.jsx', () => ({
   isE2EMode: false,
