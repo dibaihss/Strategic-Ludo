@@ -4,6 +4,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { startingPositions, isSafeZone } from "../shared/hardCodedData.js";
 import { setBoxesPosition } from './animationSlice.jsx'
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { playSound } from '../shared/audioManager';
 
 const initialState = {
     currentPlayer: "blue",
@@ -178,6 +179,7 @@ export const checkIfGotEnemy = ({ color, position }) => (dispatch, getState) => 
     }
 
     if (enemyInPosition && position && !isSafeZone(position)) {
+        playSound('capture').catch(() => {});
         dispatch(setCurrentPlayer(enemyInPosition));
         console.log(enemyInPosition)
         dispatch(setBoxesPosition({ ySteps: 3, xSteps: 3, returenToBase: true, kickedPlayer: enemyInPosition }))

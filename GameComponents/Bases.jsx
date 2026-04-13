@@ -17,6 +17,7 @@ import {
     movePlayerCore,
     sendMoveUpdateCore,
 } from './Bases.logic';
+import { playSound } from '../assets/shared/audioManager';
 
 export default function Bases() {
 
@@ -229,6 +230,7 @@ export default function Bases() {
     }, [connected, subscribe, currentMatch, user, currentPlayer]);
 
     const handleEnterNewSoldier = (color) => {
+        playSound('move').catch(() => {});
         handleEnterNewSoldierCore({ activePlayer, color, systemLang, dispatch });
     };
 
@@ -243,6 +245,7 @@ export default function Bases() {
 
     const movePlayer = (color, steps) => {
         console.log('canControlColor', canControlColor(currentPlayerColor, color));
+        playSound('move').catch(() => {});
         movePlayerCore({ color, steps, currentPlayer, activePlayer, systemLang, showClone, dispatch });
     };
 

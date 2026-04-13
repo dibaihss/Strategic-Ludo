@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { updateTimer, setTimerRunning, resetTimer, setActivePlayer } from '../assets/store/gameSlice';
 import { uiStrings } from "../assets/shared/hardCodedData.js";
 import TurnIndicator from './TurnIndicator.jsx';
+import SoundToggle from './SoundToggle.jsx';
 
 export default function Timer() {
     const dispatch = useDispatch();
@@ -75,6 +76,7 @@ export default function Timer() {
                 </Text>
             </View>
             <TurnIndicator />
+            <SoundToggle />
         </View>
     );
 }

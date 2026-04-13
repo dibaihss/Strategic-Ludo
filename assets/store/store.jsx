@@ -6,6 +6,7 @@ import themeReducer from './themeSlice';
 import animationReducer from './animationSlice';
 import asyncStorageReducer from './asyncStorageSlice';
 import languageReducer from './languageSlice';
+import audioReducer from './audioSlice';
 
 export const store = configureStore({
   reducer: {
@@ -16,6 +17,7 @@ export const store = configureStore({
     animation: animationReducer,
     asyncStorage: asyncStorageReducer,
     language: languageReducer,
+    audio: audioReducer,
   },
   middleware: (getDefaultMiddleware) => 
     getDefaultMiddleware({

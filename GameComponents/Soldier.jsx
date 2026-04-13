@@ -15,6 +15,7 @@ import {
 } from '../assets/store/gameSlice.jsx';
 import { setShowClone } from '../assets/store/animationSlice.jsx';
 import { useDispatch, useSelector } from 'react-redux';
+import { playSound, stopSound } from '../assets/shared/audioManager';
 
 const getCategory = (position) => position?.match(/[a-zA-Z]+/)?.[0];
 

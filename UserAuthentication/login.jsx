@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -33,6 +33,7 @@ const LoginPage = ({ navigation }) => {
   const [guestName, setGuestName] = useState("");
   const [guestNameError, setGuestNameError] = useState("");
 
+
   const guestNameTitle = uiStrings[systemLang].guestNameTitle || "Choose your guest name";
   const guestNameMessage =
     uiStrings[systemLang].guestNameMessage || "Enter the name you want to use before joining as a guest.";
@@ -41,7 +42,8 @@ const LoginPage = ({ navigation }) => {
   const guestNameRequired =
     uiStrings[systemLang].guestNameRequired || "Please enter your name to continue.";
 
-  const openGuestNameModal = () => {
+  
+    const openGuestNameModal = () => {
     setGuestNameError("");
     setShowGuestNameModal(true);
   };
