@@ -124,7 +124,9 @@ export const emitMultiplayerBotTurn = ({
     sendMessage(`/app/player.getPlayer/${currentMatch.id}`, selectedPlayer);
   }
 
-  if (moveMessage) {
+  const hasMultiplayerIdentity = Boolean(currentMatch?.id && user?.id);
+
+  if (moveMessage && (!connected || hasMultiplayerIdentity)) {
     botTimeout = setTimeout(() => {
       sendMoveUpdateCore({
         connected,
