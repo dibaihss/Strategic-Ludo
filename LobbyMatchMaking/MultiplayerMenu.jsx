@@ -158,6 +158,7 @@ const MatchListPage = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <Pressable
+          testID="match-list-back-button"
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
