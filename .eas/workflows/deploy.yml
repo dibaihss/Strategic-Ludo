@@ -9,7 +9,7 @@ on:
 
 concurrency:
   group: deploy-${{ github.ref }}
-  cancel-in-progress: true
+  cancel_in_progress: true
 
 jobs:
   deploy:
