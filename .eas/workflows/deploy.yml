@@ -1,10 +1,10 @@
-# EAS deploy definition.
-# Automatic deployment is triggered only by GitHub Actions `.github/workflows/release.yml`
-# after CI succeeds.
+# https://docs.expo.dev/eas/hosting/workflows/
 name: Deploy
 
 on:
-  workflow_dispatch:
+  push:
+    branches: ['main', 'release/*']
+    tags: ['v*.*.*']
 
 jobs:
   deploy:

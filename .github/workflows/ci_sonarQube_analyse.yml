@@ -1,4 +1,4 @@
-name: CI
+name: Test + E2E + Sonar
 
 on:
   push:
@@ -6,7 +6,8 @@ on:
      
 
 jobs:
-  analyze:
+  test-e2e-sonar:
+    name: Test + E2E + Sonar
     runs-on: ubuntu-latest
 
     steps:
@@ -50,8 +51,9 @@ jobs:
             test-results
           if-no-files-found: ignore
 
-      - name: SonarQube Cloud analysis
-        if: success()   # skip Sonar if any previous step failed
+      - name: SonarQube Cloud analysis (CI feedback gate)
+        # Runs only after tests/E2E pass to provide PR/push feedback signal in one place.
+        if: success()
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: "https://sonarcloud.io"
@@ -86,4 +88,3 @@ jobs:
             -Dsonar.host.url="$SONAR_HOST_URL" \
             -Dsonar.token="$SONAR_TOKEN" \
             $SONAR_OPTS
-
