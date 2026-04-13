@@ -1,15 +1,9 @@
-# https://docs.expo.dev/eas/hosting/workflows/ test 2 pipeline for EAS Hosting deploys, triggered by GitHub Actions release workflow
+# https://docs.expo.dev/eas/hosting/workflows/ 
 name: Deploy
 
 on:
   push:
-    branches: ['main', 'release/*']
-    tags: ['v*.*.*']
-  workflow_dispatch: {}
-
-concurrency:
-  group: deploy-${{ github.ref }}
-  cancel-in-progress: true
+    branches: ['main']
 
 jobs:
   deploy:
