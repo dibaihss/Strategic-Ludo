@@ -169,6 +169,7 @@ const HomePage = ({
               </Pressable>
             </View>
             <Pressable
+              testID="offline-choice-cancel-button"
               style={[styles.button, styles.cancelButton]}
               onPress={onCancelOfflineChoice}
             >
