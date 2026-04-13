@@ -1,4 +1,4 @@
-name: CI
+name: CI + Sonar (PR/Push Quality Feedback)
 
 on:
   push:
@@ -6,7 +6,9 @@ on:
      
 
 jobs:
-  analyze:
+  ci_quality_feedback:
+    # Model 1 (chosen): Sonar runs in CI for pull_request/push feedback.
+    # Keep release workflows free of duplicate Sonar runs to avoid ambiguity and duplicated cost.
     runs-on: ubuntu-latest
 
     steps:
@@ -50,8 +52,9 @@ jobs:
             test-results
           if-no-files-found: ignore
 
-      - name: SonarQube Cloud analysis
-        if: success()   # skip Sonar if any previous step failed
+      - name: SonarQube Cloud analysis (CI feedback gate)
+        # Runs only after tests/E2E pass to provide PR/push feedback signal in one place.
+        if: success()
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: "https://sonarcloud.io"
@@ -86,4 +89,3 @@ jobs:
             -Dsonar.host.url="$SONAR_HOST_URL" \
             -Dsonar.token="$SONAR_TOKEN" \
             $SONAR_OPTS
-
