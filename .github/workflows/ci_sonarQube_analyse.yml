@@ -1,4 +1,4 @@
-name: CI + Sonar (PR/Push Quality Feedback)
+name: Test + E2E + Sonar
 
 on:
   push:
@@ -6,9 +6,8 @@ on:
      
 
 jobs:
-  ci_quality_feedback:
-    # Model 1 (chosen): Sonar runs in CI for pull_request/push feedback.
-    # Keep release workflows free of duplicate Sonar runs to avoid ambiguity and duplicated cost.
+  test-e2e-sonar:
+    name: Test + E2E + Sonar
     runs-on: ubuntu-latest
 
     steps:

@@ -1,9 +1,10 @@
-# https://docs.expo.dev/eas/hosting/workflows/ 
+# https://docs.expo.dev/eas/hosting/workflows/
 name: Deploy
 
 on:
   push:
-    branches: ['feature/music-sound-effect']
+    branches: ['main', 'release/*']
+    tags: ['v*.*.*']
 
 jobs:
   deploy:
