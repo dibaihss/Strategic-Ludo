@@ -36,6 +36,7 @@ const createSoldiersByColor = (overrides = {}) => ({
 
 describe('botLogic', () => {
   afterEach(() => {
+    jest.clearAllTimers();
     jest.useRealTimers();
   });
 
@@ -178,6 +179,27 @@ describe('botLogic', () => {
     });
   });
 
+  test('buildBotMultiplayerMessages returns null-safe defaults when action is missing', () => {
+    expect(buildBotMultiplayerMessages(null)).toEqual({
+      selectedPlayer: null,
+      moveMessage: null,
+    });
+  });
+
+  test('buildBotMultiplayerMessages falls back to skipTurn for unknown action types', () => {
+    const result = buildBotMultiplayerMessages({ type: 'unexpected', payload: {} });
+
+    expect(result.moveMessage).toEqual({
+      type: 'skipTurn',
+      payload: {},
+    });
+  });
+
+  test('getBotDifficultyForTurn returns normalized default difficulty for non-bot modes', () => {
+    expect(getBotDifficultyForTurn({ mode: 'local' })).toBe('normal');
+    expect(getBotDifficultyForTurn({})).toBe('normal');
+  });
+
   test('emitMultiplayerBotTurn sends selected player first and then the move command', () => {
     jest.useFakeTimers();
     const sendMessage = jest.fn();
@@ -277,6 +299,63 @@ describe('botLogic', () => {
       matchId: 'match-1',
       playerId: 'host-1',
     });
+  });
+
+  test('emitMultiplayerBotTurn does not send network messages when disconnected', () => {
+    jest.useFakeTimers();
+    const sendMessage = jest.fn();
+    const sendMatchCommand = jest.fn();
+
+    const action = emitMultiplayerBotTurn({
+      color: 'red',
+      difficulty: 'hard',
+      cardsByColor: createCardsByColor({
+        red: [{ id: 8, value: 2, used: false }],
+      }),
+      soldiersByColor: createSoldiersByColor({
+        red: [{ id: 6, color: 'red', position: '1b', onBoard: true, isOut: false }],
+      }),
+      connected: false,
+      currentMatch: { id: 'match-1' },
+      user: { id: 'host-1' },
+      sendMessage,
+      sendMatchCommand,
+      disableNoise: true,
+    });
+
+    expect(action).toEqual(expect.objectContaining({ type: 'movePlayer' }));
+    jest.advanceTimersByTime(1500);
+    expect(sendMessage).not.toHaveBeenCalled();
+    expect(sendMatchCommand).not.toHaveBeenCalled();
+  });
+
+  test('emitMultiplayerBotTurn avoids invalid send payloads when match/user ids are missing', () => {
+    jest.useFakeTimers();
+    const sendMessage = jest.fn();
+    const sendMatchCommand = jest.fn();
+
+    const action = emitMultiplayerBotTurn({
+      color: 'red',
+      difficulty: 'hard',
+      cardsByColor: createCardsByColor({
+        red: [{ id: 8, value: 2, used: false }],
+      }),
+      soldiersByColor: createSoldiersByColor({
+        red: [{ id: 6, color: 'red', position: '1b', onBoard: true, isOut: false }],
+      }),
+      connected: true,
+      currentMatch: {},
+      user: {},
+      sendMessage,
+      sendMatchCommand,
+      disableNoise: true,
+    });
+
+    expect(action).toEqual(expect.objectContaining({ type: 'movePlayer' }));
+    jest.advanceTimersByTime(1500);
+
+    expect(sendMessage).not.toHaveBeenCalled();
+    expect(sendMatchCommand).not.toHaveBeenCalled();
   });
 
   test('runBotTurn dispatches current player and executes a move action', async () => {
