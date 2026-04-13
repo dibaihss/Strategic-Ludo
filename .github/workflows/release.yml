@@ -5,7 +5,8 @@ on:
   workflow_run:
     workflows: ["Test + E2E + Sonar"]
     types: [completed]
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   deploy:
@@ -25,6 +26,11 @@ jobs:
 
       - name: Install EAS CLI
         run: npm install -g eas-cli
+
+      - name: Verify EAS auth
+        run: eas account:view --non-interactive
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       - name: Trigger Expo deploy workflow
         run: eas workflow:run .eas/workflows/deploy.yml --non-interactive
