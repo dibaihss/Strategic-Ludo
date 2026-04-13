@@ -1,4 +1,6 @@
-# https://docs.expo.dev/eas/hosting/workflows/ test 2 pipeline for EAS Hosting deploys, triggered by GitHub Actions release workflow
+# https://docs.expo.dev/eas/hosting/workflows/
+# Pipeline for EAS Hosting deploys, triggered by GitHub Actions release workflow
+
 name: Deploy
 
 on:
@@ -13,8 +15,25 @@ concurrency:
 
 jobs:
   deploy:
-    type: deploy
-    name: Deploy
-    environment: production
-    params:
-      prod: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --omit=optional
+
+      - name: Setup Expo and EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Trigger EAS deploy workflow
+        run: eas workflow:run .eas/workflows/deploy.yml --non-interactive --var prod=true
