@@ -1,44 +1,29 @@
-name: Release
+# .github/workflows/deploy-after-ci.yml
+name: Deploy after CI
 
 on:
   workflow_run:
-    workflows: ["CI"]
+    workflows: ["Test + E2E + Sonar"]
     types: [completed]
-
-permissions:
-  contents: read
 
 jobs:
   deploy:
-    name: Deploy (gated by CI success)
-    if: >-
-      ${{
-        github.event.workflow_run.conclusion == 'success' &&
-        github.event.workflow_run.event == 'push' &&
-        github.event.workflow_run.head_branch == 'main'
-      }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout commit from CI run
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
 
-      - name: Install dependencies
-        run: npm ci --omit=optional
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
 
-      - name: Setup Expo and EAS CLI
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
-
-      - name: Trigger EAS deploy workflow
+      - name: Trigger Expo deploy workflow
         run: eas workflow:run .eas/workflows/deploy.yml --non-interactive
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
