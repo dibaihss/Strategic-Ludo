@@ -38,7 +38,7 @@ export default function Bases() {
     const user = useSelector(state => state.auth.user);
     const currentMatch = useSelector(state => state.session.currentMatch);
     const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
-    
+
 
     const { connected, subscribe, sendMessage, sendMatchCommand } = useWebSocket();
 
@@ -206,31 +206,28 @@ export default function Bases() {
     });
 
     useEffect(() => {
-        if (connected) {
-        if(!currentMatch || !currentMatch.id) return;
-            const subscription = subscribe(`/topic/playerMove/${currentMatch.id}`, (data) => {
-                console.log("Received move update:", data); // Debugging line
-                const parsedData = data;
-                if (parsedData?.type === 'movePlayer') {
-                    const { color, steps } = parsedData.payload || {};
-                    movePlayer(color, steps);
-                } else if (parsedData?.type === 'enterNewSoldier') {
-                    const { color } = parsedData.payload || {};
-                    handleEnterNewSoldier(color);
-                } else if (parsedData?.type === 'skipTurn') {
-                        HandleskipTurn()                 
-                }
-            });
-            return () => {
-                if (subscription) {
-                    subscription.unsubscribe();
-                }
-            };
-        }
+        if (!connected || !currentMatch?.id) return; // single combined guard
+        const subscription = subscribe(`/topic/playerMove/${currentMatch.id}`, (data) => {
+            console.log("Received move update:", data);
+            if (data?.type === 'movePlayer') {
+                const { color, steps } = data.payload || {};
+                movePlayer(color, steps);
+            } else if (data?.type === 'enterNewSoldier') {
+                const { color } = data.payload || {};
+                handleEnterNewSoldier(color);
+            } else if (data?.type === 'skipTurn') {
+                HandleskipTurn();
+            }
+        });
+
+        return () => {
+            subscription?.unsubscribe();
+        };
+
     }, [connected, subscribe, currentMatch, user, currentPlayer]);
 
     const handleEnterNewSoldier = (color) => {
-        playSound('move').catch(() => {});
+        playSound('move').catch(() => { });
         handleEnterNewSoldierCore({ activePlayer, color, systemLang, dispatch });
     };
 
@@ -245,13 +242,13 @@ export default function Bases() {
 
     const movePlayer = (color, steps) => {
         console.log('canControlColor', canControlColor(currentPlayerColor, color));
-        playSound('move').catch(() => {});
+        playSound('move').catch(() => { });
         movePlayerCore({ color, steps, currentPlayer, activePlayer, systemLang, showClone, dispatch });
     };
 
     // Mutliplayer Functions
     const movePlayerHanlder = (color, steps) => {
-        if(activePlayer !== color) return;
+        if (activePlayer !== color) return;
         if (!connected) {
             movePlayer(color, steps);
             return;
