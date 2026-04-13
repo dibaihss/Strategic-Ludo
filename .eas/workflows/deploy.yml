@@ -3,7 +3,7 @@ name: Deploy
 
 on:
   push:
-    branches: ['debug-bot-modus']
+    branches: ['feature/music-sound-effect']
 
 jobs:
   deploy:

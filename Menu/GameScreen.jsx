@@ -17,6 +17,7 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { createGameScreenStyles } from './GameScreen.styles.js';
 import Instructions from './Instructions.jsx';
 import { emitMultiplayerBotTurn, getBotDifficultyForTurn, isBotControlledPlayer, runBotTurn } from './botLogic.js';
+import { playSound, stopSound } from '../assets/shared/audioManager';
 
 const buildPlayerColorsFromPlayers = (players = []) => {
   if (!Array.isArray(players) || players.length < 2) return null;
@@ -122,7 +123,7 @@ export default function GameScreen({ route, navigation }) {
   useEffect(() => {
     setGameIsStarted(true);
     setLoading(false);
-  }, [mode, matchId, dispatch]);
+  }, []);
 
   useEffect(() => {
     if (mode === 'multiplayer' && multiplayerPlayerColors) {
@@ -260,6 +261,7 @@ export default function GameScreen({ route, navigation }) {
     setWinnerResults(sorted.slice(0, 3));
     setShowWinnerModal(true);
     setWinnerDetected(true);
+    playSound('win').catch(() => {});
     Animated.spring(winnerScale, {
       toValue: 1,
       friction: 6,

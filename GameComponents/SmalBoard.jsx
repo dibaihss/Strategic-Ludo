@@ -12,6 +12,7 @@ import {
     setCurrentPlayer
 } from '../assets/store/gameSlice.jsx';
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
+import { playSound, stopSound } from '../assets/shared/audioManager';
 
 const canControlColor = (currentPlayerColor, selectedColor) => {
     if (currentPlayerColor === selectedColor) return true;
@@ -55,6 +56,7 @@ export default function SmalBoard() {
 
     const currentSelectedPlayer = (selectedPlayer) => {
         console.log(selectedPlayer);
+        playSound('click').catch(() => {});
         if (!connected) {
             dispatch(setCurrentPlayer(selectedPlayer));
             return;
