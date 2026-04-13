@@ -5,6 +5,8 @@ on:
   workflow_run:
     workflows: ["Test + E2E + Sonar"]
     types: [completed]
+    branches:
+      - main
 
 jobs:
   deploy:
@@ -14,16 +16,23 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
 
-      - name: Install EAS CLI
-        run: npm install -g eas-cli
+      - name: Install dependencies
+        run: npm ci --omit=optional
+
+      - name: Setup Expo and EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Trigger Expo deploy workflow
         run: eas workflow:run .eas/workflows/deploy.yml --non-interactive
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}

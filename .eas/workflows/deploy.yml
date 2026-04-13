@@ -1,9 +1,15 @@
-# https://docs.expo.dev/eas/hosting/workflows/ 
+# .eas/workflows/deploy.yml
 name: Deploy
 
 on:
   push:
-    branches: ['main']
+    branches: ['main', 'release/*']
+    tags: ['v*.*.*']
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   deploy:
