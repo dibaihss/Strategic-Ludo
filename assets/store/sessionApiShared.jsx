@@ -33,8 +33,12 @@ export const isE2EMode = (() => {
   const envFlag =
     (typeof process !== "undefined" && process?.env?.EXPO_PUBLIC_E2E === "true") ||
     (typeof process !== "undefined" && process?.env?.REACT_APP_E2E === "true");
+  const search =
+    typeof window !== "undefined" && typeof window?.location?.search === "string"
+      ? window.location.search
+      : "";
   const queryFlag =
-    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("e2e") === "1";
+    typeof window !== "undefined" && new URLSearchParams(search).get("e2e") === "1";
   return Boolean(envFlag || queryFlag);
 })();
 
