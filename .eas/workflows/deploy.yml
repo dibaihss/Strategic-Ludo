@@ -1,9 +1,10 @@
-# https://docs.expo.dev/eas/hosting/workflows/ 
+# EAS deploy definition.
+# Automatic deployment is triggered only by GitHub Actions `.github/workflows/release.yml`
+# after CI succeeds.
 name: Deploy
 
 on:
-  push:
-    branches: ['feature/music-sound-effect']
+  workflow_dispatch:
 
 jobs:
   deploy:
