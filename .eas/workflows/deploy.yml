@@ -1,4 +1,4 @@
-# https://docs.expo.dev/eas/hosting/workflows/ test pipeline for EAS Hosting deploys, triggered by GitHub Actions release workflow
+# https://docs.expo.dev/eas/hosting/workflows/ test 2 pipeline for EAS Hosting deploys, triggered by GitHub Actions release workflow
 name: Deploy
 
 on:
