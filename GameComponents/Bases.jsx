@@ -241,7 +241,6 @@ export default function Bases() {
     };
 
     const movePlayer = (color, steps) => {
-        console.log('canControlColor', canControlColor(currentPlayerColor, color));
         movePlayerCore({ color, steps, currentPlayer, activePlayer, systemLang, showClone, dispatch });
     };
 
