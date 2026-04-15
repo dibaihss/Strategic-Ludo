@@ -3,9 +3,10 @@ import { MaterialIcons } from '@expo/vector-icons';
 import Goals from '../GameComponents/Goals.jsx';
 import Bases from '../GameComponents/Bases.jsx';
 import Timer from '../GameComponents/Timer.jsx';
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { View, Text, Pressable, ActivityIndicator, Modal, Animated } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { setActivePlayer, resetTimer, setIsOnline, resetGameState, setCurrentPlayerColor, setPlayerColors } from '../assets/store/gameSlice.jsx';
 import { resetAnimationState } from '../assets/store/animationSlice.jsx';
 import { uiStrings, getLocalizedColor } from '../assets/shared/hardCodedData.js';
@@ -66,7 +67,9 @@ export default function GameScreen({ route, navigation }) {
   const [winningColor, setWinningColor] = useState(null);
   const [winnerDetected, setWinnerDetected] = useState(false);
   const winnerScale = useRef(new Animated.Value(0.7)).current;
-  const keepAwakeActivatedRef = useRef(false);
+  const keepAwakeLifecycleRef = useRef({ id: 0, active: false });
+  const hasInitializedSessionRef = useRef(false);
+  const hasInitializedLocalStartRef = useRef(false);
 
   // Memoize styles to avoid recreating on every render
   const styles = useMemo(() => createGameScreenStyles(theme), [theme]);
@@ -89,38 +92,61 @@ export default function GameScreen({ route, navigation }) {
   );
 
   useEffect(() => {
-    let mounted = true;
+    if (hasInitializedSessionRef.current) return;
+    hasInitializedSessionRef.current = true;
 
     setCurrentUserPage('Game');
     dispatch(resetGameState());
     dispatch(resetAnimationState());
 
-    if (isOnline == false) {
+    if (isOnline === false) {
       dispatch(setActivePlayer("blue"));
       dispatch(setCurrentPlayerColor("blue"));
     }
-    // Keep the device awake when the user is on the GameScreen
-    activateKeepAwakeAsync()
-      .then(() => {
-        if (mounted) {
-          keepAwakeActivatedRef.current = true;
-        }
-      })
-      .catch((error) => {
-        console.error('Failed to activate keep-awake on game screen:', error);
-      });
+  }, [dispatch, isOnline]);
 
-    return () => {
-      mounted = false;
-      // Deactivate keep awake when leaving the GameScreen
-      if (!keepAwakeActivatedRef.current) return;
-      deactivateKeepAwake().catch((error) => {
-        console.warn('Failed to deactivate keep-awake on game screen:', error);
-      });
-    };
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      const lifecycleId = keepAwakeLifecycleRef.current.id + 1;
+      keepAwakeLifecycleRef.current.id = lifecycleId;
+      keepAwakeLifecycleRef.current.active = false;
+
+      let isCurrentLifecycle = true;
+
+      activateKeepAwakeAsync()
+        .then(() => {
+          if (keepAwakeLifecycleRef.current.id !== lifecycleId) return;
+
+          if (!isCurrentLifecycle) {
+            deactivateKeepAwake().catch((error) => {
+              console.warn('Failed to deactivate keep-awake on game screen:', error);
+            });
+            return;
+          }
+
+          keepAwakeLifecycleRef.current.active = true;
+        })
+        .catch((error) => {
+          console.error('Failed to activate keep-awake on game screen:', error);
+        });
+
+      return () => {
+        isCurrentLifecycle = false;
+
+        if (keepAwakeLifecycleRef.current.id !== lifecycleId) return;
+        if (!keepAwakeLifecycleRef.current.active) return;
+
+        keepAwakeLifecycleRef.current.active = false;
+        deactivateKeepAwake().catch((error) => {
+          console.warn('Failed to deactivate keep-awake on game screen:', error);
+        });
+      };
+    }, [])
+  );
 
   useEffect(() => {
+    if (hasInitializedLocalStartRef.current) return;
+    hasInitializedLocalStartRef.current = true;
     setGameIsStarted(true);
     setLoading(false);
   }, []);
