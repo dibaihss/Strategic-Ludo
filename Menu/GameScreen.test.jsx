@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, render } from '@testing-library/react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import * as RN from 'react-native';
 
@@ -397,5 +397,68 @@ describe('GameScreen', () => {
 
     expect(emitMultiplayerBotTurn).not.toHaveBeenCalled();
     expect(runBotTurn).not.toHaveBeenCalled();
+  });
+
+  test('exit confirmation uses goBack when the game screen can go back', async () => {
+    configureSelectors(createState());
+    const navigation = {
+      canGoBack: jest.fn(() => true),
+      goBack: jest.fn(),
+      dispatch: jest.fn(),
+      navigate: jest.fn(),
+    };
+
+    const { getAllByText, getByTestId } = render(
+      <GameScreen route={{ params: { mode: 'bot', matchId: 1 } }} navigation={navigation} />
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    fireEvent.press(getByTestId('game-exit-button'));
+    const exitButtons = getAllByText('Exit');
+    fireEvent.press(exitButtons[exitButtons.length - 1]);
+
+    expect(navigation.goBack).toHaveBeenCalledTimes(1);
+    expect(navigation.dispatch).not.toHaveBeenCalled();
+    expect(navigation.navigate).not.toHaveBeenCalled();
+  });
+
+  test('exit confirmation resets to home when no back route exists', async () => {
+    configureSelectors(createState());
+    dispatchMock.mockReturnValue({
+      unwrap: () => Promise.resolve(),
+    });
+    const navigation = {
+      canGoBack: jest.fn(() => false),
+      goBack: jest.fn(),
+      dispatch: jest.fn(),
+      navigate: jest.fn(),
+    };
+
+    const { getAllByText, getByTestId } = render(
+      <GameScreen route={{ params: { mode: 'multiplayer', matchId: 1 } }} navigation={navigation} />
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    fireEvent.press(getByTestId('game-exit-button'));
+    const exitButtons = getAllByText('Exit');
+    fireEvent.press(exitButtons[exitButtons.length - 1]);
+
+    expect(navigation.goBack).not.toHaveBeenCalled();
+    expect(navigation.dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'RESET',
+        payload: {
+          index: 0,
+          routes: [{ name: 'Home' }],
+        },
+      })
+    );
+    expect(navigation.navigate).not.toHaveBeenCalled();
   });
 });
