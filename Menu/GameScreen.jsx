@@ -3,9 +3,10 @@ import { MaterialIcons } from '@expo/vector-icons';
 import Goals from '../GameComponents/Goals.jsx';
 import Bases from '../GameComponents/Bases.jsx';
 import Timer from '../GameComponents/Timer.jsx';
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { View, Text, Pressable, ActivityIndicator, Modal, Animated } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { setActivePlayer, resetTimer, setIsOnline, resetGameState, setCurrentPlayerColor, setPlayerColors } from '../assets/store/gameSlice.jsx';
 import { resetAnimationState } from '../assets/store/animationSlice.jsx';
 import { uiStrings, getLocalizedColor } from '../assets/shared/hardCodedData.js';
@@ -68,7 +69,9 @@ export default function GameScreen({ route, navigation }) {
   const [winningColor, setWinningColor] = useState(null);
   const [winnerDetected, setWinnerDetected] = useState(false);
   const winnerScale = useRef(new Animated.Value(0.7)).current;
-  const keepAwakeActivatedRef = useRef(false);
+  const keepAwakeLifecycleRef = useRef({ id: 0, active: false });
+  const hasInitializedSessionRef = useRef(false);
+  const hasInitializedLocalStartRef = useRef(false);
 
   // Memoize styles to avoid recreating on every render
   const styles = useMemo(() => createGameScreenStyles(theme), [theme]);
@@ -133,6 +136,8 @@ export default function GameScreen({ route, navigation }) {
   );
 
   useEffect(() => {
+    if (hasInitializedLocalStartRef.current) return;
+    hasInitializedLocalStartRef.current = true;
     setGameIsStarted(true);
     setLoading(false);
   }, []);

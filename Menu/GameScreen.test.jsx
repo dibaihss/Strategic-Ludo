@@ -9,6 +9,10 @@ import { emitMultiplayerBotTurn, runBotTurn } from './botLogic.js';
 import GameScreen from './GameScreen';
 import { setCurrentPlayer, setCurrentPlayerColor } from '../assets/store/gameSlice.jsx';
 
+jest.mock('@react-navigation/native', () => ({
+  useFocusEffect: jest.fn((effect) => effect()),
+}));
+
 jest.mock('@react-native-async-storage/async-storage', () => ({
   setItem: jest.fn(),
   getItem: jest.fn(),
