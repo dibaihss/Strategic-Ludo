@@ -4,8 +4,8 @@ import { useSelector } from 'react-redux';
 import { Platform } from 'react-native';
 
 // --- WebSocket URL Configuration ---
-const PRODUCTION_WS_URL = process.env.EXPO_PUBLIC_WS_URL || 'https://api-ludo-app-gtvtnw.fly.dev';
-const LOCALHOST_WS_URL = 'http://localhost:3000';
+const PRODUCTION_WS_URL = process.env.EXPO_PUBLIC_WS_URL || "https://api-ludo-app.onrender.com";
+const LOCALHOST_WS_URL = "https://api-ludo-app.onrender.com";
 const ANDROID_WS_URL = 'http://192.168.178.130:3000';
 
 // Choose the appropriate WebSocket URL based on platform and environment

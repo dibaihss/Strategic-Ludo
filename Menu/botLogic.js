@@ -136,7 +136,7 @@ export const emitMultiplayerBotTurn = ({
         user,
         sendMessage,
       });
-    }, 1500);
+    }, 1000);
   }
   
   return action;

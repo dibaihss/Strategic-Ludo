@@ -125,18 +125,19 @@ const buildMovementSequence = (boxesPosition, currentPlayer, boxSize) => {
         maxCol2,
         returenToBase
     } = boxesPosition;
+    
+    playSound('move').catch(() => { });
 
-    if (returenToBase) {
+    if (returenToBase) {   
         return buildReturnToBasePath(boxesPosition, boxSize);
     }
-
-    if (xSteps > 0 && ySteps > 0) {
+    if (xSteps > 0 && ySteps > 0) {     
         return maxRow < maxCol
             ? buildXYPath(boxesPosition, currentPlayer, boxSize)
             : buildYXPath(boxesPosition, currentPlayer, boxSize);
     }
 
-    if (maxRow2 > 0 && maxRow1 > 0) {
+    if (maxRow2 > 0 && maxRow1 > 0) {     
         return buildXYXPath(boxesPosition, currentPlayer, boxSize);
     }
 
@@ -146,7 +147,7 @@ const buildMovementSequence = (boxesPosition, currentPlayer, boxSize) => {
 
     const movement = [];
     if (xSteps > 0) movement.push(...buildXPath(boxesPosition, currentPlayer, boxSize));
-    if (ySteps > 0) movement.push(...buildYPath(boxesPosition, currentPlayer, boxSize));
+    if (ySteps > 0) movement.push(...buildYPath(boxesPosition, currentPlayer, boxSize))
     return movement;
 };
 
