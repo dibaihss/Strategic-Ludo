@@ -17,7 +17,7 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { createGameScreenStyles } from './GameScreen.styles.js';
 import Instructions from './Instructions.jsx';
 import { emitMultiplayerBotTurn, getBotDifficultyForTurn, isBotControlledPlayer, runBotTurn } from './botLogic.js';
-import { playSound, stopSound } from '../assets/shared/audioManager';
+import { playSound } from '../assets/shared/audioManager';
 
 const buildPlayerColorsFromPlayers = (players = []) => {
   if (!Array.isArray(players) || players.length < 2) return null;
