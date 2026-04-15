@@ -18,6 +18,7 @@ import { createGameScreenStyles } from './GameScreen.styles.js';
 import Instructions from './Instructions.jsx';
 import { emitMultiplayerBotTurn, getBotDifficultyForTurn, isBotControlledPlayer, runBotTurn } from './botLogic.js';
 import { playSound, stopSound } from '../assets/shared/audioManager';
+import { useFocusEffect } from '@react-navigation/native';
 
 const buildPlayerColorsFromPlayers = (players = []) => {
   if (!Array.isArray(players) || players.length < 2) return null;
@@ -88,37 +89,47 @@ export default function GameScreen({ route, navigation }) {
     [currentMatch, user]
   );
 
-  useEffect(() => {
-    let mounted = true;
+  useFocusEffect(
+    React.useCallback(() => {
+      let isScreenFocused = true;
 
-    setCurrentUserPage('Game');
-    dispatch(resetGameState());
-    dispatch(resetAnimationState());
+      dispatch(setCurrentUserPage('Game'));
+      dispatch(resetGameState());
+      dispatch(resetAnimationState());
 
-    if (isOnline == false) {
-      dispatch(setActivePlayer("blue"));
-      dispatch(setCurrentPlayerColor("blue"));
-    }
-    // Keep the device awake when the user is on the GameScreen
-    activateKeepAwakeAsync()
-      .then(() => {
-        if (mounted) {
-          keepAwakeActivatedRef.current = true;
-        }
-      })
-      .catch((error) => {
-        console.error('Failed to activate keep-awake on game screen:', error);
-      });
+      if (isOnline === false) {
+        dispatch(setActivePlayer('blue'));
+        dispatch(setCurrentPlayerColor('blue'));
+      }
 
-    return () => {
-      mounted = false;
-      // Deactivate keep awake when leaving the GameScreen
-      if (!keepAwakeActivatedRef.current) return;
-      deactivateKeepAwake().catch((error) => {
-        console.warn('Failed to deactivate keep-awake on game screen:', error);
-      });
-    };
-  }, []);
+      // Keep the device awake while the GameScreen is focused.
+      activateKeepAwakeAsync()
+        .then(() => {
+          if (isScreenFocused) {
+            keepAwakeActivatedRef.current = true;
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to activate keep-awake on game screen:', error);
+        });
+
+      return () => {
+        isScreenFocused = false;
+        setShowExitModal(false);
+
+        // Deactivate keep-awake when leaving the GameScreen.
+        if (!keepAwakeActivatedRef.current) return;
+
+        deactivateKeepAwake()
+          .catch((error) => {
+            console.warn('Failed to deactivate keep-awake on game screen:', error);
+          })
+          .finally(() => {
+            keepAwakeActivatedRef.current = false;
+          });
+      };
+    }, [dispatch, isOnline])
+  );
 
   useEffect(() => {
     setGameIsStarted(true);
