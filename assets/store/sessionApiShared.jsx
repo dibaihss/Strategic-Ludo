@@ -16,7 +16,7 @@ const ENV_API =
   null;
 
 const PRODUCTION_API_URL =
-  (typeof process !== "undefined" && process.env && process.env.REACT_APP_PRODUCTION_URL) ||
+  (typeof process !== "undefined" && process.env && process.env.EXPO_PUBLIC_API_URL) ||
   "https://api-ludo-app.onrender.com/api";
 
 const LOCALHOST_API_URL =
