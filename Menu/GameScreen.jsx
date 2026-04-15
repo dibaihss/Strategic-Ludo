@@ -15,10 +15,12 @@ import { useWebSocket } from '../assets/shared/webSocketConnection.jsx'; // Impo
 import { setCurrentUserPage } from '../assets/store/authSlice.jsx';
 import { leaveMatch } from '../assets/store/sessionSlice.jsx';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
+import { CommonActions } from '@react-navigation/native';
 import { createGameScreenStyles } from './GameScreen.styles.js';
 import Instructions from './Instructions.jsx';
 import { emitMultiplayerBotTurn, getBotDifficultyForTurn, isBotControlledPlayer, runBotTurn } from './botLogic.js';
 import { playSound, stopSound } from '../assets/shared/audioManager';
+import { useFocusEffect } from '@react-navigation/native';
 
 const buildPlayerColorsFromPlayers = (players = []) => {
   if (!Array.isArray(players) || players.length < 2) return null;
@@ -91,57 +93,46 @@ export default function GameScreen({ route, navigation }) {
     [currentMatch, user]
   );
 
-  useEffect(() => {
-    if (hasInitializedSessionRef.current) return;
-    hasInitializedSessionRef.current = true;
-
-    setCurrentUserPage('Game');
-    dispatch(resetGameState());
-    dispatch(resetAnimationState());
-
-    if (isOnline === false) {
-      dispatch(setActivePlayer("blue"));
-      dispatch(setCurrentPlayerColor("blue"));
-    }
-  }, [dispatch, isOnline]);
-
   useFocusEffect(
-    useCallback(() => {
-      const lifecycleId = keepAwakeLifecycleRef.current.id + 1;
-      keepAwakeLifecycleRef.current.id = lifecycleId;
-      keepAwakeLifecycleRef.current.active = false;
+    React.useCallback(() => {
+      let isScreenFocused = true;
 
-      let isCurrentLifecycle = true;
+      dispatch(setCurrentUserPage('Game'));
+      dispatch(resetGameState());
+      dispatch(resetAnimationState());
 
+      if (isOnline === false) {
+        dispatch(setActivePlayer('blue'));
+        dispatch(setCurrentPlayerColor('blue'));
+      }
+
+      // Keep the device awake while the GameScreen is focused.
       activateKeepAwakeAsync()
         .then(() => {
-          if (keepAwakeLifecycleRef.current.id !== lifecycleId) return;
-
-          if (!isCurrentLifecycle) {
-            deactivateKeepAwake().catch((error) => {
-              console.warn('Failed to deactivate keep-awake on game screen:', error);
-            });
-            return;
+          if (isScreenFocused) {
+            keepAwakeActivatedRef.current = true;
           }
-
-          keepAwakeLifecycleRef.current.active = true;
         })
         .catch((error) => {
           console.error('Failed to activate keep-awake on game screen:', error);
         });
 
       return () => {
-        isCurrentLifecycle = false;
+        isScreenFocused = false;
+        setShowExitModal(false);
 
-        if (keepAwakeLifecycleRef.current.id !== lifecycleId) return;
-        if (!keepAwakeLifecycleRef.current.active) return;
+        // Deactivate keep-awake when leaving the GameScreen.
+        if (!keepAwakeActivatedRef.current) return;
 
-        keepAwakeLifecycleRef.current.active = false;
-        deactivateKeepAwake().catch((error) => {
-          console.warn('Failed to deactivate keep-awake on game screen:', error);
-        });
+        deactivateKeepAwake()
+          .catch((error) => {
+            console.warn('Failed to deactivate keep-awake on game screen:', error);
+          })
+          .finally(() => {
+            keepAwakeActivatedRef.current = false;
+          });
       };
-    }, [])
+    }, [dispatch, isOnline])
   );
 
   useEffect(() => {
@@ -341,12 +332,21 @@ export default function GameScreen({ route, navigation }) {
 
   const confirmExitGame = () => {
     setShowExitModal(false); // Close the modal
-    if (mode === 'local') {
-      navigation.navigate('Login');
-    } else {
-      navigation.navigate('Home');
-      handleLeaveMatch(); // Call the function to leave the match
+    if (mode === 'multiplayer') {
+      handleLeaveMatch();
     }
+
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: mode === 'local' ? 'Login' : 'Home' }],
+      })
+    );
   };
 
   const handleLeaveMatch = () => {

@@ -69,8 +69,8 @@ export default function AppNavigator() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isLoggedIn ? (
           <>
-            <Stack.Screen name="Home" component={HomeScreen} options={{ unmountOnBlur: true }}/>
-            <Stack.Screen name="Game" component={GameScreen} options={{ unmountOnBlur: true }}/>
+            <Stack.Screen name="Home" component={HomeScreen}/>
+            <Stack.Screen name="Game" component={GameScreen}/>
             <Stack.Screen name="MatchList" component={MatchListPage} />
             <Stack.Screen name="WaitingRoom" component={WaitingRoom} />
           </>
@@ -78,13 +78,13 @@ export default function AppNavigator() {
           <>
             <Stack.Screen name="Login" component={LoginPage} />
             <Stack.Screen name="Register" component={RegisterPage} />
-            <Stack.Screen name="Home" component={HomeScreen}  options={{ unmountOnBlur: true }}/>
-            <Stack.Screen name="Game" component={GameScreen} options={{ unmountOnBlur: true }} />
+            <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="Game" component={GameScreen} />
           </>
         ) : (
           <>
             <Stack.Screen name="Login" component={LoginPage} />
-            <Stack.Screen name="Register" component={RegisterPage} options={{ unmountOnBlur: true }} />
+            <Stack.Screen name="Register" component={RegisterPage} />
           </>
         )}
       </Stack.Navigator>
