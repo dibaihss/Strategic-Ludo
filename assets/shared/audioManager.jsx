@@ -9,6 +9,7 @@ const soundConfig = {
   capture:    { looping: false, isBackgroundMusic: false },
   win:        { looping: false, isBackgroundMusic: false },
   click:      { looping: false, isBackgroundMusic: false },
+  changeTurn:      { looping: false, isBackgroundMusic: false },
 };
 
 const getAudioState = () => {

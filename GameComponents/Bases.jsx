@@ -242,7 +242,6 @@ export default function Bases() {
 
     const movePlayer = (color, steps) => {
         console.log('canControlColor', canControlColor(currentPlayerColor, color));
-        playSound('move').catch(() => { });
         movePlayerCore({ color, steps, currentPlayer, activePlayer, systemLang, showClone, dispatch });
     };
 

@@ -181,7 +181,6 @@ export const checkIfGotEnemy = ({ color, position }) => (dispatch, getState) => 
     if (enemyInPosition && position && !isSafeZone(position)) {
         playSound('capture').catch(() => {});
         dispatch(setCurrentPlayer(enemyInPosition));
-        console.log(enemyInPosition)
         dispatch(setBoxesPosition({ ySteps: 3, xSteps: 3, returenToBase: true, kickedPlayer: enemyInPosition }))
     } else {
         dispatch(setActivePlayer());
@@ -300,7 +299,6 @@ export const gameSlice = createSlice({
             state.currentPlayer = action.payload;
         },
         setActivePlayer: (state, action) => {
-
             const newActivePlayer = getNextPlayerType(state.activePlayer,state.availableTypes);
             state.activePlayer = newActivePlayer;
 
