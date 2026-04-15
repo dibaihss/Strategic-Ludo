@@ -14,6 +14,7 @@ import { useWebSocket } from '../assets/shared/webSocketConnection.jsx'; // Impo
 import { setCurrentUserPage } from '../assets/store/authSlice.jsx';
 import { leaveMatch } from '../assets/store/sessionSlice.jsx';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
+import { CommonActions } from '@react-navigation/native';
 import { createGameScreenStyles } from './GameScreen.styles.js';
 import Instructions from './Instructions.jsx';
 import { emitMultiplayerBotTurn, getBotDifficultyForTurn, isBotControlledPlayer, runBotTurn } from './botLogic.js';
@@ -315,12 +316,21 @@ export default function GameScreen({ route, navigation }) {
 
   const confirmExitGame = () => {
     setShowExitModal(false); // Close the modal
-    if (mode === 'local') {
-      navigation.navigate('Login');
-    } else {
-      navigation.navigate('Home');
-      handleLeaveMatch(); // Call the function to leave the match
+    if (mode === 'multiplayer') {
+      handleLeaveMatch();
     }
+
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: mode === 'local' ? 'Login' : 'Home' }],
+      })
+    );
   };
 
   const handleLeaveMatch = () => {
