@@ -3,9 +3,10 @@ import { MaterialIcons } from '@expo/vector-icons';
 import Goals from '../GameComponents/Goals.jsx';
 import Bases from '../GameComponents/Bases.jsx';
 import Timer from '../GameComponents/Timer.jsx';
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { View, Text, Pressable, ActivityIndicator, Modal, Animated } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { setActivePlayer, resetTimer, setIsOnline, resetGameState, setCurrentPlayerColor, setPlayerColors } from '../assets/store/gameSlice.jsx';
 import { resetAnimationState } from '../assets/store/animationSlice.jsx';
 import { uiStrings, getLocalizedColor } from '../assets/shared/hardCodedData.js';
@@ -14,6 +15,7 @@ import { useWebSocket } from '../assets/shared/webSocketConnection.jsx'; // Impo
 import { setCurrentUserPage } from '../assets/store/authSlice.jsx';
 import { leaveMatch } from '../assets/store/sessionSlice.jsx';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
+import { CommonActions } from '@react-navigation/native';
 import { createGameScreenStyles } from './GameScreen.styles.js';
 import Instructions from './Instructions.jsx';
 import { emitMultiplayerBotTurn, getBotDifficultyForTurn, isBotControlledPlayer, runBotTurn } from './botLogic.js';
@@ -66,7 +68,9 @@ export default function GameScreen({ route, navigation }) {
   const [winningColor, setWinningColor] = useState(null);
   const [winnerDetected, setWinnerDetected] = useState(false);
   const winnerScale = useRef(new Animated.Value(0.7)).current;
-  const keepAwakeActivatedRef = useRef(false);
+  const keepAwakeLifecycleRef = useRef({ id: 0, active: false });
+  const hasInitializedSessionRef = useRef(false);
+  const hasInitializedLocalStartRef = useRef(false);
 
   // Memoize styles to avoid recreating on every render
   const styles = useMemo(() => createGameScreenStyles(theme), [theme]);
@@ -88,39 +92,51 @@ export default function GameScreen({ route, navigation }) {
     [currentMatch, user]
   );
 
+  useFocusEffect(
+    React.useCallback(() => {
+      let isScreenFocused = true;
+
+      dispatch(setCurrentUserPage('Game'));
+      dispatch(resetGameState());
+      dispatch(resetAnimationState());
+
+      if (isOnline === false) {
+        dispatch(setActivePlayer('blue'));
+        dispatch(setCurrentPlayerColor('blue'));
+      }
+
+      // Keep the device awake while the GameScreen is focused.
+      activateKeepAwakeAsync()
+        .then(() => {
+          if (isScreenFocused) {
+            keepAwakeActivatedRef.current = true;
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to activate keep-awake on game screen:', error);
+        });
+
+      return () => {
+        isScreenFocused = false;
+        setShowExitModal(false);
+
+        // Deactivate keep-awake when leaving the GameScreen.
+        if (!keepAwakeActivatedRef.current) return;
+
+        deactivateKeepAwake()
+          .catch((error) => {
+            console.warn('Failed to deactivate keep-awake on game screen:', error);
+          })
+          .finally(() => {
+            keepAwakeActivatedRef.current = false;
+          });
+      };
+    }, [dispatch, isOnline])
+  );
+
   useEffect(() => {
-    let mounted = true;
-
-    setCurrentUserPage('Game');
-    dispatch(resetGameState());
-    dispatch(resetAnimationState());
-
-    if (isOnline == false) {
-      dispatch(setActivePlayer("blue"));
-      dispatch(setCurrentPlayerColor("blue"));
-    }
-    // Keep the device awake when the user is on the GameScreen
-    activateKeepAwakeAsync()
-      .then(() => {
-        if (mounted) {
-          keepAwakeActivatedRef.current = true;
-        }
-      })
-      .catch((error) => {
-        console.error('Failed to activate keep-awake on game screen:', error);
-      });
-
-    return () => {
-      mounted = false;
-      // Deactivate keep awake when leaving the GameScreen
-      if (!keepAwakeActivatedRef.current) return;
-      deactivateKeepAwake().catch((error) => {
-        console.warn('Failed to deactivate keep-awake on game screen:', error);
-      });
-    };
-  }, []);
-
-  useEffect(() => {
+    if (hasInitializedLocalStartRef.current) return;
+    hasInitializedLocalStartRef.current = true;
     setGameIsStarted(true);
     setLoading(false);
   }, []);
@@ -315,12 +331,21 @@ export default function GameScreen({ route, navigation }) {
 
   const confirmExitGame = () => {
     setShowExitModal(false); // Close the modal
-    if (mode === 'local') {
-      navigation.navigate('Login');
-    } else {
-      navigation.navigate('Home');
-      handleLeaveMatch(); // Call the function to leave the match
+    if (mode === 'multiplayer') {
+      handleLeaveMatch();
     }
+
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: mode === 'local' ? 'Login' : 'Home' }],
+      })
+    );
   };
 
   const handleLeaveMatch = () => {
