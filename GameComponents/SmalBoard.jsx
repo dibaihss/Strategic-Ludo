@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import React, { useEffect } from 'react';
 import Soldier from './Soldier';
-import { boxes, isSafeZone } from "../assets/shared/hardCodedData.js"
+import { boxes, isSafeZone, isArrow, getArrowDirection } from "../assets/shared/hardCodedData.js"
 import { useDispatch, useSelector } from 'react-redux';
 import {
     setCurrentPlayer
@@ -165,6 +165,15 @@ export default function SmalBoard() {
             fontSize: isSmallScreen ? 15 : 30,
             opacity: 0.6,
         },
+        arrowIcon: {
+            position: 'absolute',
+            zIndex: 0,
+            width: '100%',
+            height: '100%',
+            textAlign: 'center',
+            fontSize: isSmallScreen ? 15 : 30,
+            opacity: 0.6,
+        },
     });
     const renderBox = (number, i) => (
         <View
@@ -175,6 +184,10 @@ export default function SmalBoard() {
     
             {isSafeZone(number) && (
                 <Text style={styles.safeZoneIcon}>🛡️</Text>
+            )}
+
+            {isArrow(number) && (
+                <Text style={styles.arrowIcon}>{getArrowDirection(number)}</Text>
             )}
 
             {renderSoldiersForBox({ soldiers: redSoldiers, keyPrefix: 'red', number, currentPlayer, onSelect: currentSelectedPlayer })}
