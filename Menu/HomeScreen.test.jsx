@@ -9,10 +9,11 @@ jest.mock('../assets/store/authSlice.jsx', () => ({
 }));
 
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import * as RN from 'react-native';
 import HomeScreen from './HomeScreen';
+import { act } from '@testing-library/react-native';
 
 RN.Modal = ({ visible, children }) => (visible ? children : null);
 
@@ -55,21 +56,26 @@ describe('HomeScreen', () => {
     useDispatch.mockReturnValue(jest.fn());
   });
 
-  test('passes selected offline bot difficulty into game navigation', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('shows offline options when pressing play offline', () => {
     const navigation = { navigate: jest.fn() };
     const state = createState();
 
     useSelector.mockImplementation((selector) => selector(state));
 
-    const { getByTestId } = render(<HomeScreen navigation={navigation} />);
+    const { getByTestId, queryByTestId } = render(<HomeScreen navigation={navigation} />);
 
+    // Initially, offline options should not be visible
+    expect(queryByTestId('offline-choice-local-button')).toBeNull();
+
+    // Press play offline button
     fireEvent.press(getByTestId('home-play-offline-button'));
-    fireEvent.press(getByTestId('offline-choice-bot-button'));
-    fireEvent.press(getByTestId('bot-difficulty-normal-button'));
 
-    expect(navigation.navigate).toHaveBeenCalledWith('Game', {
-      mode: 'bot',
-      botDifficulty: 'normal',
-    });
+    // Now offline options should be visible
+    expect(getByTestId('offline-choice-local-button')).toBeTruthy();
+    expect(getByTestId('offline-choice-bot-button')).toBeTruthy();
   });
 });

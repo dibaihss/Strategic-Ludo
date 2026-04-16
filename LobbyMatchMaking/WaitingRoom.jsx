@@ -16,6 +16,7 @@ import { uiStrings } from '../assets/shared/hardCodedData.js';
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
 import Toast from 'react-native-toast-message';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const WaitingRoom = ({ navigation, route }) => {
   const dispatch = useDispatch();
@@ -106,13 +107,14 @@ const WaitingRoom = ({ navigation, route }) => {
         console.log("WebSocket data received:", data);
         if (data.type === 'startGame') {
           setShowCountdown(true);
+
         }
         if (data.type === 'userInactive') {
           if (user.id !== data.userId) {
             debounceHandleRefresh();
           }
         } else if (data.type === 'userBack') {
-            debounceHandleRefresh();
+          debounceHandleRefresh();
         } else if (data.type === 'userJoined') {
           debounceHandleRefresh();
         } else if (data.type === 'botAdded') {
@@ -189,6 +191,7 @@ const WaitingRoom = ({ navigation, route }) => {
   };
 
   const handleChooseBotDifficulty = (botDifficulty) => {
+    if (!isHost) return;
     setShowBotDifficultyPrompt(false);
 
     const nextBotNumber = botCount + 1;
@@ -236,7 +239,7 @@ const WaitingRoom = ({ navigation, route }) => {
   }
 
   const checkIfUserInMatch = (match) => {
-    if(!match || !match.id) return;
+    if (!match || !match.id) return;
     const users = Array.isArray(match.users) ? match.users : [];
     const userInMatch = users.find(u => u.id === user.id);
     console.log('User in match:', users, userInMatch);
@@ -245,7 +248,7 @@ const WaitingRoom = ({ navigation, route }) => {
       dispatch(updateMatch(null))
       return;
     }
-};
+  };
   const startGame = () => {
     const users = Array.isArray(currentMatch?.users) ? currentMatch.users : [];
     if (users.length < 2) {
@@ -254,7 +257,7 @@ const WaitingRoom = ({ navigation, route }) => {
     sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'startGame' });
   };
 
-  const handleStartGame = () => {
+  const handleStartGame = async () => {
     if (players.length < 2) return;
     const playerColors = {
       blue: players[0].id,
@@ -275,6 +278,27 @@ const WaitingRoom = ({ navigation, route }) => {
           console.error('Failed to update match status:', error);
         });
     }
+
+
+    await AsyncStorage.setItem('REDIRECT_TO_GAME', 'true');
+    await AsyncStorage.setItem('REDIRECT_GAME_MODE', 'multiplayer');
+    await AsyncStorage.setItem('REDIRECT_BOT_DIFFICULTY', 'normal');
+    await AsyncStorage.setItem('REDIRECT_MATCH_DATA', JSON.stringify(currentMatch));
+
+
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    } else {
+      dispatch(setPlayerColors(playerColors))
+      navigation.navigate('Game', {
+        mode: 'multiplayer',
+        matchId: currentMatch.id,
+        playerColors,
+      });
+    }
+
+
+
     dispatch(setPlayerColors(playerColors))
     navigation.navigate('Game', {
       mode: 'multiplayer',

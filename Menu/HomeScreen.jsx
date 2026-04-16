@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import HomePage from './Home.jsx';
-import { resetTimer, setActivePlayer } from '../assets/store/gameSlice.jsx';
 import { logout, clearAuth} from '../assets/store/authSlice.jsx';
 
 export default function HomeScreen({ navigation }) {
@@ -15,16 +15,25 @@ export default function HomeScreen({ navigation }) {
     setShowOfflineOptions(true);
   };
 
-  const handleChooseOfflineMode = (selectedMode) => {
+  const handleChooseOfflineMode = async (selectedMode) => {
     setShowOfflineOptions(false);
     if (selectedMode === 'bot') {
       setShowBotDifficultyPrompt(true);
       return;
     }
 
-    dispatch(resetTimer());
-    dispatch(setActivePlayer());
-    navigation.navigate('Game', { mode: selectedMode });
+    await AsyncStorage.setItem('REDIRECT_TO_GAME', 'true');
+    await AsyncStorage.setItem('REDIRECT_GAME_MODE', selectedMode);
+
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    } else {
+      // For native, we rely on the App entry point to handle the flag on next boot
+      // or we could use a library like react-native-restart if available.
+      // As a fallback for native, we still navigate but the "clean session"
+      // will happen on the next manual reload or we can implement a soft-reset.
+      navigation.navigate('Game', { mode: selectedMode });
+    }
   };
 
   const handleCancelOfflineChoice = () => {
@@ -36,11 +45,18 @@ export default function HomeScreen({ navigation }) {
     setShowOfflineOptions(true);
   };
 
-  const handleChooseBotDifficulty = (botDifficulty) => {
+  const handleChooseBotDifficulty = async (botDifficulty) => {
     setShowBotDifficultyPrompt(false);
-    dispatch(resetTimer());
-    dispatch(setActivePlayer());
-    navigation.navigate('Game', { mode: 'bot', botDifficulty });
+
+    await AsyncStorage.setItem('REDIRECT_TO_GAME', 'true');
+    await AsyncStorage.setItem('REDIRECT_GAME_MODE', 'bot');
+    await AsyncStorage.setItem('REDIRECT_BOT_DIFFICULTY', botDifficulty);
+
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    } else {
+      navigation.navigate('Game', { mode: 'bot', botDifficulty });
+    }
   };
 
   const handleStartMultiplayerGame = () => {
