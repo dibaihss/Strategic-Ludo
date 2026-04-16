@@ -191,6 +191,7 @@ const WaitingRoom = ({ navigation, route }) => {
   };
 
   const handleChooseBotDifficulty = (botDifficulty) => {
+    if (!isHost) return;
     setShowBotDifficultyPrompt(false);
 
     const nextBotNumber = botCount + 1;
