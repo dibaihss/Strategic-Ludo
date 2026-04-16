@@ -11,7 +11,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { createWaitingRoomStyles } from './WaitingRoom.styles.js';
 import { useDispatch, useSelector } from 'react-redux';
 import { addBotToMatch, fetchCurrentMatch, updateMatch, updateMatchStatus, leaveMatch } from '../assets/store/sessionSlice.jsx';
-import { setPlayerColors, updateSoldiersPosition, removeColorFromAvailableColors, setActivePlayer } from '../assets/store/gameSlice.jsx';
+import { setPlayerColors, updateSoldiersPosition, removeColorFromAvailableColors, setActivePlayer, setPlayerStatus } from '../assets/store/gameSlice.jsx';
+import StatusBadge from '../assets/shared/StatusBadge.jsx';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
 import Toast from 'react-native-toast-message';
@@ -27,6 +28,7 @@ const WaitingRoom = ({ navigation, route }) => {
   const currentMatch = useSelector(state => state.session.currentMatch);
   const user = useSelector(state => state.auth.user);
   const loading = useSelector(state => state.session.loading);
+  const playerConnectionStatus = useSelector(state => state.game?.playerConnectionStatus || {});
 
   const [count, setCount] = useState(3);
   const intervalRef = useRef(null);
@@ -112,18 +114,22 @@ const WaitingRoom = ({ navigation, route }) => {
 
         }
         if (data.type === 'userInactive') {
+          dispatch(setPlayerStatus({ userId: data.userId, status: 'inactive' }));
           if (user.id !== data.userId) {
             debounceHandleRefresh();
           }
         } else if (data.type === 'userBack') {
+          dispatch(setPlayerStatus({ userId: data.userId, status: 'connected' }));
           debounceHandleRefresh();
         } else if (data.type === 'userJoined') {
+          dispatch(setPlayerStatus({ userId: data.userId, status: 'connected' }));
           debounceHandleRefresh();
         } else if (data.type === 'botAdded') {
           if (data.bot) {
             dispatch(addBotToMatch({ matchId: currentMatch.id, bot: data.bot }));
           }
         } else if (data.type === 'userDisconnected') {
+          dispatch(setPlayerStatus({ userId: data.userId, status: 'disconnected' }));
           debounceHandleRefresh();
         } else if (data.type === 'userLeft' || data.type === 'userKicked') {
           if (data.type === "userKicked") console.log("user kicked", data.userId)
@@ -485,13 +491,24 @@ const WaitingRoom = ({ navigation, route }) => {
         <FlatList
           data={players}
           keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item, index }) => (
-            <View style={[styles.playerItem, { backgroundColor: theme.colors.inputBackground }]}>
+          renderItem={({ item, index }) => {
+            const playerStatus = playerConnectionStatus[item.id] || 'connected';
+            const isDisconnected = playerStatus === 'disconnected';
+            
+            return (
+            <View style={[
+              styles.playerItem, 
+              { backgroundColor: theme.colors.inputBackground },
+              isDisconnected && styles.playerItemDisconnected
+            ]}>
               <View style={styles.playerDetails}>
                 <View style={[styles.playerAvatar, { backgroundColor: getPlayerColor(index, theme) }]}>
                   <Text style={styles.playerInitial}>
                     {(item.name || item.username || "User").charAt(0).toUpperCase()}
                   </Text>
+                  <View style={styles.statusBadgeContainer}>
+                    <StatusBadge status={playerStatus} size="sm" />
+                  </View>
                 </View>
 
                 <Text style={[styles.playerName, { color: theme.colors.text }]}>
@@ -519,7 +536,8 @@ const WaitingRoom = ({ navigation, route }) => {
                 )}
               </View>
             </View>
-          )}
+          );
+          }}
           ListEmptyComponent={
             <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
               {uiStrings[systemLang].noPlayersYet || 'No players have joined yet'}

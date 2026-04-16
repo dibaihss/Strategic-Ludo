@@ -183,6 +183,17 @@ export const createWaitingRoomStyles = (theme) =>
       fontWeight: 'bold',
       color: theme.colors.text,
     },
+    statusBadgeContainer: {
+      position: 'absolute',
+      bottom: -2,
+      right: -2,
+      borderRadius: 8,
+      borderWidth: 2,
+      borderColor: theme.colors.card,
+    },
+    playerItemDisconnected: {
+      opacity: 0.6,
+    },
     emptyText: {
       textAlign: 'center',
       padding: 24,

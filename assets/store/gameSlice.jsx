@@ -15,6 +15,9 @@ const initialState = {
     isTimerRunning: false,
     unActivePlayers: [],
     gamePaused: false,
+    playerConnectionStatus: {},
+    waitingForPlayer: null,
+    waitingForPlayerTimeout: 10,
     availableTypes: ["red", "yellow", "blue", "green"],
     playerColors: {
         blue: 1,
@@ -569,6 +572,23 @@ export const gameSlice = createSlice({
         },
         setPausedGame: (state, action) => {
             state.gamePaused = action.payload;
+        },
+        setPlayerStatus: (state, action) => {
+            const { userId, status } = action.payload;
+            state.playerConnectionStatus[userId] = status;
+        },
+        resetPlayerStatuses: (state) => {
+            state.playerConnectionStatus = {};
+        },
+        setWaitingForPlayer: (state, action) => {
+            state.waitingForPlayer = action.payload;
+            if (action.payload) {
+                state.gamePaused = true;
+            }
+        },
+        clearWaitingForPlayer: (state) => {
+            state.waitingForPlayer = null;
+            state.gamePaused = false;
         }
     },
     extraReducers: (builder) => {
@@ -618,7 +638,20 @@ export const {
     setCurrentPlayerColor,
     applyServerStateSnapshot,
     updateSoldiersPosition,
-    removeColorFromAvailableColors
+    removeColorFromAvailableColors,
+    setPlayerStatus,
+    resetPlayerStatuses,
+    setWaitingForPlayer,
+    clearWaitingForPlayer
 } = gameSlice.actions;
 
 export default gameSlice.reducer;
+
+export const selectPlayerStatus = (state, userId) => state.game.playerConnectionStatus[userId] || 'connected';
+export const selectAllPlayerStatuses = (state) => state.game.playerConnectionStatus;
+export const selectDisconnectedPlayers = (state) => {
+    const statuses = state.game.playerConnectionStatus;
+    return Object.entries(statuses)
+        .filter(([_, status]) => status === 'disconnected')
+        .map(([userId, _]) => userId);
+};

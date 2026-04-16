@@ -3,10 +3,12 @@ import { MaterialIcons } from '@expo/vector-icons';
 import Goals from '../GameComponents/Goals.jsx';
 import Bases from '../GameComponents/Bases.jsx';
 import Timer from '../GameComponents/Timer.jsx';
+import PlayerStatusPanel from '../GameComponents/PlayerStatusPanel.jsx';
+import GamePausedOverlay from '../GameComponents/GamePausedOverlay.jsx';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { View, Text, Pressable, ActivityIndicator, Modal, Animated } from 'react-native';
-import { setActivePlayer, resetTimer, setIsOnline, resetGameState, setCurrentPlayerColor, setPlayerColors } from '../assets/store/gameSlice.jsx';
+import { setActivePlayer, resetTimer, setIsOnline, resetGameState, setCurrentPlayerColor, setPlayerColors, setPlayerStatus, setWaitingForPlayer, clearWaitingForPlayer } from '../assets/store/gameSlice.jsx';
 import { resetAnimationState } from '../assets/store/animationSlice.jsx';
 import { uiStrings, getLocalizedColor } from '../assets/shared/hardCodedData.js';
 
@@ -57,6 +59,7 @@ export default function GameScreen({ route, navigation }) {
   const yellowCards = useSelector(state => state.game.yellowCards);
   const greenCards = useSelector(state => state.game.greenCards);
   const showClone = useSelector(state => state.animation?.showClone || false);
+  const playerConnectionStatus = useSelector(state => state.game?.playerConnectionStatus || {});
 
   const [gameIsStarted, setGameIsStarted] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -78,7 +81,7 @@ export default function GameScreen({ route, navigation }) {
     playerColors: routePlayerColors,
     botDifficulty: routeBotDifficulty,
   } = route.params || { mode: 'local', matchId: 1 };
-  const { connected, sendMessage, sendMatchCommand } = useWebSocket();
+  const { connected, sendMessage, sendMatchCommand, subscribe } = useWebSocket();
   const multiplayerPlayerColors = useMemo(
     () => routePlayerColors || buildPlayerColorsFromPlayers(currentMatch?.users),
     [currentMatch?.users, routePlayerColors]
@@ -270,6 +273,70 @@ export default function GameScreen({ route, navigation }) {
     }).start();
   }, [blueSoldiers, redSoldiers, yellowSoldiers, greenSoldiers, loading, winnerDetected, winnerScale]);
 
+  useEffect(() => {
+    if (!currentMatch?.id || !connected) return;
+
+    const subscription = subscribe(`/topic/gameStarted/${currentMatch.id}`, (data) => {
+      if (data.type === 'userInactive') {
+        dispatch(setPlayerStatus({ userId: data.userId, status: 'inactive' }));
+      } else if (data.type === 'userBack') {
+        dispatch(setPlayerStatus({ userId: data.userId, status: 'connected' }));
+      } else if (data.type === 'userDisconnected') {
+        dispatch(setPlayerStatus({ userId: data.userId, status: 'disconnected' }));
+      } else if (data.type === 'userLeft') {
+        dispatch(setPlayerStatus({ userId: data.userId, status: 'disconnected' }));
+      } else if (data.type === 'userJoined') {
+        dispatch(setPlayerStatus({ userId: data.userId, status: 'connected' }));
+      }
+    });
+
+    return () => {
+      if (subscription) {
+        subscription.unsubscribe();
+      }
+    };
+  }, [currentMatch?.id, connected, dispatch, subscribe]);
+
+  const DISCONNECT_TIMEOUT = 10;
+  const disconnectTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    if (mode !== 'multiplayer' || !isOnline) return;
+
+    const playerColorsMap = playerColors || {};
+    const activePlayerUserId = playerColorsMap[activePlayer];
+
+    if (!activePlayerUserId) return;
+
+    const currentPlayerStatus = playerConnectionStatus[activePlayerUserId];
+
+    if (currentPlayerStatus === 'disconnected' && !winnerDetected) {
+      dispatch(setWaitingForPlayer({
+        userId: activePlayerUserId,
+        playerName: activePlayer,
+        color: activePlayer,
+      }));
+
+      disconnectTimeoutRef.current = setTimeout(() => {
+        dispatch(clearWaitingForPlayer());
+      }, DISCONNECT_TIMEOUT * 1000);
+    } else {
+      if (disconnectTimeoutRef.current) {
+        clearTimeout(disconnectTimeoutRef.current);
+        disconnectTimeoutRef.current = null;
+      }
+      if (currentPlayerStatus === 'connected' && !winnerDetected) {
+        dispatch(clearWaitingForPlayer());
+      }
+    }
+
+    return () => {
+      if (disconnectTimeoutRef.current) {
+        clearTimeout(disconnectTimeoutRef.current);
+      }
+    };
+  }, [activePlayer, playerColors, playerConnectionStatus, mode, isOnline, dispatch, winnerDetected]);
+
   const sendMoveUpdate = (message) => {
     if (connected && message?.type) {
       sendMatchCommand({
@@ -359,6 +426,7 @@ export default function GameScreen({ route, navigation }) {
       {gameIsStarted ? (
         <>
           <Timer />
+          <PlayerStatusPanel />
           <SmalBoard />
           <Goals />
           <Bases />
@@ -387,6 +455,7 @@ export default function GameScreen({ route, navigation }) {
               </Text>
             </Pressable>
           </View>
+          <GamePausedOverlay visible={mode === 'multiplayer' && isOnline} />
         </>
       ) : (
         <View style={styles.loadingContainer}>
@@ -403,6 +472,7 @@ export default function GameScreen({ route, navigation }) {
           </Pressable>
         </View>
       )}
+      <GamePausedOverlay visible={mode === 'multiplayer' && isOnline} />
       {/* Winner Popup Modal */}
       <Modal
         visible={showWinnerModal}
