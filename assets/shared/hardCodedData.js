@@ -26,6 +26,38 @@ const safeZoneCellSet = new Set(SAFE_ZONE_CELL_IDS);
 
 const isSafeZone = (cellId) => Boolean(cellId && safeZoneCellSet.has(cellId));
 
+/** Board cell IDs with arrow icons. */
+const ARROW_CELL_IDS = Object.freeze([
+    '3a',
+    '3b',
+    '3c',
+    '3d',
+    '10d',
+    '10b',
+    '10a',
+    '10c'
+
+]);
+
+const arrowCellSet = new Set(ARROW_CELL_IDS);
+
+const isArrow = (cellId) => Boolean(cellId && arrowCellSet.has(cellId));
+
+/** Returns the arrow emoji direction for each arrow cell. */
+const getArrowDirection = (cellId) => {
+    switch (cellId) {
+        case '3a': return '⬆️';
+        case '10a': return '⬅️';
+        case '3c': return '⬇️';
+        case '10c': return '➡️';
+        case '3b': return '➡️';
+        case '10b': return '⬆️';
+        case '3d': return '⬅️';
+        case '10d': return '⬇️';
+        default:  return '➡️';
+    }
+};
+
 const directions = ["left", "top", "bottom", "right"];
 const playerType = ["red", "yellow", "blue", "green"]
 const playerTypeAr = ["احمر", "زهري", "ازرق", "اخضر"]
@@ -402,4 +434,7 @@ export {
     getLocalizedColor,
     SAFE_ZONE_CELL_IDS,
     isSafeZone,
+    ARROW_CELL_IDS,
+    isArrow,
+    getArrowDirection,
 };
