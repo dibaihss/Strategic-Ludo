@@ -217,7 +217,7 @@ export default function Bases() {
             left: isSmallScreen ? 5 : 124,
         },
         avatarContainerRed: {
-            top: isSmallScreen ? -35 : 129,
+            top: isSmallScreen ? -35 : 46,
             right: isSmallScreen ? 5 : 132,
         },
         avatarContainerYellow: {
