@@ -18,6 +18,7 @@ import Toast from 'react-native-toast-message';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+
 const WaitingRoom = ({ navigation, route }) => {
   const dispatch = useDispatch();
   const theme = useSelector(state => state.theme.current);
@@ -32,6 +33,7 @@ const WaitingRoom = ({ navigation, route }) => {
 
   const [refreshing, setRefreshing] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
+  const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
   const keepAwakeActivatedRef = useRef(false);
   const [showBotDifficultyPrompt, setShowBotDifficultyPrompt] = useState(false);
 
@@ -284,6 +286,7 @@ const WaitingRoom = ({ navigation, route }) => {
     await AsyncStorage.setItem('REDIRECT_GAME_MODE', 'multiplayer');
     await AsyncStorage.setItem('REDIRECT_BOT_DIFFICULTY', 'normal');
     await AsyncStorage.setItem('REDIRECT_MATCH_DATA', JSON.stringify(currentMatch));
+    await AsyncStorage.setItem('REDIRECT_ISLOGGED_IN', isLoggedIn.toString());
 
 
     if (typeof window !== 'undefined') {

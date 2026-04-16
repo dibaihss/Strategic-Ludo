@@ -24,6 +24,7 @@ export default function HomeScreen({ navigation }) {
 
     await AsyncStorage.setItem('REDIRECT_TO_GAME', 'true');
     await AsyncStorage.setItem('REDIRECT_GAME_MODE', selectedMode);
+    await AsyncStorage.setItem('REDIRECT_ISLOGGED_IN', isLoggedIn.toString());
 
     if (typeof window !== 'undefined') {
       window.location.reload();
@@ -51,6 +52,7 @@ export default function HomeScreen({ navigation }) {
     await AsyncStorage.setItem('REDIRECT_TO_GAME', 'true');
     await AsyncStorage.setItem('REDIRECT_GAME_MODE', 'bot');
     await AsyncStorage.setItem('REDIRECT_BOT_DIFFICULTY', botDifficulty);
+    await AsyncStorage.setItem('REDIRECT_ISLOGGED_IN', isLoggedIn.toString());
 
     if (typeof window !== 'undefined') {
       window.location.reload();

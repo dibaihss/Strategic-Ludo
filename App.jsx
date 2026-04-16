@@ -30,8 +30,9 @@ function RootNavigation() {
         if (redirectFlag === 'true') {
           const mode = await AsyncStorage.getItem('REDIRECT_GAME_MODE');
           const botDifficulty = await AsyncStorage.getItem('REDIRECT_BOT_DIFFICULTY');
-
-          await dispatch(loadStoredUser()).unwrap();
+          const isLoggedINLocalStorage = await AsyncStorage.getItem('REDIRECT_ISLOGGED_IN');
+    
+          if(isLoggedINLocalStorage === "true") await dispatch(loadStoredUser()).unwrap();
 
           // Restore match data from localStorage for multiplayer
           if (mode === 'multiplayer') {
