@@ -10,6 +10,7 @@ import { store } from './assets/store/store.jsx';
 import { WebSocketProvider } from './assets/shared/webSocketConnection.jsx';
 import { initAudio } from './assets/shared/audioManager';
 import { loadStoredUser } from './assets/store/authSlice.jsx';
+import { updateMatch } from './assets/store/sessionSlice.jsx';
 
 import AppNavigator from './navigators/AppNavigator.jsx';
 import AuthNavigator from './navigators/AuthNavigator.jsx';
@@ -32,12 +33,22 @@ function RootNavigation() {
 
           await dispatch(loadStoredUser()).unwrap();
 
+          // Restore match data from localStorage for multiplayer
+          if (mode === 'multiplayer') {
+            const matchDataStr = await AsyncStorage.getItem('REDIRECT_MATCH_DATA');
+            if (matchDataStr) {
+              const matchData = JSON.parse(matchDataStr);
+              dispatch(updateMatch(matchData));
+            }
+          }
+
           const params = { mode };
           if (botDifficulty) params.botDifficulty = botDifficulty;
 
           await AsyncStorage.removeItem('REDIRECT_TO_GAME');
           await AsyncStorage.removeItem('REDIRECT_GAME_MODE');
           await AsyncStorage.removeItem('REDIRECT_BOT_DIFFICULTY');
+          await AsyncStorage.removeItem('REDIRECT_MATCH_DATA');
 
           // Game is a root-level screen in both AppNavigator and OfflineNavigator
           setInitialNavState({

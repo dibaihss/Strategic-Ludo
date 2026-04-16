@@ -407,7 +407,7 @@ const sessionSlice = createSlice({
       } else {
         state.matches.push(mergedMatch);
       }
-      if (state.currentMatch?.id === mergedMatch.id) {
+      if (!state.currentMatch || state.currentMatch?.id === mergedMatch.id) {
         state.currentMatch = mergedMatch;
       }
     },

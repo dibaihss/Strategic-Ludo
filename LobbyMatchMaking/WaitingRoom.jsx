@@ -282,7 +282,7 @@ const WaitingRoom = ({ navigation, route }) => {
     await AsyncStorage.setItem('REDIRECT_TO_GAME', 'true');
     await AsyncStorage.setItem('REDIRECT_GAME_MODE', 'multiplayer');
     await AsyncStorage.setItem('REDIRECT_BOT_DIFFICULTY', 'normal');
-    await AsyncStorage.setItem('REDIRECT_CURRENT_MATCHID', currentMatch.id);
+    await AsyncStorage.setItem('REDIRECT_MATCH_DATA', JSON.stringify(currentMatch));
 
 
     if (typeof window !== 'undefined') {
