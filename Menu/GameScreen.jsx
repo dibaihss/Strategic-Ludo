@@ -3,7 +3,6 @@ import { MaterialIcons } from '@expo/vector-icons';
 import Goals from '../GameComponents/Goals.jsx';
 import Bases from '../GameComponents/Bases.jsx';
 import Timer from '../GameComponents/Timer.jsx';
-import PlayerStatusPanel from '../GameComponents/PlayerStatusPanel.jsx';
 import GamePausedOverlay from '../GameComponents/GamePausedOverlay.jsx';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -60,6 +59,7 @@ export default function GameScreen({ route, navigation }) {
   const greenCards = useSelector(state => state.game.greenCards);
   const showClone = useSelector(state => state.animation?.showClone || false);
   const playerConnectionStatus = useSelector(state => state.game?.playerConnectionStatus || {});
+  const waitingForPlayer = useSelector(state => state.game?.waitingForPlayer);
 
   const [gameIsStarted, setGameIsStarted] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -277,16 +277,17 @@ export default function GameScreen({ route, navigation }) {
     if (!currentMatch?.id || !connected) return;
 
     const subscription = subscribe(`/topic/gameStarted/${currentMatch.id}`, (data) => {
+      console.log('[GameScreen] WebSocket event:', data.type, 'userId:', data.userId);
       if (data.type === 'userInactive') {
-        dispatch(setPlayerStatus({ userId: data.userId, status: 'inactive' }));
+        dispatch(setPlayerStatus({ userId: String(data.userId), status: 'inactive' }));
       } else if (data.type === 'userBack') {
-        dispatch(setPlayerStatus({ userId: data.userId, status: 'connected' }));
+        dispatch(setPlayerStatus({ userId: String(data.userId), status: 'connected' }));
       } else if (data.type === 'userDisconnected') {
-        dispatch(setPlayerStatus({ userId: data.userId, status: 'disconnected' }));
+        dispatch(setPlayerStatus({ userId: String(data.userId), status: 'disconnected' }));
       } else if (data.type === 'userLeft') {
-        dispatch(setPlayerStatus({ userId: data.userId, status: 'disconnected' }));
+        dispatch(setPlayerStatus({ userId: String(data.userId), status: 'disconnected' }));
       } else if (data.type === 'userJoined') {
-        dispatch(setPlayerStatus({ userId: data.userId, status: 'connected' }));
+        dispatch(setPlayerStatus({ userId: String(data.userId), status: 'connected' }));
       }
     });
 
@@ -304,13 +305,18 @@ export default function GameScreen({ route, navigation }) {
     if (mode !== 'multiplayer' || !isOnline) return;
 
     const playerColorsMap = playerColors || {};
-    const activePlayerUserId = playerColorsMap[activePlayer];
+    const activePlayerUserId = String(playerColorsMap[activePlayer]);
 
-    if (!activePlayerUserId) return;
+    if (!activePlayerUserId) {
+      console.log('[GameScreen] No userId for color:', activePlayer, 'map:', playerColorsMap);
+      return;
+    }
 
     const currentPlayerStatus = playerConnectionStatus[activePlayerUserId];
+    console.log('[GameScreen] Checking status:', activePlayer, 'userId:', activePlayerUserId, 'status:', currentPlayerStatus);
 
     if (currentPlayerStatus === 'disconnected' && !winnerDetected) {
+      console.log('[GameScreen] Setting waiting for player:', activePlayerUserId);
       dispatch(setWaitingForPlayer({
         userId: activePlayerUserId,
         playerName: activePlayer,
@@ -318,6 +324,7 @@ export default function GameScreen({ route, navigation }) {
       }));
 
       disconnectTimeoutRef.current = setTimeout(() => {
+        console.log('[GameScreen] Auto-clearing waiting after timeout');
         dispatch(clearWaitingForPlayer());
       }, DISCONNECT_TIMEOUT * 1000);
     } else {
@@ -426,7 +433,6 @@ export default function GameScreen({ route, navigation }) {
       {gameIsStarted ? (
         <>
           <Timer />
-          <PlayerStatusPanel />
           <SmalBoard />
           <Goals />
           <Bases />
@@ -455,7 +461,7 @@ export default function GameScreen({ route, navigation }) {
               </Text>
             </Pressable>
           </View>
-          <GamePausedOverlay visible={mode === 'multiplayer' && isOnline} />
+<GamePausedOverlay visible={!!waitingForPlayer} />
         </>
       ) : (
         <View style={styles.loadingContainer}>

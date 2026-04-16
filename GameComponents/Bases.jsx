@@ -1,6 +1,7 @@
 import { View, Pressable, Text, StyleSheet, Dimensions } from "react-native";
 import React, { useEffect } from 'react';
 import Soldier from './Soldier';
+import StatusBadge from '../assets/shared/StatusBadge.jsx';
 import { useDispatch, useSelector } from 'react-redux';
 import {
     setActivePlayer,
@@ -38,6 +39,9 @@ export default function Bases() {
     const user = useSelector(state => state.auth.user);
     const currentMatch = useSelector(state => state.session.currentMatch);
     const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
+    const playerColors = useSelector(state => state.game.playerColors);
+    const playerConnectionStatus = useSelector(state => state.game?.playerConnectionStatus || {});
+    const users = useSelector(state => state.session.currentMatch?.users);
 
 
     const { connected, subscribe, sendMessage, sendMatchCommand } = useWebSocket();
@@ -203,7 +207,68 @@ export default function Bases() {
             shadowOpacity: activePlayer === "green" ? 0.7 : "",
             shadowRadius: activePlayer === "green" ? 50 : "",
         },
+        avatarContainer: {
+            position: 'absolute',
+            alignItems: 'center',
+            zIndex: 10,
+        },
+        avatarContainerBlue: {
+            top: isSmallScreen ? -35 : 32,
+            left: isSmallScreen ? 5 : 124,
+        },
+        avatarContainerRed: {
+            top: isSmallScreen ? -35 : 129,
+            right: isSmallScreen ? 5 : 132,
+        },
+        avatarContainerYellow: {
+            bottom: isSmallScreen ? -35 : 222,
+            left: isSmallScreen ? 5 : 124,
+        },
+        avatarContainerGreen: {
+            bottom: isSmallScreen ? -35 : 222,
+            right: isSmallScreen ? 5 : 134,
+        },
+        avatarCircle: {
+            width: isSmallScreen ? 32 : 40,
+            height: isSmallScreen ? 32 : 40,
+            borderRadius: isSmallScreen ? 16 : 20,
+            justifyContent: 'center',
+            alignItems: 'center',
+            borderWidth: 2,
+            borderColor: 'white',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.3,
+            shadowRadius: 3,
+            elevation: 4,
+        },
+        avatarText: {
+            color: 'white',
+            fontSize: isSmallScreen ? 14 : 16,
+            fontWeight: 'bold',
+        },
+        statusBadgeWrapper: {
+            position: 'absolute',
+            bottom: -4,
+            right: -4,
+            backgroundColor: 'white',
+            borderRadius: 8,
+            padding: 1,
+        },
     });
+
+    const getPlayerInfo = (color) => {
+        const userId = playerColors?.[color];
+        if (!userId) return null;
+        
+        const user = users?.find(u => String(u.id) === String(userId));
+        if (user?.isBot) {
+            const difficulty = user.botDifficulty?.[0]?.toUpperCase() || 'B';
+            return { initial: difficulty, name: 'Bot' };
+        }
+        const name = user?.name || user?.username || 'Player';
+        return { initial: name.charAt(0).toUpperCase(), name };
+    };
 
     useEffect(() => {
         if (!connected || !currentMatch?.id) return; // single combined guard
@@ -299,6 +364,32 @@ export default function Bases() {
         color === "green" && { transform: [{ rotate: '180deg' }] },
     ]);
 
+    const renderPlayerAvatar = (color) => {
+        const playerInfo = getPlayerInfo(color);
+        if (!playerInfo) return null;
+        
+        const userId = playerColors?.[color];
+        const status = userId ? (playerConnectionStatus[String(userId)] || 'connected') : 'connected';
+        
+        const avatarContainerStyle = {
+            blue: styles.avatarContainerBlue,
+            red: styles.avatarContainerRed,
+            yellow: styles.avatarContainerYellow,
+            green: styles.avatarContainerGreen,
+        }[color];
+        
+        return (
+            <View style={[styles.avatarContainer, avatarContainerStyle]}>
+                <View style={[styles.avatarCircle, { backgroundColor: theme.colors[color] }]}>
+                    <Text style={styles.avatarText}>{playerInfo.initial}</Text>
+                </View>
+                <View style={styles.statusBadgeWrapper}>
+                    <StatusBadge status={status} size="sm" showPulse={false} />
+                </View>
+            </View>
+        );
+    };
+
     const renderInCirclePlayers = (j, playerType, i) => (
         <>
             {[
@@ -322,6 +413,7 @@ export default function Bases() {
         <>
             {playerType.map((color, i) => (
                 <View key={color} style={[styles.circleContainer, styles[directions[i]]]}>
+                    
                     <View style={{ flexDirection: 'column' }}>
                         <View style={{ display: "flex" }}>
                             {(cardsByColor[color] || []).map((card) => (
@@ -337,6 +429,7 @@ export default function Bases() {
                             ))}
                         </View>
                     </View>
+                  
                     <View style={[styles.corner, styles[color]]}>
                         {[...Array(4)].map((_, j) => (
                             <View key={j} style={styles.circle}>
@@ -355,6 +448,7 @@ export default function Bases() {
                                 <MaterialIcons name={getArrowNameByColor(color)} size={24} color={theme.name === "modernDark" ? "white" : "black"} />
                         }
                     </Pressable>
+                    {renderPlayerAvatar(color)}
                 </View>
             ))}
         </>

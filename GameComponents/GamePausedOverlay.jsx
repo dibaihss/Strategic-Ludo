@@ -7,10 +7,10 @@ import StatusBadge from '../assets/shared/StatusBadge.jsx';
 const GamePausedOverlay = ({ visible }) => {
   const theme = useSelector(state => state.theme.current);
   const systemLang = useSelector(state => state.language.systemLang);
-  const waitingForPlayer = useSelector(state => state.game.waitingForPlayer);
-  const playerColors = useSelector(state => state.game.playerColors);
+  const waitingForPlayer = useSelector(state => state.game?.waitingForPlayer);
+  const playerColors = useSelector(state => state.game?.playerColors);
 
-  if (!visible || !waitingForPlayer) {
+  if (!visible || !waitingForPlayer || !waitingForPlayer.userId) {
     return null;
   }
 
