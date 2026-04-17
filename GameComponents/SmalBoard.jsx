@@ -25,14 +25,14 @@ const showErrorToast = (text1, text2) => {
     });
 };
 
-const canControlColor = (currentPlayerColor, selectedColor, systemLang, activePlayer) => {
+const canControlColor = (currentPlayerColor, selectedColor, systemLang, color) => {
     if (currentPlayerColor === selectedColor){
        return true;
     } else {
-       const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
+       const localizedActivePlayer = getLocalizedColor(color, systemLang);
               showErrorToast(
-                  uiStrings[systemLang].wrongTurn,
-                  uiStrings[systemLang].wrongColor.replace('{color}', localizedActivePlayer)
+                      uiStrings[systemLang].selectPlayer.replace('{color}', localizedActivePlayer),
+                      uiStrings[systemLang].playerNotSelected
               );
     }
     if (Array.isArray(currentPlayerColor)) {
@@ -79,6 +79,7 @@ export default function SmalBoard() {
         console.log(selectedPlayer);
         playSound('click').catch(() => {});
         if (!connected) {
+            if (canControlColor(currentPlayerColor, selectedPlayer.color, systemLang, activePlayer))
             dispatch(setCurrentPlayer(selectedPlayer));
             return;
         }
