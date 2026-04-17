@@ -31,7 +31,8 @@ export const WebSocketProvider = ({ children }) => {
   const [connected, setConnected] = useState(false);
   const [messages, setMessages] = useState({});
   const isOnline = useSelector(state => state.game.isOnline);
-
+  const currentMatch = useSelector(state => state.session.currentMatch);
+  const user = useSelector(state => state.auth.user);
 
   const reconnectSocket = () => {
     if (socketClient && !socketClient.connected) {
@@ -78,10 +79,17 @@ export const WebSocketProvider = ({ children }) => {
       autoConnect: true,
     });
 
-    client.on('connect', () => {
-      console.log('Connected to Socket.IO');
-      setConnected(true);
-    });
+client.on('connect', () => {
+  console.log('Connected to Socket.IO');
+  setConnected(true);
+  
+  // Small delay to ensure backend socket is fully registered
+  setTimeout(() => {
+    if (user?.name) {
+      client.emit('chat.addUser', { sender: user.name, userId: user.id, sessionId: currentMatch?.id });
+    }
+  }, 500);
+});
 
     client.on('disconnect', () => {
       console.log('Disconnected from Socket.IO');

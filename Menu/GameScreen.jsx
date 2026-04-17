@@ -6,7 +6,7 @@ import Timer from '../GameComponents/Timer.jsx';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { View, Text, Pressable, ActivityIndicator, Modal, Animated } from 'react-native';
-import { setActivePlayer, resetTimer, setIsOnline, resetGameState, setCurrentPlayerColor, setPlayerColors } from '../assets/store/gameSlice.jsx';
+import { setActivePlayer, resetTimer, setIsOnline, resetGameState, setCurrentPlayerColor, setPlayerColors, setPausedGame, setDisconnectedPlayer } from '../assets/store/gameSlice.jsx';
 import { resetAnimationState } from '../assets/store/animationSlice.jsx';
 import { uiStrings, getLocalizedColor } from '../assets/shared/hardCodedData.js';
 
@@ -18,6 +18,7 @@ import { createGameScreenStyles } from './GameScreen.styles.js';
 import Instructions from './Instructions.jsx';
 import { emitMultiplayerBotTurn, getBotDifficultyForTurn, isBotControlledPlayer, runBotTurn } from './botLogic.js';
 import { playSound, stopSound } from '../assets/shared/audioManager';
+import DisconnectionOverlay from '../GameComponents/DisconnectionOverlay.jsx';
 
 const buildPlayerColorsFromPlayers = (players = []) => {
   if (!Array.isArray(players) || players.length < 2) return null;
@@ -57,6 +58,7 @@ export default function GameScreen({ route, navigation }) {
   const yellowCards = useSelector(state => state.game.yellowCards);
   const greenCards = useSelector(state => state.game.greenCards);
   const showClone = useSelector(state => state.animation?.showClone || false);
+  const disconnectedPlayer = useSelector(state => state.game.disconnectedPlayer);
 
   const [gameIsStarted, setGameIsStarted] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -144,6 +146,13 @@ export default function GameScreen({ route, navigation }) {
       dispatch(setCurrentPlayerColor(activePlayer));
     }
   }, [mode, activePlayer, dispatch]);
+
+  // useEffect(() => {
+  //   if (connected && disconnectedPlayer) {
+  //     dispatch(setPausedGame(false));
+  //     dispatch(setDisconnectedPlayer(null));
+  //   }
+  // }, [connected, disconnectedPlayer, dispatch]);
 
   const cardsByColor = useMemo(() => ({
     blue: blueCards,
@@ -475,6 +484,7 @@ export default function GameScreen({ route, navigation }) {
         </View>
       </Modal>
       {/* End Exit Confirmation Modal */}
+      <DisconnectionOverlay navigation={navigation} />
     </View>
   );
 }

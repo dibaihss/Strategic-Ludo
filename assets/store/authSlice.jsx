@@ -191,7 +191,7 @@ export const logout = createAsyncThunk(
           headers.Authorization = `Bearer ${token}`;
         }
 
-        const response = await fetch(`${API_URL}/users/${userId}`, {
+        const response = await fetch(`${API_URL}/guest-users/${userId}`, {
           method: "DELETE",
           headers,
         });

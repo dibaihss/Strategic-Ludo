@@ -1,7 +1,6 @@
-import Toast from 'react-native-toast-message';
 import { enterNewSoldier, checkIfCardUsed } from '../assets/store/gameSlice.jsx';
 import { setBoxesPosition } from '../assets/store/animationSlice.jsx';
-import { boxes, categories, uiStrings, getLocalizedColor } from '../assets/shared/hardCodedData.js';
+import { boxes, categories } from '../assets/shared/hardCodedData.js';
 
 export const getCategoryFromPosition = (position) => position.match(/[a-zA-Z]+/)[0];
 
@@ -15,6 +14,13 @@ export const canControlColor = (currentPlayerColor, color) => {
     }
     return false;
 };
+
+export const canEnterPiece = (activePlayer, color, currentPlayerColor) => {
+    console.log('canEnterPiece', activePlayer, color, currentPlayerColor);
+    if (activePlayer === color && currentPlayerColor === color 
+        || activePlayer === color && currentPlayerColor[0] === color  
+        || activePlayer === color && currentPlayerColor[1] === color ) return true;
+}
 
 export const getNextCategory = (currentCategory) => {
     const currentIndex = categories.indexOf(currentCategory);
@@ -106,16 +112,6 @@ export const createStepMetrics = (sourcePos, targetPos) => {
     return metrics;
 };
 
-export const showErrorToast = (text1, text2) => {
-    Toast.show({
-        type: 'error',
-        text1,
-        text2,
-        position: 'bottom',
-        visibilityTime: 2000,
-    });
-};
-
 export const isOutOfBoardPosition = (playerColor, position) => {
     const outPositions = {
         blue: '7d',
@@ -172,45 +168,27 @@ export const sendMoveUpdateCore = ({ connected, message, sendMatchCommand, curre
     sendMessage(`/app/player.Move/${currentMatch.id}`, message);
 };
 
-export const handleEnterNewSoldierCore = ({ activePlayer, color, systemLang, dispatch }) => {
+export const handleEnterNewSoldierCore = ({ activePlayer, color, dispatch }) => {
     if (activePlayer !== color) {
-        const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
-        showErrorToast(
-            uiStrings[systemLang].wrongTurn,
-            uiStrings[systemLang].wrongColor.replace('{color}', localizedActivePlayer)
-        );
-        return;
+        return { error: 'wrongTurn' };
     }
 
     dispatch(enterNewSoldier(color));
+    return { error: null };
 };
 
-export const movePlayerCore = ({ color, steps, currentPlayer, activePlayer, systemLang, showClone, dispatch }) => {
-    const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
-
+export const movePlayerCore = ({ color, steps, currentPlayer, activePlayer, showClone, dispatch }) => {
     if (!currentPlayer || currentPlayer.isOut) {
-        showErrorToast(
-            uiStrings[systemLang].selectPlayer.replace('{color}', localizedActivePlayer),
-            uiStrings[systemLang].playerNotSelected
-        );
-        return;
+        return { error: 'selectPlayer' };
     }
-    if (showClone) return;
+     if (showClone) return { error: 'clone' };
 
     if (currentPlayer.color !== color) {
-        showErrorToast(
-            uiStrings[systemLang].wrongColor,
-            uiStrings[systemLang].wrongTurn.replaceAll('{color}', localizedActivePlayer)
-        );
-        return;
+        return { error: 'wrongColor' };
     }
 
     if (activePlayer !== currentPlayer.color) {
-        showErrorToast(
-            uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer),
-            uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer)
-        );
-        return;
+        return { error: 'wrongTurn' };
     }
 
     dispatch(checkIfCardUsed({ color, steps }));
@@ -222,9 +200,10 @@ export const movePlayerCore = ({ color, steps, currentPlayer, activePlayer, syst
                 ? { ySteps: steps, newPosition }
                 : { xSteps: steps, newPosition };
         dispatch(setBoxesPosition(outOfBoardPayload));
-        return;
+        return { error: null };
     }
 
     const metrics = createStepMetrics(currentPlayer.position, newPosition);
     dispatch(setBoxesPosition({ ...metrics, newPosition }));
+    return { error: null };
 };
