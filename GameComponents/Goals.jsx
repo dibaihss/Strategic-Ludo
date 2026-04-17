@@ -1,10 +1,9 @@
-import { View, StyleSheet, Platform, Dimensions } from "react-native";
-import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, Dimensions } from "react-native";
+import React from 'react';
 import Soldier from './Soldier';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
-import { uiStrings, getLocalizedColor } from "../assets/shared/hardCodedData.js";
-import Toast from 'react-native-toast-message';
+
 
 export default function Goals() {
     // Get soldiers from Redux store
@@ -18,39 +17,6 @@ export default function Goals() {
     const windowHeight = Dimensions.get('window').height;
     const isSmallScreen = windowWidth < 375 || windowHeight < 667;
 
-    // Track winners to avoid multiple toasts
-    const [winners, setWinners] = useState({
-        yellow: false,
-        green: false,
-        red: false,
-        blue: false
-    });
-
-    // Check for winners and show toasts
-    useEffect(() => {
-        const checkAndShowToast = (soldiers, color) => {
-            if (soldiers.length > 0 && soldiers.every(obj => obj.isOut === true) && !winners[color.toLowerCase()]) {
-                // Use getLocalizedColor to translate the color name
-                const localizedColor = getLocalizedColor(color.toLowerCase(), systemLang);
-                Toast.show({
-                    type: 'success',
-                    text1: uiStrings[systemLang].wonGame.replace('{color}', localizedColor),
-                    position: 'top',
-                    visibilityTime: 5000,
-                    autoHide: true,
-                    topOffset: 60,
-                    bottomOffset: 40,
-                    props: { backgroundColor: theme.colors[color.toLowerCase()] }
-                });
-                setWinners(prev => ({ ...prev, [color.toLowerCase()]: true }));
-            }
-        };
-
-        checkAndShowToast(yellowSoldiers, 'Yellow');
-        checkAndShowToast(greenSoldiers, 'Green');
-        checkAndShowToast(redSoldiers, 'Red');
-        checkAndShowToast(blueSoldiers, 'Blue');
-    }, [yellowSoldiers, greenSoldiers, redSoldiers, blueSoldiers, systemLang, winners]);
 
     const styles = StyleSheet.create({
         centerCircle: {
