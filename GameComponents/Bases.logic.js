@@ -195,7 +195,7 @@ export const movePlayerCore = ({ color, steps, currentPlayer, activePlayer, syst
         );
         return;
     }
-    if (showClone) return;
+     if (showClone) return;
 
     if (currentPlayer.color !== color) {
         showErrorToast(

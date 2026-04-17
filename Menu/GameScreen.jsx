@@ -484,7 +484,7 @@ export default function GameScreen({ route, navigation }) {
         </View>
       </Modal>
       {/* End Exit Confirmation Modal */}
-      <DisconnectionOverlay />
+      <DisconnectionOverlay navigation={navigation} />
     </View>
   );
 }

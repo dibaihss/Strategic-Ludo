@@ -21,6 +21,7 @@ import {
 } from './Bases.logic';
 import { playSound } from '../assets/shared/audioManager';
 
+
 export default function Bases() {
 
     const dispatch = useDispatch();
@@ -226,23 +227,19 @@ export default function Bases() {
             }
 
         });
-
         return () => {
             subscription?.unsubscribe();
         };
 
-}, [connected, socketClient, currentMatch]);
+}, [connected, socketClient, currentMatch, user, currentPlayer]);
 
     const handleUserDisconnected = (data) => {
         console.log("Handling user disconnection:", data);
         if (data.userId) {
-            console.log(`User with ID ${data.userId} disconnected.`);
             const disconnectedColor = playerColors 
                 ? Object.entries(playerColors).find(([, id]) => String(id) === String(data.userId))?.[0] 
                 : 'blue';
-            console.log('Setting disconnected player:', { name: data.sender, color: disconnectedColor || 'blue' });
             dispatch(setDisconnectedPlayer({ name: data.sender, color: disconnectedColor || 'blue' }));
-            console.log('Setting gamePaused to true');
             dispatch(setPausedGame(true));
         }
     };
@@ -261,7 +258,7 @@ export default function Bases() {
     };
 
     const movePlayer = (color, steps) => {
-        console.log('canControlColor', canControlColor(currentPlayerColor, color));
+        console.log('canControlColor', canControlColor(currentPlayerColor, color), activePlayer);
         movePlayerCore({ color, steps, currentPlayer, activePlayer, systemLang, showClone, dispatch });
     };
 

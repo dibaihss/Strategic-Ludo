@@ -1,24 +1,42 @@
 import React from 'react';
-import { View, Text, StyleSheet, Modal, Dimensions } from 'react-native';
-import { useSelector } from 'react-redux';
+import { View, Text, StyleSheet, Modal, Dimensions, Pressable } from 'react-native';
+import { useSelector, useDispatch } from 'react-redux';
 import { MaterialIcons } from '@expo/vector-icons';
 import { getLocalizedColor } from "../assets/shared/hardCodedData.js";
+import { useWebSocket } from "../assets/shared/webSocketConnection.jsx";
+import { leaveMatch } from "../assets/store/sessionSlice.jsx";
+import { setDisconnectedPlayer, setPausedGame } from "../assets/store/gameSlice.jsx";
 
-const DisconnectionOverlay = () => {
+const DisconnectionOverlay = ({ navigation }) => {
+  const dispatch = useDispatch();
   const disconnectedPlayer = useSelector(state => state.game.disconnectedPlayer);
   const gamePaused = useSelector(state => state.game.gamePaused);
   const theme = useSelector(state => state.theme.current);
   const systemLang = useSelector(state => state.language.systemLang);
+  const user = useSelector(state => state.auth.user);
+  const currentMatch = useSelector(state => state.session.currentMatch);
+  const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
+  const { sendMessage } = useWebSocket();
   const windowWidth = Dimensions.get('window').width;
   const isSmallScreen = windowWidth < 375;
 
-  console.log('DisconnectionOverlay - disconnectedPlayer:', JSON.stringify(disconnectedPlayer), 'gamePaused:', gamePaused);
+  const handleExitGame = () => {
+    if (currentMatch && currentMatch.id) {
+      sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userLeft', userId: user.id, colors: currentPlayerColor });
+      dispatch(leaveMatch({ matchId: currentMatch.id, playerId: user.id }))
+        .unwrap()
+        .catch(error => {
+          console.error('Failed to leave match:', error);
+        });
+    }
+    dispatch(setDisconnectedPlayer(null));
+    dispatch(setPausedGame(false));
+    navigation.navigate('Home');
+  };
 
   if (!disconnectedPlayer || !gamePaused) {
-    console.log(gamePaused, disconnectedPlayer, 'DisconnectionOverlay - No disconnected player or game is not paused, not rendering overlay.');
     return null;
   }
-    console.log(gamePaused, disconnectedPlayer, ' overlay.');
 
 
   const playerName = disconnectedPlayer.name || 'Unknown Player';
@@ -62,6 +80,17 @@ const DisconnectionOverlay = () => {
           <Text style={[styles.hint, { color: theme.colors.textSecondary }]}>
             Game is paused until player reconnects
           </Text>
+
+          <Pressable
+            testID="overlay-exit-button"
+            style={[styles.exitButton, { backgroundColor: theme.colors.button }]}
+            onPress={handleExitGame}
+          >
+            <MaterialIcons name="exit-to-app" size={20} color={theme.colors.buttonText} />
+            <Text style={[styles.exitButtonText, { color: theme.colors.buttonText }]}>
+              Exit Game
+            </Text>
+          </Pressable>
         </View>
       </View>
     </Modal>
@@ -128,6 +157,19 @@ const styles = StyleSheet.create({
   hint: {
     fontSize: 12,
     fontStyle: 'italic',
+  },
+  exitButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    marginTop: 20,
+    gap: 8,
+  },
+  exitButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
 
