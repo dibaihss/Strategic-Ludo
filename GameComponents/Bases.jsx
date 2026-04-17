@@ -5,19 +5,24 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
     setActivePlayer,
     resetTimer,
+    setPausedGame,
+    setDisconnectedPlayer,
 } from '../assets/store/gameSlice.jsx';
-import { directions, playerType } from "../assets/shared/hardCodedData.js";
+import { directions, playerType, uiStrings, getLocalizedColor } from "../assets/shared/hardCodedData.js";
+import Toast from 'react-native-toast-message';
 import { MaterialIcons } from '@expo/vector-icons';
 import Feather from '@expo/vector-icons/Feather';
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
 import {
     canControlColor,
     getArrowNameByColor,
+    canEnterPiece,
     handleEnterNewSoldierCore,
     movePlayerCore,
     sendMoveUpdateCore,
 } from './Bases.logic';
 import { playSound } from '../assets/shared/audioManager';
+
 
 export default function Bases() {
 
@@ -38,9 +43,10 @@ export default function Bases() {
     const user = useSelector(state => state.auth.user);
     const currentMatch = useSelector(state => state.session.currentMatch);
     const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
+    const playerColors = useSelector(state => state.game.playerColors);
 
 
-    const { connected, subscribe, sendMessage, sendMatchCommand } = useWebSocket();
+    const { connected, subscribe, sendMessage, sendMatchCommand, socketClient } = useWebSocket();
 
     const windowWidth = Dimensions.get('window').width;
     const windowHeight = Dimensions.get('window').height;
@@ -217,18 +223,42 @@ export default function Bases() {
                 handleEnterNewSoldier(color);
             } else if (data?.type === 'skipTurn') {
                 HandleskipTurn();
+            } else if (data?.type === 'userDisconnected') {
+                console.log("User disconnected:", data);
+                handleUserDisconnected(data);
             }
-        });
 
+        });
         return () => {
             subscription?.unsubscribe();
         };
 
-    }, [connected, subscribe, currentMatch, user, currentPlayer]);
+    }, [connected, socketClient, currentMatch, user, currentPlayer]);
 
+    const handleUserDisconnected = (data) => {
+        console.log("Handling user disconnection:", data);
+        if (data.userId) {
+            const disconnectedColor = playerColors
+                ? Object.entries(playerColors).find(([, id]) => String(id) === String(data.userId))?.[0]
+                : 'blue';
+            dispatch(setDisconnectedPlayer({ name: data.sender, color: disconnectedColor || 'blue' }));
+            dispatch(setPausedGame(true));
+        }
+    };
     const handleEnterNewSoldier = (color) => {
+        const result = handleEnterNewSoldierCore({ activePlayer, color, dispatch });
+        if (result.error === 'wrongTurn') {
+            const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
+            Toast.show({
+                type: 'error',
+                text1: uiStrings[systemLang].wrongTurn,
+                text2: uiStrings[systemLang].wrongColor.replace('{color}', localizedActivePlayer),
+                position: 'bottom',
+                visibilityTime: 2000,
+            });
+            return;
+        }
         playSound('move').catch(() => { });
-        handleEnterNewSoldierCore({ activePlayer, color, systemLang, dispatch });
     };
 
     const sendMoveUpdate = (message) => {
@@ -241,8 +271,29 @@ export default function Bases() {
     };
 
     const movePlayer = (color, steps) => {
-        console.log('canControlColor', canControlColor(currentPlayerColor, color));
-        movePlayerCore({ color, steps, currentPlayer, activePlayer, systemLang, showClone, dispatch });
+        const result = movePlayerCore({ color, steps, currentPlayer, activePlayer, showClone, dispatch });
+        console.log("Move player result:", result);
+        if (result?.error) {
+            const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
+            let text1, text2;
+            if (result.error === 'wrongColor') {
+                text1 = uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer);
+                text2 = result.error === 'wrongColor'
+                    ? uiStrings[systemLang].wrongColor
+                    : uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer);
+
+            } else {
+                text1 = uiStrings[systemLang].selectPlayer.replace('{color}', localizedActivePlayer);
+                text2 = uiStrings[systemLang].playerNotSelected;
+            }
+            Toast.show({
+                type: 'error',
+                text1,
+                text2,
+                position: 'bottom',
+                visibilityTime: 2000,
+            });
+        }
     };
 
     // Mutliplayer Functions
@@ -253,7 +304,7 @@ export default function Bases() {
             return;
         }
 
-        if (!canControlColor(currentPlayerColor, color)) return;
+        if (!canControlColor(currentPlayerColor, color, activePlayer)) return;
         sendMoveUpdate({
             type: 'movePlayer',
             payload: {
@@ -269,7 +320,7 @@ export default function Bases() {
             return;
         }
 
-        if (!canControlColor(currentPlayerColor, color)) return;
+        if (!canEnterPiece(activePlayer, color, currentPlayerColor)) return;
         sendMoveUpdate({
             type: 'enterNewSoldier',
             payload: {

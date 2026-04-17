@@ -15,6 +15,7 @@ const initialState = {
     isTimerRunning: false,
     unActivePlayers: [],
     gamePaused: false,
+    disconnectedPlayer: null,
     availableTypes: ["red", "yellow", "blue", "green"],
     playerColors: {
         blue: 1,
@@ -569,6 +570,9 @@ export const gameSlice = createSlice({
         },
         setPausedGame: (state, action) => {
             state.gamePaused = action.payload;
+        },
+        setDisconnectedPlayer: (state, action) => {
+            state.disconnectedPlayer = action.payload;
         }
     },
     extraReducers: (builder) => {
@@ -615,6 +619,7 @@ export const {
     resetGameState,
     setActivePlayerDirect,
     setPausedGame,
+    setDisconnectedPlayer,
     setCurrentPlayerColor,
     applyServerStateSnapshot,
     updateSoldiersPosition,

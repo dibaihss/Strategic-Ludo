@@ -6,16 +6,35 @@ import {
 } from 'react-native';
 import React, { useEffect } from 'react';
 import Soldier from './Soldier';
-import { boxes, isSafeZone, isArrow, getArrowDirection } from "../assets/shared/hardCodedData.js"
+import { boxes, isSafeZone, isArrow, getArrowDirection, getLocalizedColor, uiStrings } from "../assets/shared/hardCodedData.js"
 import { useDispatch, useSelector } from 'react-redux';
 import {
     setCurrentPlayer
 } from '../assets/store/gameSlice.jsx';
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
 import { playSound, stopSound } from '../assets/shared/audioManager';
+import Toast from 'react-native-toast-message';
 
-const canControlColor = (currentPlayerColor, selectedColor) => {
-    if (currentPlayerColor === selectedColor) return true;
+const showErrorToast = (text1, text2) => {
+    Toast.show({
+        type: 'error',
+        text1,
+        text2,
+        position: 'bottom',
+        visibilityTime: 2000,
+    });
+};
+
+const canControlColor = (currentPlayerColor, selectedColor, systemLang, color) => {
+    if (currentPlayerColor === selectedColor){
+       return true;
+    } else {
+       const localizedActivePlayer = getLocalizedColor(color, systemLang);
+              showErrorToast(
+                      uiStrings[systemLang].selectPlayer.replace('{color}', localizedActivePlayer),
+                      uiStrings[systemLang].playerNotSelected
+              );
+    }
     if (Array.isArray(currentPlayerColor)) {
         return currentPlayerColor[0] === selectedColor || currentPlayerColor[1] === selectedColor;
     }
@@ -47,6 +66,8 @@ export default function SmalBoard() {
     const theme = useSelector(state => state.theme.current);
     const currentMatch = useSelector(state => state.session.currentMatch);
     const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
+    const systemLang = useSelector(state => state.language.systemLang);
+    const activePlayer = useSelector(state => state.game.activePlayer);
 
     const { connected, subscribe, sendMessage } = useWebSocket();
 
@@ -58,23 +79,21 @@ export default function SmalBoard() {
         console.log(selectedPlayer);
         playSound('click').catch(() => {});
         if (!connected) {
+            if (canControlColor(currentPlayerColor, selectedPlayer.color, systemLang, activePlayer))
             dispatch(setCurrentPlayer(selectedPlayer));
             return;
         }
 
-        if (canControlColor(currentPlayerColor, selectedPlayer.color)) {
+        if (canControlColor(currentPlayerColor, selectedPlayer.color, systemLang, activePlayer)) {
             handlePlayerMove(selectedPlayer);
         }
     };
     useEffect(() => {
         if (connected) {
             if(!currentMatch || !currentMatch.id) return;
-            // Subscribe to receive board updates
             const subscription = subscribe(`/topic/currentPlayer/${currentMatch.id}`, (data) => {
-                // Update your component state or dispatch Redux actions
                 const nextPlayer = data?.payload ? data.payload : data;
                 dispatch(setCurrentPlayer(nextPlayer));
-                // Example: dispatch(updateBoard(data));
             });
 
             // Cleanup subscription when component unmounts
