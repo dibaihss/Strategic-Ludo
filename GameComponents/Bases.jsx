@@ -5,6 +5,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
     setActivePlayer,
     resetTimer,
+    setPausedGame,
+    setDisconnectedPlayer,
 } from '../assets/store/gameSlice.jsx';
 import { directions, playerType } from "../assets/shared/hardCodedData.js";
 import { MaterialIcons } from '@expo/vector-icons';
@@ -38,9 +40,10 @@ export default function Bases() {
     const user = useSelector(state => state.auth.user);
     const currentMatch = useSelector(state => state.session.currentMatch);
     const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
+    const playerColors = useSelector(state => state.game.playerColors);
 
 
-    const { connected, subscribe, sendMessage, sendMatchCommand } = useWebSocket();
+    const { connected, subscribe, sendMessage, sendMatchCommand, socketClient } = useWebSocket();
 
     const windowWidth = Dimensions.get('window').width;
     const windowHeight = Dimensions.get('window').height;
@@ -217,15 +220,32 @@ export default function Bases() {
                 handleEnterNewSoldier(color);
             } else if (data?.type === 'skipTurn') {
                 HandleskipTurn();
+            } else if (data?.type === 'userDisconnected') {
+                console.log("User disconnected:", data);
+                handleUserDisconnected(data);
             }
+
         });
 
         return () => {
             subscription?.unsubscribe();
         };
 
-    }, [connected, subscribe, currentMatch, user, currentPlayer]);
+}, [connected, socketClient, currentMatch]);
 
+    const handleUserDisconnected = (data) => {
+        console.log("Handling user disconnection:", data);
+        if (data.userId) {
+            console.log(`User with ID ${data.userId} disconnected.`);
+            const disconnectedColor = playerColors 
+                ? Object.entries(playerColors).find(([, id]) => String(id) === String(data.userId))?.[0] 
+                : 'blue';
+            console.log('Setting disconnected player:', { name: data.sender, color: disconnectedColor || 'blue' });
+            dispatch(setDisconnectedPlayer({ name: data.sender, color: disconnectedColor || 'blue' }));
+            console.log('Setting gamePaused to true');
+            dispatch(setPausedGame(true));
+        }
+    };
     const handleEnterNewSoldier = (color) => {
         playSound('move').catch(() => { });
         handleEnterNewSoldierCore({ activePlayer, color, systemLang, dispatch });
