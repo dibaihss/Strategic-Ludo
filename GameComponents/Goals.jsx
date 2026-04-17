@@ -12,7 +12,6 @@ export default function Goals() {
     const yellowSoldiers = useSelector(state => state.game.yellowSoldiers);
     const greenSoldiers = useSelector(state => state.game.greenSoldiers);
     const theme = useSelector(state => state.theme.current);
-    const systemLang = useSelector(state => state.language.systemLang);
     const windowWidth = Dimensions.get('window').width;
     const windowHeight = Dimensions.get('window').height;
     const isSmallScreen = windowWidth < 375 || windowHeight < 667;
