@@ -19,7 +19,10 @@ export const canEnterPiece = (activePlayer, color, currentPlayerColor) => {
     console.log('canEnterPiece', activePlayer, color, currentPlayerColor);
     if (activePlayer === color && currentPlayerColor === color 
         || activePlayer === color && currentPlayerColor[0] === color  
-        || activePlayer === color && currentPlayerColor[1] === color ) return true;
+        || activePlayer === color && currentPlayerColor[1] === color 
+        || activePlayer === currentPlayerColor  
+        || activePlayer === currentPlayerColor[1]   
+        || activePlayer === currentPlayerColor[0]) return true;
 }
 
 export const getNextCategory = (currentCategory) => {
