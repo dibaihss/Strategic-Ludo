@@ -1,6 +1,10 @@
 # .eas/workflows/deploy.yml
 name: Deploy
 
+on:
+  push:
+    branches:
+      - main  # 👈 only deploy on main
 jobs:
   deploy:
     type: deploy
