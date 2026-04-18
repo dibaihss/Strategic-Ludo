@@ -88,7 +88,64 @@ Keep E2E tests focused on high-value paths and critical regressions. Keep busine
   - Unit tests for rule correctness and branch coverage.
   - One E2E smoke path for user-visible confidence.
 
-## Troubleshooting
+
+## Running E2E Tests Against a Mocked Backend
+
+By default, Playwright E2E tests run against a mocked backend. This is useful for fast, isolated UI and flow testing without requiring a real server.
+
+### Commands
+- **Run all E2E tests (mocked backend, headless):**
+  ```bash
+  npm run e2e:web
+  ```
+- **Run all E2E tests (mocked backend, UI mode):**
+  ```bash
+  npm run e2e:web:ui
+  ```
+- **Run a specific E2E test file (mocked backend, UI mode, single worker):**
+  ```bash
+  npx playwright test e2e/multiplayer.e2e.spec.js --headed --workers=1
+  ```
+  - This command runs the specified test file in a visible browser window (not headless) and ensures only one test runs at a time (useful for debugging and watching the test flow).
+
+---
+
+## Running E2E Tests Against a Real Backend
+
+You can run Playwright E2E tests against a real backend API (instead of the default mock server) to validate full integration.
+
+### Prerequisites
+- The real backend (API and WebSocket) must be running and accessible at `http://localhost:3000` (or set `EXPO_PUBLIC_LOCALHOST_API_URL`/`EXPO_PUBLIC_LOCALHOST_WS_URL` as needed).
+- Ensure ports 19006 (public) and 19007 (Expo web) are free. The test runner will attempt to kill any process using these ports automatically.
+
+### Commands
+- **Start E2E with real backend (headless):**
+  ```bash
+  npm run e2e:web:real
+  ```
+- **Start E2E with real backend (UI mode):**
+  ```bash
+  npm run e2e:web:real:headed
+  ```
+- **Run a specific test:**
+  ```bash
+  npm run e2e:web:real -- e2e/multiplayer.e2e.spec.js -g "user can login as guest"
+  ```
+
+### How it works
+- The command launches a proxy script (`scripts/start-playwright-proxy.cjs`) that:
+  - Starts Expo web on port 19007.
+  - Proxies the app on port 19006.
+  - Forwards API/WebSocket calls to your real backend.
+  - Kills any process using the required ports before starting.
+- Playwright then runs tests against `http://127.0.0.1:19006`.
+
+### Troubleshooting Real Backend E2E
+- If you see a port-in-use error, check for other running Expo or Node processes and stop them.
+- If the app cannot connect to the backend, verify your backend is running and accessible at the expected URL.
+- If you want a dry run to see which processes would be killed, ask for a preflight script.
+
+---
 
 - If Jest tries to run Playwright files, verify `testPathIgnorePatterns` in `jest.config.js` includes `e2e`.
 - If React Native transforms fail in Jest, check `transformIgnorePatterns` in `jest.config.js`.

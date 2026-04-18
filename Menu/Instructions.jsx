@@ -15,7 +15,7 @@ export default function Instructions({ mode }) {
        <Modal
         animationType="fade"
         transparent={true}
-        visible={showModal}
+        visible={showModal && mode !== "multiplayer"}
         onRequestClose={() => setShowModal(false)}
       >
         <View style={styles.modalContainer}>

@@ -1,5 +1,7 @@
 const { test, expect, chromium } = require('@playwright/test');
 
+const useRealBackend = process.env.PLAYWRIGHT_USE_REAL_BACKEND === 'true';
+
 test.describe('Ludo multiplayer flow', () => {
   // ─── Helper Functions ─────────────────────────────────────────────────────
 
@@ -9,7 +11,7 @@ test.describe('Ludo multiplayer flow', () => {
    * Open app in E2E mode (uses mock data instead of real API)
    */
   const openAppInE2EMode = async (page) => {
-    await page.goto('/?e2e=1');
+    await page.goto(useRealBackend ? '/' : '/?e2e=1');
   };
 
   /**
