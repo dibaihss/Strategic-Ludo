@@ -12,6 +12,7 @@ import { createWaitingRoomStyles } from './WaitingRoom.styles.js';
 import { useDispatch, useSelector } from 'react-redux';
 import { addBotToMatch, fetchCurrentMatch, updateMatch, updateMatchStatus, leaveMatch } from '../assets/store/sessionSlice.jsx';
 import { setPlayerColors, updateSoldiersPosition, removeColorFromAvailableColors, setActivePlayer } from '../assets/store/gameSlice.jsx';
+import { isE2EMode } from '../assets/store/sessionApiShared.jsx';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
 import Toast from 'react-native-toast-message';
@@ -256,23 +257,32 @@ const WaitingRoom = ({ navigation, route }) => {
     if (users.length < 2) {
       return;
     }
+
+    if (isE2EMode) {
+      setShowCountdown(true);
+      return;
+    }
+
     sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'startGame' });
   };
 
   const handleStartGame = async () => {
     if (players.length < 2) return;
+    const redirectMatch = currentMatch && currentMatch.status !== 'in_progress'
+      ? {
+        ...currentMatch,
+        status: 'in_progress',
+      }
+      : currentMatch;
     const playerColors = {
       blue: players[0].id,
       red: players[1].id,
       yellow: players[2] ? players[2].id : players[1].id,
       green: players[3] ? players[3].id : players[0].id
     }
-    if (currentMatch && currentMatch.status !== 'in_progress') {
-      const updatedMatch = {
-        ...currentMatch,
-        status: 'in_progress',
-      };
-      dispatch(updateMatchStatus(updatedMatch))
+    if (redirectMatch && currentMatch?.status !== 'in_progress') {
+      dispatch(updateMatch(redirectMatch));
+      dispatch(updateMatchStatus(redirectMatch))
         .unwrap()
         .then(updatedMatch => {
         })
@@ -285,22 +295,14 @@ const WaitingRoom = ({ navigation, route }) => {
     await AsyncStorage.setItem('REDIRECT_TO_GAME', 'true');
     await AsyncStorage.setItem('REDIRECT_GAME_MODE', 'multiplayer');
     await AsyncStorage.setItem('REDIRECT_BOT_DIFFICULTY', 'normal');
-    await AsyncStorage.setItem('REDIRECT_MATCH_DATA', JSON.stringify(currentMatch));
+    await AsyncStorage.setItem('REDIRECT_MATCH_DATA', JSON.stringify(redirectMatch));
     await AsyncStorage.setItem('REDIRECT_ISLOGGED_IN', isLoggedIn.toString());
 
 
-    if (typeof window !== 'undefined') {
-      window.location.reload();
-    } else {
-      dispatch(setPlayerColors(playerColors))
-      navigation.navigate('Game', {
-        mode: 'multiplayer',
-        matchId: currentMatch.id,
-        playerColors,
-      });
+    if (typeof globalThis.window?.location?.reload === 'function') {
+      globalThis.window.location.reload();
+      return;
     }
-
-
 
     dispatch(setPlayerColors(playerColors))
     navigation.navigate('Game', {
@@ -311,18 +313,24 @@ const WaitingRoom = ({ navigation, route }) => {
   };
 
 
-  const handleLeaveMatch = () => {
-    navigation.navigate('Home');
+  const handleLeaveMatch = async () => {
     if (currentMatch && currentMatch.id) {
-      dispatch(leaveMatch({ matchId: currentMatch.id, playerId: user.id }))
-        .unwrap()
-        .then(() => {
-          sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userLeft', userId: user.id })
-        })
-        .catch(error => {
-          console.error('Failed to delete match:', error);
-        });
+      try {
+        await dispatch(leaveMatch({ matchId: currentMatch.id, playerId: user.id })).unwrap();
+        sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userLeft', userId: user.id });
+      } catch (error) {
+        console.error('Failed to delete match:', error);
+      } finally {
+        dispatch(updateMatch(null));
+      }
     }
+
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+
+    navigation.navigate('MatchList');
   };
 
   if (loading && !currentMatch) {

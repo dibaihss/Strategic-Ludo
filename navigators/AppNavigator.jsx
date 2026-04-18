@@ -20,8 +20,16 @@ export default function AppNavigator() {
         component={GameScreen}
         options={{ unmountOnBlur: true }}
       />
-      <Stack.Screen name="MatchList" component={MatchListPage} />
-      <Stack.Screen name="WaitingRoom" component={WaitingRoom} />
+      <Stack.Screen
+        name="MatchList"
+        component={MatchListPage}
+        options={{ unmountOnBlur: true }}
+      />
+      <Stack.Screen
+        name="WaitingRoom"
+        component={WaitingRoom}
+        options={{ unmountOnBlur: true }}
+      />
     </Stack.Navigator>
   );
 }

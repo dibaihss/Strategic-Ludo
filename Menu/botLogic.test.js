@@ -1,5 +1,6 @@
 import {
   buildBotMultiplayerMessages,
+  cancelPendingBotTurn,
   chooseBotAction,
   emitMultiplayerBotTurn,
   getFirstAvailableBotPlayer,
@@ -26,13 +27,12 @@ const createCardsByColor = (overrides = {}) => ({
   ...overrides,
 });
 
-const createSoldiersByColor = (overrides = {}) => ({
+const createSoldiersByColor = (overrides = {}) => Object.assign({
   blue: [],
   red: [],
   yellow: [],
   green: [],
-  ...overrides,
-});
+}, overrides);
 
 describe('botLogic', () => {
   afterEach(() => {
@@ -358,6 +358,34 @@ describe('botLogic', () => {
     expect(sendMatchCommand).not.toHaveBeenCalled();
   });
 
+  test('cancelPendingBotTurn prevents an already scheduled multiplayer bot move from being emitted', () => {
+    jest.useFakeTimers();
+    const sendMessage = jest.fn();
+    const sendMatchCommand = jest.fn();
+
+    emitMultiplayerBotTurn({
+      color: 'red',
+      difficulty: 'hard',
+      cardsByColor: createCardsByColor({
+        red: [{ id: 8, value: 2, used: false }],
+      }),
+      soldiersByColor: createSoldiersByColor({
+        red: [{ id: 6, color: 'red', position: '1b', onBoard: true, isOut: false }],
+      }),
+      connected: true,
+      currentMatch: { id: 'match-1' },
+      user: { id: 'host-1' },
+      sendMessage,
+      sendMatchCommand,
+      disableNoise: true,
+    });
+
+    cancelPendingBotTurn();
+    jest.advanceTimersByTime(1500);
+
+    expect(sendMatchCommand).not.toHaveBeenCalled();
+  });
+
   test('runBotTurn dispatches current player and executes a move action', async () => {
     const dispatch = jest.fn();
     const movePlayer = jest.fn();
@@ -438,6 +466,36 @@ describe('botLogic', () => {
     expect(action).toEqual(expect.objectContaining({ type: 'skipTurn', payload: {} }));
     expect(dispatch).toHaveBeenCalledWith(setActivePlayer());
     expect(dispatch).toHaveBeenCalledWith(resetTimer());
+    expect(movePlayer).not.toHaveBeenCalled();
+    expect(enterNewSoldier).not.toHaveBeenCalled();
+  });
+
+  test('runBotTurn aborts without dispatching when execution is cancelled', async () => {
+    const dispatch = jest.fn();
+    const movePlayer = jest.fn();
+    const enterNewSoldier = jest.fn();
+
+    const action = await runBotTurn({
+      color: 'red',
+      difficulty: 'hard',
+      activePlayer: 'red',
+      systemLang: 'en',
+      showClone: false,
+      dispatch,
+      cardsByColor: createCardsByColor({
+        red: [{ id: 8, value: 2, used: false }],
+      }),
+      soldiersByColor: createSoldiersByColor({
+        red: [{ id: 6, color: 'red', position: '1b', onBoard: true, isOut: false }],
+      }),
+      movePlayer,
+      enterNewSoldier,
+      shouldCancel: () => true,
+      delayMs: 0,
+    });
+
+    expect(action).toBeNull();
+    expect(dispatch).not.toHaveBeenCalled();
     expect(movePlayer).not.toHaveBeenCalled();
     expect(enterNewSoldier).not.toHaveBeenCalled();
   });

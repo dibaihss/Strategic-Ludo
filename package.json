@@ -9,7 +9,10 @@
     "web": "expo start --web",
     "test": "jest",
     "web:e2e": "cross-env EXPO_PUBLIC_E2E=true CI=1 expo start --web --port 19006",
+    "web:e2e:real": "cross-env CI=1 node scripts/start-playwright-proxy.cjs",
     "e2e:web": "playwright test",
+    "e2e:web:real": "cross-env PLAYWRIGHT_USE_REAL_BACKEND=true playwright test",
+    "e2e:web:real:headed": "cross-env PLAYWRIGHT_USE_REAL_BACKEND=true PLAYWRIGHT_MANUAL_HEADED=true playwright test --headed --workers=1",
     "e2e:web:ui": "playwright test --ui",
     "e2e:web:update": "playwright test --update-snapshots"
   },
@@ -44,6 +47,7 @@
     "@testing-library/react-native": "^13.3.3",
     "cross-env": "^7.0.3",
     "dotenv": "^17.3.1",
+    "http-proxy": "^1.18.1",
     "jest": "^29.7.0",
     "jest-expo": "^55.0.14",
     "react-test-renderer": "^19.2.0"

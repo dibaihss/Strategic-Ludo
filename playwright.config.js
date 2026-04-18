@@ -1,5 +1,7 @@
 const { defineConfig } = require("@playwright/test");
 
+const useRealBackend = process.env.PLAYWRIGHT_USE_REAL_BACKEND === "true";
+
 module.exports = defineConfig({
   testDir: "./e2e",
   retries: process.env.CI ? 2 : 0,
@@ -15,8 +17,10 @@ module.exports = defineConfig({
     video: "retain-on-failure",
   },
   webServer: {
-    command: "npm run web:e2e",
-    url: "http://127.0.0.1:19006",
+    command: useRealBackend ? "npm run web:e2e:real" : "npm run web:e2e",
+    url: useRealBackend
+      ? "http://127.0.0.1:19006/__playwright_ready"
+      : "http://127.0.0.1:19006",
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
   },

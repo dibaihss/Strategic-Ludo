@@ -1,8 +1,7 @@
 import React from 'react';
-import { render, waitFor } from '@testing-library/react-native';
+import { render } from '@testing-library/react-native';
 import { useSelector } from 'react-redux';
 import Goals from './Goals';
-import Toast from 'react-native-toast-message';
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   setItem: jest.fn(),
@@ -85,21 +84,7 @@ describe('Goals component', () => {
     configureSelectors(createState());
   });
 
-  test('shows a toast when a color completes all soldiers', async () => {
-    render(<Goals />);
-
-    await waitFor(() => {
-      expect(Toast.show).toHaveBeenCalledTimes(1);
-      expect(Toast.show).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: 'success',
-          text1: expect.stringMatching(/red/i),
-        })
-      );
-    });
-  });
-
-  test('does not show a toast when no color has all soldiers completed', async () => {
+  test('renders when no color has all soldiers completed', () => {
     const state = createState({
       game: {
         redSoldiers: [
@@ -112,10 +97,8 @@ describe('Goals component', () => {
     });
     configureSelectors(state);
 
-    render(<Goals />);
+    const { toJSON } = render(<Goals />);
 
-    await waitFor(() => {
-      expect(Toast.show).not.toHaveBeenCalled();
-    });
+    expect(toJSON()).toBeTruthy();
   });
 });

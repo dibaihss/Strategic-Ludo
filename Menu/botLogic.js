@@ -2,7 +2,6 @@ import { handleEnterNewSoldierCore, movePlayerCore, sendMoveUpdateCore } from '.
 import { resetTimer, setActivePlayer, setCurrentPlayer } from '../assets/store/gameSlice.jsx';
 import {
   chooseScoredBotAction,
-  getCardsForColor,
   getSoldiersForColor,
   normalizeBotDifficulty,
 } from './botStrategy.js';
@@ -97,6 +96,13 @@ export const buildBotMultiplayerMessages = (action) => {
 
 
 let botTimeout = null;
+export const cancelPendingBotTurn = () => {
+  if (!botTimeout) return;
+
+  clearTimeout(botTimeout);
+  botTimeout = null;
+};
+
 export const emitMultiplayerBotTurn = ({
   color,
   difficulty = 'normal',
@@ -107,17 +113,23 @@ export const emitMultiplayerBotTurn = ({
   user,
   sendMessage,
   sendMatchCommand,
+  shouldCancel = () => false,
+  delayMs = 1000,
   randomFn,
   disableNoise = false,
 }) => {
+  if (shouldCancel()) {
+    cancelPendingBotTurn();
+    return null;
+  }
+
   const action = chooseBotAction(cardsByColor, soldiersByColor, color, {
     difficulty,
     randomFn,
     disableNoise,
   });
-  if (botTimeout) {
-    clearTimeout(botTimeout);
-  }
+  cancelPendingBotTurn();
+
   const { selectedPlayer, moveMessage } = buildBotMultiplayerMessages(action);
 
   if (connected && currentMatch?.id && selectedPlayer) {
@@ -128,6 +140,11 @@ export const emitMultiplayerBotTurn = ({
 
   if (moveMessage && (!connected || hasMultiplayerIdentity)) {
     botTimeout = setTimeout(() => {
+      if (shouldCancel()) {
+        cancelPendingBotTurn();
+        return;
+      }
+
       sendMoveUpdateCore({
         connected,
         message: moveMessage,
@@ -136,7 +153,8 @@ export const emitMultiplayerBotTurn = ({
         user,
         sendMessage,
       });
-    }, 1000);
+      botTimeout = null;
+    }, delayMs);
   }
   
   return action;
@@ -156,11 +174,17 @@ export const runBotTurn = async ({
   setCurrentPlayerAction = setCurrentPlayer,
   setActivePlayerAction = setActivePlayer,
   resetTimerAction = resetTimer,
+  shouldCancel = () => false,
+  delayMs = 500,
   randomFn,
   disableNoise = false,
 }) => {
   // Simulate thinking time
-  await new Promise(resolve => setTimeout(resolve, 500));
+  await new Promise(resolve => setTimeout(resolve, delayMs));
+
+  if (shouldCancel()) {
+    return null;
+  }
 
   const action = chooseBotAction(cardsByColor, soldiersByColor, color, {
     difficulty,
@@ -168,6 +192,10 @@ export const runBotTurn = async ({
     disableNoise,
   });
   const botPlayer = action.payload?.soldier || getFirstAvailableBotPlayer(soldiersByColor, color);
+
+  if (shouldCancel()) {
+    return null;
+  }
 
   if (botPlayer && botPlayer.color === color) {
     dispatch(setCurrentPlayerAction(botPlayer));

@@ -5,7 +5,7 @@ import * as RN from 'react-native';
 
 RN.Modal = ({ children }) => children;
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
-import { emitMultiplayerBotTurn, runBotTurn } from './botLogic.js';
+import { cancelPendingBotTurn, emitMultiplayerBotTurn, runBotTurn } from './botLogic.js';
 import GameScreen from './GameScreen';
 import { setCurrentPlayer, setCurrentPlayerColor } from '../assets/store/gameSlice.jsx';
 
@@ -35,6 +35,7 @@ jest.mock('./botLogic.js', () => {
   const actual = jest.requireActual('./botLogic.js');
   return {
     ...actual,
+    cancelPendingBotTurn: jest.fn(),
     emitMultiplayerBotTurn: jest.fn(() => ({ type: 'movePlayer' })),
     runBotTurn: jest.fn(() => ({ type: 'movePlayer' })),
   };
@@ -73,6 +74,8 @@ const createState = (overrides = {}) => {
       playerColors: { blue: 'user-1' },
       activePlayer: 'blue',
       currentPlayerColor: 'blue',
+      gamePaused: false,
+      disconnectedPlayer: null,
       isOnline: false,
       blueSoldiers: [
         { id: 1, color: 'blue', isOut: true },
@@ -397,5 +400,70 @@ describe('GameScreen', () => {
 
     expect(emitMultiplayerBotTurn).not.toHaveBeenCalled();
     expect(runBotTurn).not.toHaveBeenCalled();
+  });
+
+  test('gamePaused blocks offline bot turns from being scheduled', async () => {
+    jest.useFakeTimers();
+
+    const state = createState({
+      game: {
+        activePlayer: 'red',
+        gamePaused: true,
+        redSoldiers: [
+          { id: 5, color: 'red', position: '1b', onBoard: true, isOut: false },
+        ],
+        redCards: [
+          { id: 7, value: 2, used: false },
+        ],
+      },
+    });
+
+    configureSelectors(state);
+
+    const { findByTestId } = render(
+      <GameScreen route={{ params: { mode: 'bot', matchId: 1 } }} navigation={{ navigate: jest.fn() }} />
+    );
+
+    expect(await findByTestId('game-screen')).toBeTruthy();
+
+    act(() => {
+      jest.advanceTimersByTime(1000);
+    });
+
+    expect(runBotTurn).not.toHaveBeenCalled();
+    expect(emitMultiplayerBotTurn).not.toHaveBeenCalled();
+  });
+
+  test('unmount cancels any pending bot turn before it runs', async () => {
+    jest.useFakeTimers();
+
+    const state = createState({
+      game: {
+        activePlayer: 'red',
+        redSoldiers: [
+          { id: 5, color: 'red', position: '1b', onBoard: true, isOut: false },
+        ],
+        redCards: [
+          { id: 7, value: 2, used: false },
+        ],
+      },
+    });
+
+    configureSelectors(state);
+
+    const { findByTestId, unmount } = render(
+      <GameScreen route={{ params: { mode: 'bot', matchId: 1 } }} navigation={{ navigate: jest.fn() }} />
+    );
+
+    expect(await findByTestId('game-screen')).toBeTruthy();
+
+    unmount();
+
+    act(() => {
+      jest.advanceTimersByTime(1000);
+    });
+
+    expect(runBotTurn).not.toHaveBeenCalled();
+    expect(cancelPendingBotTurn).toHaveBeenCalled();
   });
 });

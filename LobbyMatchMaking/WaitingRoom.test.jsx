@@ -2,8 +2,16 @@ jest.mock('../assets/store/sessionSlice.jsx', () => ({
   addBotToMatch: jest.fn((payload) => ({ type: 'session/addBotToMatch', payload })),
   fetchCurrentMatch: jest.fn(),
   updateMatch: jest.fn((payload) => ({ type: 'session/updateMatch', payload })),
-  updateMatchStatus: jest.fn(),
+  updateMatchStatus: jest.fn((payload) => ({
+    type: 'session/updateMatchStatusThunk',
+    payload,
+    unwrap: jest.fn(() => Promise.resolve(payload)),
+  })),
   leaveMatch: jest.fn(),
+}));
+
+jest.mock('../assets/store/sessionApiShared.jsx', () => ({
+  isE2EMode: jest.fn(() => false),
 }));
 
 jest.mock('../assets/store/gameSlice.jsx', () => ({
@@ -17,8 +25,11 @@ import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import * as RN from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import WaitingRoom from './WaitingRoom';
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
+import { isE2EMode } from '../assets/store/sessionApiShared.jsx';
+import { updateMatch, updateMatchStatus } from '../assets/store/sessionSlice.jsx';
 
 RN.Modal = ({ visible, children }) => (visible ? children : null);
 
@@ -90,8 +101,11 @@ describe('WaitingRoom', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.useRealTimers();
     dispatchMock = jest.fn();
+    dispatchMock.mockImplementation((action) => action);
     sendMessageMock = jest.fn();
+    isE2EMode.mockReturnValue?.(false);
     useDispatch.mockReturnValue(dispatchMock);
     useSelector.mockImplementation((selector) => selector(createState()));
     useWebSocket.mockReturnValue({
@@ -130,5 +144,67 @@ describe('WaitingRoom', () => {
         }),
       })
     );
+  });
+
+  test('starts countdown locally in mocked e2e mode without websocket delivery', async () => {
+    jest.useFakeTimers();
+    isE2EMode.mockReturnValue(true);
+
+    useSelector.mockImplementation((selector) => selector({
+      ...createState(),
+      auth: {
+        user: { id: 'user-1', name: 'Host' },
+        isLoggedIn: true,
+      },
+      session: {
+        loading: false,
+        currentMatch: {
+          id: 'match-1',
+          name: 'Game Room 1',
+          status: 'waiting',
+          users: [
+            { id: 'user-1', name: 'Host' },
+            { id: 'bot-1', name: 'Bot 1', isBot: true, isGuest: true },
+          ],
+        },
+      },
+    }));
+
+    const navigation = { navigate: jest.fn() };
+    const { getByTestId, findByText } = render(
+      <WaitingRoom navigation={navigation} route={{ params: { join: false } }} />
+    );
+
+    fireEvent.press(getByTestId('waiting-room-start-button'));
+
+    expect(sendMessageMock).not.toHaveBeenCalledWith(
+      '/app/waitingRoom.gameStarted/match-1',
+      expect.objectContaining({ type: 'startGame' })
+    );
+
+    await findByText(/Game starting in/i);
+
+    await React.act(async () => {
+      jest.advanceTimersByTime(3000);
+      await Promise.resolve();
+    });
+
+    expect(dispatchMock).toHaveBeenCalledWith(updateMatch(expect.objectContaining({
+      id: 'match-1',
+      status: 'in_progress',
+    })));
+    expect(updateMatchStatus).toHaveBeenCalledWith(expect.objectContaining({
+      id: 'match-1',
+      status: 'in_progress',
+    }));
+    expect(AsyncStorage.setItem).toHaveBeenCalledWith('REDIRECT_TO_GAME', 'true');
+    expect(navigation.navigate).toHaveBeenCalledWith('Game', expect.objectContaining({
+      mode: 'multiplayer',
+      matchId: 'match-1',
+      playerColors: expect.objectContaining({
+        blue: 'user-1',
+        red: 'bot-1',
+      }),
+    }));
   });
 });
