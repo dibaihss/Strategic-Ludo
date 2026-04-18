@@ -196,6 +196,9 @@ export default function Bases() {
     };
 
     const movePlayer = (color, steps) => {
+        const activePlayer = activePlayerRef.current;
+        const currentPlayer = currentPlayerRef.current;
+        console.log(`Attempting to move player of color ${color} by ${steps} steps. Active player: ${activePlayer}, Current player color: ${currentPlayerColorRef.current}`);
         const result = movePlayerCore({ color, steps, currentPlayer, activePlayer, showClone, dispatch });
         console.log("Move player result:", result);
         if (result?.error) {
@@ -223,13 +226,13 @@ export default function Bases() {
 
     // ─── Multiplayer move with acknowledgement ────────────────────────────
     const movePlayerHanlder = useCallback(async (color, steps) => {
-        if (activePlayerRef.current !== color) return;
-
-        // Offline mode — apply locally
         if (!connected) {
             movePlayer(color, steps);
             return;
         }
+
+        if (activePlayerRef.current !== color) return;
+
 
         if (!canControlColor(currentPlayerColorRef.current, color, activePlayerRef.current)) return;
 
