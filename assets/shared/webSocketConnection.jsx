@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { io } from 'socket.io-client';
 import { useSelector, useDispatch } from 'react-redux';
 import { Platform } from 'react-native';
+import { applyServerStateSnapshot } from '../store/gameSlice.jsx';
 
 // ─── WebSocket URL Configuration ──────────────────────────────────────────
 const PRODUCTION_WS_URL = process.env.EXPO_PUBLIC_WS_URL;
@@ -130,8 +131,8 @@ export const WebSocketProvider = ({ children }) => {
     emitWithAck('requestGameState', { sessionId: id })
       .then((response) => {
         if (response?.status === 'ok' && response.gameState) {
-          console.log('Syncing game state from server');
-          dispatch({ type: 'game/syncGameState', payload: response.gameState });
+          console.log('Syncing game state from server', response.gameState);
+          dispatch(applyServerStateSnapshot(response.gameState));
         }
       })
       .catch((err) => {
@@ -233,7 +234,7 @@ export const WebSocketProvider = ({ children }) => {
   }, [isOnline]);
 
   // ─── Context value ─────────────────────────────────────────────────────
-  const value = {
+  const value = useMemo(() => ({
     socketClient: socketRef.current,
     connected,
     subscribe,
@@ -242,7 +243,7 @@ export const WebSocketProvider = ({ children }) => {
     emitWithAck,       // ✅ exposed so components can use it directly
     requestFullSync,   // ✅ exposed so components can trigger resync
     reconnect: reconnectSocket,
-  };
+  }), [connected, subscribe, sendMessage, sendMatchCommand, emitWithAck, requestFullSync, reconnectSocket]);
 
   return (
     <WebSocketContext.Provider value={value}>

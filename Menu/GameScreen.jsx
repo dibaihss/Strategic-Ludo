@@ -70,7 +70,7 @@ export default function GameScreen({ route, navigation }) {
     playerColors: routePlayerColors,
     botDifficulty: routeBotDifficulty,
   } = route.params || { mode: 'local', matchId: 1 };
-  const { connected, sendMessage, sendMatchCommand } = useWebSocket();
+  const { connected, sendMessage, sendMatchCommand, requestFullSync } = useWebSocket();
   const multiplayerPlayerColors = useMemo(
     () => routePlayerColors || buildPlayerColorsFromPlayers(currentMatch?.users),
     [currentMatch?.users, routePlayerColors]
@@ -219,6 +219,7 @@ export default function GameScreen({ route, navigation }) {
     }),
     [activePlayer, currentMatch?.users, mode, playerColors, routeBotDifficulty]
   );
+  const canSyncGameState = mode === 'multiplayer' && connected && Boolean(currentMatch?.id);
 
   useEffect(() => {
     if (winnerDetected || loading || shouldPauseBotActions()) return;
@@ -334,6 +335,11 @@ export default function GameScreen({ route, navigation }) {
     setShowExitModal(true);
   };
 
+  const handleSyncGameState = () => {
+    if (!canSyncGameState) return;
+    requestFullSync(currentMatch?.id);
+  };
+
   const confirmExitGame = async () => {
     setShowExitModal(false); // Close the modal
     exitInProgressRef.current = true;
@@ -388,6 +394,20 @@ export default function GameScreen({ route, navigation }) {
           <Goals />
           <Bases />
           <View style={styles.controls}>
+            {mode === 'multiplayer' ? (
+              <Pressable
+                testID="game-sync-state-button"
+                style={[styles.button, !canSyncGameState && { opacity: 0.5 }]}
+                onPress={handleSyncGameState}
+                disabled={!canSyncGameState}
+              >
+                <MaterialIcons name="sync" size={24} color={theme.colors.buttonText} />
+                <Text style={styles.buttonText}>
+                  {uiStrings[systemLang]?.syncGameState || 'Sync Game State'}
+                </Text>
+              </Pressable>
+            ) : null}
+
             <Pressable
               testID="game-skip-turn-button"
               style={styles.button}

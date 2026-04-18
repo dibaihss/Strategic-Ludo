@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, render } from '@testing-library/react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import * as RN from 'react-native';
 
@@ -163,18 +163,21 @@ describe('GameScreen', () => {
   let dispatchMock;
   let sendMessageMock;
   let sendMatchCommandMock;
+  let requestFullSyncMock;
 
   beforeEach(() => {
     jest.clearAllMocks();
     dispatchMock = jest.fn();
     sendMessageMock = jest.fn();
     sendMatchCommandMock = jest.fn();
+    requestFullSyncMock = jest.fn();
     useDispatch.mockReturnValue(dispatchMock);
     useWebSocket.mockReturnValue({
       connected: false,
       subscribe: jest.fn(),
       sendMessage: sendMessageMock,
       sendMatchCommand: sendMatchCommandMock,
+      requestFullSync: requestFullSyncMock,
     });
   });
 
@@ -254,6 +257,72 @@ describe('GameScreen', () => {
     });
   });
 
+  test('shows the sync button for multiplayer matches and requests a full sync when pressed', () => {
+    const state = createState({
+      game: {
+        isOnline: true,
+      },
+      session: {
+        currentMatch: {
+          id: 'match-1',
+          users: [{ id: 'user-1', name: 'Host' }],
+        },
+      },
+    });
+
+    configureSelectors(state);
+    useWebSocket.mockReturnValue({
+      connected: true,
+      subscribe: jest.fn(),
+      sendMessage: sendMessageMock,
+      sendMatchCommand: sendMatchCommandMock,
+      requestFullSync: requestFullSyncMock,
+    });
+
+    const { getByTestId } = render(
+      <GameScreen route={{ params: { mode: 'multiplayer', matchId: 'match-1' } }} navigation={{ navigate: jest.fn() }} />
+    );
+
+    fireEvent.press(getByTestId('game-sync-state-button'));
+
+    expect(requestFullSyncMock).toHaveBeenCalledWith('match-1');
+  });
+
+  test('does not render the sync button outside multiplayer mode', () => {
+    configureSelectors(createState());
+
+    const { queryByTestId } = render(
+      <GameScreen route={{ params: { mode: 'local', matchId: 1 } }} navigation={{ navigate: jest.fn() }} />
+    );
+
+    expect(queryByTestId('game-sync-state-button')).toBeNull();
+  });
+
+  test('disables the sync button when the multiplayer socket is disconnected', () => {
+    const state = createState({
+      game: {
+        isOnline: true,
+      },
+      session: {
+        currentMatch: {
+          id: 'match-1',
+          users: [{ id: 'user-1', name: 'Host' }],
+        },
+      },
+    });
+
+    configureSelectors(state);
+
+    const { getByTestId } = render(
+      <GameScreen route={{ params: { mode: 'multiplayer', matchId: 'match-1' } }} navigation={{ navigate: jest.fn() }} />
+    );
+
+    const syncButton = getByTestId('game-sync-state-button');
+    fireEvent.press(syncButton);
+
+    expect(requestFullSyncMock).not.toHaveBeenCalled();
+  });
+
   test('host emits multiplayer bot moves through the websocket flow instead of local bot execution', async () => {
     jest.useFakeTimers();
 
@@ -303,6 +372,7 @@ describe('GameScreen', () => {
       subscribe: jest.fn(),
       sendMessage: sendMessageMock,
       sendMatchCommand: sendMatchCommandMock,
+      requestFullSync: requestFullSyncMock,
     });
 
     const { findByTestId } = render(
@@ -383,6 +453,7 @@ describe('GameScreen', () => {
       subscribe: jest.fn(),
       sendMessage: sendMessageMock,
       sendMatchCommand: sendMatchCommandMock,
+      requestFullSync: requestFullSyncMock,
     });
 
     const { findByTestId } = render(
