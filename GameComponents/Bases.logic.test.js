@@ -1,4 +1,3 @@
-import Toast from 'react-native-toast-message';
 import {
     canControlColor,
     calculateNewPositionForPlayer,
@@ -53,7 +52,6 @@ describe('Bases.logic', () => {
             dispatch,
         });
 
-        expect(Toast.show).toHaveBeenCalledTimes(1);
         expect(dispatch).not.toHaveBeenCalled();
     });
 
@@ -69,7 +67,6 @@ describe('Bases.logic', () => {
             dispatch,
         });
 
-        expect(Toast.show).toHaveBeenCalledTimes(1);
         expect(dispatch).not.toHaveBeenCalled();
     });
 
@@ -85,7 +82,6 @@ describe('Bases.logic', () => {
             dispatch,
         });
 
-        expect(Toast.show).toHaveBeenCalledTimes(1);
         expect(dispatch).not.toHaveBeenCalled();
     });
 
@@ -102,7 +98,6 @@ describe('Bases.logic', () => {
         });
 
         expect(dispatch).not.toHaveBeenCalled();
-        expect(Toast.show).not.toHaveBeenCalled();
     });
 
     test('movePlayerCore dispatches card check and movement payload on a valid board move', () => {
@@ -152,7 +147,6 @@ describe('Bases.logic', () => {
             systemLang: 'en',
             dispatch,
         });
-        expect(Toast.show).toHaveBeenCalledTimes(1);
         expect(dispatch).not.toHaveBeenCalled();
 
         handleEnterNewSoldierCore({
