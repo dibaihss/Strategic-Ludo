@@ -5,8 +5,8 @@ import Bases from '../GameComponents/Bases.jsx';
 import Timer from '../GameComponents/Timer.jsx';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { View, Text, Pressable, ActivityIndicator, Modal, Animated } from 'react-native';
-import { setActivePlayer, resetTimer, setIsOnline, resetGameState, setCurrentPlayerColor, setPlayerColors, setPausedGame, setDisconnectedPlayer } from '../assets/store/gameSlice.jsx';
+import { View, Text, Pressable, ActivityIndicator, Modal, Animated, AppState } from 'react-native';
+import { setActivePlayer, resetTimer, setIsOnline, resetGameState, setCurrentPlayerColor, setPlayerColors, setPausedGame } from '../assets/store/gameSlice.jsx';
 import { resetAnimationState } from '../assets/store/animationSlice.jsx';
 import { uiStrings, getLocalizedColor } from '../assets/shared/hardCodedData.js';
 
@@ -16,8 +16,8 @@ import { leaveMatch, updateMatch } from '../assets/store/sessionSlice.jsx';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { createGameScreenStyles } from './GameScreen.styles.js';
 import Instructions from './Instructions.jsx';
-import { emitMultiplayerBotTurn, getBotDifficultyForTurn, isBotControlledPlayer, runBotTurn } from './botLogic.js';
-import { playSound, stopSound } from '../assets/shared/audioManager';
+import { cancelPendingBotTurn, emitMultiplayerBotTurn, getBotDifficultyForTurn, isBotControlledPlayer, runBotTurn } from './botLogic.js';
+import { playSound } from '../assets/shared/audioManager';
 import DisconnectionOverlay from '../GameComponents/DisconnectionOverlay.jsx';
 
 const buildPlayerColorsFromPlayers = (players = []) => {
@@ -39,6 +39,8 @@ const getUserColorsFromPlayerColors = (userId, colors) => {
     .map(([color]) => color);
 };
 
+const isAppStateActive = (appState) => appState !== 'background' && appState !== 'inactive';
+
 export default function GameScreen({ route, navigation }) {
   const dispatch = useDispatch();
   const theme = useSelector(state => state.theme.current);
@@ -48,6 +50,7 @@ export default function GameScreen({ route, navigation }) {
   const playerColors = useSelector(state => state.game.playerColors);
   const activePlayer = useSelector(state => state.game.activePlayer);
   const isOnline = useSelector(state => state.game.isOnline);
+  const gamePaused = useSelector(state => state.game.gamePaused);
   const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
   const blueSoldiers = useSelector(state => state.game.blueSoldiers);
   const redSoldiers = useSelector(state => state.game.redSoldiers);
@@ -58,7 +61,6 @@ export default function GameScreen({ route, navigation }) {
   const yellowCards = useSelector(state => state.game.yellowCards);
   const greenCards = useSelector(state => state.game.greenCards);
   const showClone = useSelector(state => state.animation?.showClone || false);
-  const disconnectedPlayer = useSelector(state => state.game.disconnectedPlayer);
 
   const [gameIsStarted, setGameIsStarted] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -67,8 +69,11 @@ export default function GameScreen({ route, navigation }) {
   const [winnerResults, setWinnerResults] = useState([]);
   const [winningColor, setWinningColor] = useState(null);
   const [winnerDetected, setWinnerDetected] = useState(false);
+  const [isAppActive, setIsAppActive] = useState(isAppStateActive(AppState.currentState));
   const winnerScale = useRef(new Animated.Value(0.7)).current;
   const keepAwakeActivatedRef = useRef(false);
+  const screenActiveRef = useRef(true);
+  const exitInProgressRef = useRef(false);
 
   // Memoize styles to avoid recreating on every render
   const styles = useMemo(() => createGameScreenStyles(theme), [theme]);
@@ -76,7 +81,6 @@ export default function GameScreen({ route, navigation }) {
   // Get the game mode from navigation params
   const {
     mode,
-    matchId,
     playerColors: routePlayerColors,
     botDifficulty: routeBotDifficulty,
   } = route.params || { mode: 'local', matchId: 1 };
@@ -89,9 +93,17 @@ export default function GameScreen({ route, navigation }) {
     () => Boolean(currentMatch && user && String(currentMatch.users?.[0]?.id) === String(user.id)),
     [currentMatch, user]
   );
+  const shouldPauseBotActions = () => (
+    gamePaused
+    || !screenActiveRef.current
+    || !isAppActive
+    || exitInProgressRef.current
+  );
 
   useEffect(() => {
     let mounted = true;
+    screenActiveRef.current = true;
+    exitInProgressRef.current = false;
 
     setCurrentUserPage('Game');
     dispatch(resetGameState());
@@ -114,13 +126,51 @@ export default function GameScreen({ route, navigation }) {
 
     return () => {
       mounted = false;
+      screenActiveRef.current = false;
+      exitInProgressRef.current = true;
+      cancelPendingBotTurn();
+      dispatch(setPausedGame(true));
       // Deactivate keep awake when leaving the GameScreen
       if (!keepAwakeActivatedRef.current) return;
       deactivateKeepAwake().catch((error) => {
         console.warn('Failed to deactivate keep-awake on game screen:', error);
       });
     };
+  }, [dispatch]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      const appIsActive = isAppStateActive(nextState);
+      setIsAppActive(appIsActive);
+
+      if (!appIsActive) {
+        cancelPendingBotTurn();
+      }
+    });
+
+    return () => subscription.remove();
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') {
+      return undefined;
+    }
+
+    const handleBeforeUnload = () => {
+      exitInProgressRef.current = true;
+      cancelPendingBotTurn();
+      dispatch(setPausedGame(true));
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (gamePaused || !isAppActive) {
+      cancelPendingBotTurn();
+    }
+  }, [gamePaused, isAppActive]);
 
   useEffect(() => {
     setGameIsStarted(true);
@@ -192,10 +242,12 @@ export default function GameScreen({ route, navigation }) {
   );
 
   useEffect(() => {
-    if (winnerDetected || loading) return;
+    if (winnerDetected || loading || shouldPauseBotActions()) return;
     if (!isOfflineBotTurn && !shouldEmitMultiplayerBotTurn) return;
 
     const botTimer = setTimeout(() => {
+      if (shouldPauseBotActions()) return;
+
       if (isOfflineBotTurn) {
         runBotTurn({
           color: activePlayer,
@@ -206,6 +258,7 @@ export default function GameScreen({ route, navigation }) {
           dispatch,
           cardsByColor,
           soldiersByColor,
+          shouldCancel: shouldPauseBotActions,
         });
         return;
       }
@@ -220,6 +273,7 @@ export default function GameScreen({ route, navigation }) {
         user,
         sendMessage,
         sendMatchCommand,
+        shouldCancel: shouldPauseBotActions,
       });
     }, 1000);
 
@@ -231,7 +285,9 @@ export default function GameScreen({ route, navigation }) {
     connected,
     currentMatch,
     dispatch,
+    gamePaused,
     isOfflineBotTurn,
+    isAppActive,
     loading,
     sendMatchCommand,
     sendMessage,
@@ -324,6 +380,10 @@ export default function GameScreen({ route, navigation }) {
 
   const confirmExitGame = async () => {
     setShowExitModal(false); // Close the modal
+    exitInProgressRef.current = true;
+    cancelPendingBotTurn();
+    dispatch(setPausedGame(true));
+
     if (mode === 'local') {
       navigation.replace('Home');
     } else {
@@ -342,6 +402,8 @@ export default function GameScreen({ route, navigation }) {
       } catch (error) {
         console.error('Failed to leave match:', error);
       } finally {
+        cancelPendingBotTurn();
+        dispatch(setIsOnline(false));
         dispatch(updateMatch(null));
       }
     }
