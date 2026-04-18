@@ -299,8 +299,8 @@ const WaitingRoom = ({ navigation, route }) => {
     await AsyncStorage.setItem('REDIRECT_ISLOGGED_IN', isLoggedIn.toString());
 
 
-    if (typeof window !== 'undefined') {
-      window.location.reload();
+    if (typeof globalThis.window?.location?.reload === 'function') {
+      globalThis.window.location.reload();
       return;
     }
 
