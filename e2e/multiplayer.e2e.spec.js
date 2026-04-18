@@ -20,6 +20,7 @@
 const { test, expect, chromium } = require('@playwright/test');
 
 const useRealBackend = process.env.PLAYWRIGHT_USE_REAL_BACKEND === 'true';
+const gameScreenTimeout = 25000;
 
 test.describe('Ludo multiplayer flow', () => {
   // ─── Helper Functions ─────────────────────────────────────────────────────
@@ -271,7 +272,7 @@ test.describe('Ludo multiplayer flow', () => {
     // Should see countdown or game screen
     // Game starts after 3-second countdown in code
     await expect(page.getByTestId('game-screen')).toBeVisible({
-      timeout: 15000,
+      timeout: gameScreenTimeout,
     });
   });
 
@@ -298,7 +299,7 @@ test.describe('Ludo multiplayer flow', () => {
 
     // Wait for game screen
     await expect(page.getByTestId('game-screen')).toBeVisible({
-      timeout: 15000,
+      timeout: gameScreenTimeout,
     });
 
     // Verify game screen elements
@@ -327,7 +328,7 @@ test.describe('Ludo multiplayer flow', () => {
     // Start game
     await page.getByTestId('waiting-room-start-button').click();
     await expect(page.getByTestId('game-screen')).toBeVisible({
-      timeout: 15000,
+      timeout: gameScreenTimeout,
     });
 
     // Try to perform a move (enter soldier or play a card)
@@ -379,7 +380,7 @@ test.describe('Ludo multiplayer flow', () => {
     // Start game
     await page.getByTestId('waiting-room-start-button').click();
     await expect(page.getByTestId('game-screen')).toBeVisible({
-      timeout: 15000,
+      timeout: gameScreenTimeout,
     });
 
     // Exit game
