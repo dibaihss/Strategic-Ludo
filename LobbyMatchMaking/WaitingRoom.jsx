@@ -312,7 +312,7 @@ const WaitingRoom = ({ navigation, route }) => {
 
 
   const handleLeaveMatch = () => {
-    navigation.navigate('Home');
+    navigation.navigate('MatchList');
     if (currentMatch && currentMatch.id) {
       dispatch(leaveMatch({ matchId: currentMatch.id, playerId: user.id }))
         .unwrap()

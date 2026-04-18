@@ -325,9 +325,9 @@ export default function GameScreen({ route, navigation }) {
   const confirmExitGame = () => {
     setShowExitModal(false); // Close the modal
     if (mode === 'local') {
-      navigation.navigate('Home');
+      navigation.replace('Home');
     } else {
-      navigation.navigate('Home');
+      navigation.replace('Home');
       handleLeaveMatch(); // Call the function to leave the match
     }
   };
