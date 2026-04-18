@@ -19,27 +19,13 @@ import Instructions from './Instructions.jsx';
 import { cancelPendingBotTurn, emitMultiplayerBotTurn, getBotDifficultyForTurn, isBotControlledPlayer, runBotTurn } from './botLogic.js';
 import { playSound } from '../assets/shared/audioManager';
 import DisconnectionOverlay from '../GameComponents/DisconnectionOverlay.jsx';
-
-const buildPlayerColorsFromPlayers = (players = []) => {
-  if (!Array.isArray(players) || players.length < 2) return null;
-
-  return {
-    blue: players[0].id,
-    red: players[1].id,
-    yellow: players[2] ? players[2].id : players[1].id,
-    green: players[3] ? players[3].id : players[0].id,
-  };
-};
-
-const getUserColorsFromPlayerColors = (userId, colors) => {
-  if (!userId || !colors) return [];
-
-  return Object.entries(colors)
-    .filter(([, ownerId]) => String(ownerId) === String(userId))
-    .map(([color]) => color);
-};
-
-const isAppStateActive = (appState) => appState !== 'background' && appState !== 'inactive';
+import {
+  buildPlayerColorsFromPlayers,
+  getUserColorFromPlayerColors,
+  getUserColorsFromPlayerColors,
+  getWinnerSummary,
+  isAppStateActive,
+} from './GameScreen.logic.js';
 
 export default function GameScreen({ route, navigation }) {
   const dispatch = useDispatch();
@@ -197,13 +183,6 @@ export default function GameScreen({ route, navigation }) {
     }
   }, [mode, activePlayer, dispatch]);
 
-  // useEffect(() => {
-  //   if (connected && disconnectedPlayer) {
-  //     dispatch(setPausedGame(false));
-  //     dispatch(setDisconnectedPlayer(null));
-  //   }
-  // }, [connected, disconnectedPlayer, dispatch]);
-
   const cardsByColor = useMemo(() => ({
     blue: blueCards,
     red: redCards,
@@ -302,28 +281,17 @@ export default function GameScreen({ route, navigation }) {
   useEffect(() => {
     if (winnerDetected || loading) return;
 
-    const players = [
-      { color: 'blue', soldiers: blueSoldiers },
-      { color: 'red', soldiers: redSoldiers },
-      { color: 'yellow', soldiers: yellowSoldiers },
-      { color: 'green', soldiers: greenSoldiers },
-    ];
-
-    const results = players.map(player => {
-      const completed = player.soldiers.filter(obj => obj.isOut === true).length;
-      return {
-        color: player.color,
-        completed,
-        isWinner: player.soldiers.length > 0 && player.soldiers.every(obj => obj.isOut === true),
-      };
+    const winnerSummary = getWinnerSummary({
+      blue: blueSoldiers,
+      red: redSoldiers,
+      yellow: yellowSoldiers,
+      green: greenSoldiers,
     });
 
-    const winner = results.find(player => player.isWinner);
-    if (!winner) return;
+    if (!winnerSummary) return;
 
-    const sorted = [...results].sort((a, b) => b.completed - a.completed);
-    setWinningColor(winner.color);
-    setWinnerResults(sorted.slice(0, 3));
+    setWinningColor(winnerSummary.winningColor);
+    setWinnerResults(winnerSummary.winnerResults);
     setShowWinnerModal(true);
     setWinnerDetected(true);
     playSound('win').catch(() => {});
@@ -348,19 +316,9 @@ export default function GameScreen({ route, navigation }) {
     sendMessage(`/app/player.Move/${currentMatch.id}`, message);
   };
 
-  const findUserColor = () => {
-    if (!user?.id || !playerColors) {
-      return null; // Return null if user or playerColors aren't available
-    }
-    // Object.entries converts { blue: 'id1', red: 'id2' } to [ ['blue', 'id1'], ['red', 'id2'] ]
-    const userEntry = Object.entries(playerColors).find(([color, userId]) => userId === user.id);
-    // userEntry will be like ['blue', 'user123'] or undefined if not found
-    console.log(userEntry)
-    return userEntry ? userEntry[0] : null; // Return the color (first element) or null
-  };
   const skipTurn = () => {
     if (connected) {
-      const userColor = findUserColor();
+      const userColor = getUserColorFromPlayerColors(user?.id, playerColors);
       if (userColor === activePlayer) {
         sendMoveUpdate({
           type: 'skipTurn'
@@ -373,8 +331,6 @@ export default function GameScreen({ route, navigation }) {
   }
 
   const handleExitGame = () => {
-    // Show the confirmation modal instead of navigating directly
-    console.log(currentPlayerColor)
     setShowExitModal(true);
   };
 
@@ -394,11 +350,9 @@ export default function GameScreen({ route, navigation }) {
 
   const handleLeaveMatch = async () => {
     if (currentMatch && currentMatch.id) {
-      console.log("Leaving match", currentMatch.id)
       sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userLeft', userId: user.id, colors: currentPlayerColor })
       try {
         await dispatch(leaveMatch({ matchId: currentMatch.id, playerId: user.id })).unwrap();
-        console.log('User left successfully');
       } catch (error) {
         console.error('Failed to leave match:', error);
       } finally {

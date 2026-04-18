@@ -23,156 +23,97 @@ import {
 } from './Bases.logic';
 import { playSound } from '../assets/shared/audioManager';
 
-
 export default function Bases() {
 
-    const dispatch = useDispatch();
-    const currentPlayer = useSelector(state => state.game.currentPlayer);
-    const activePlayer = useSelector(state => state.game.activePlayer);
-    const blueSoldiers = useSelector(state => state.game.blueSoldiers);
-    const redSoldiers = useSelector(state => state.game.redSoldiers);
-    const yellowSoldiers = useSelector(state => state.game.yellowSoldiers);
-    const greenSoldiers = useSelector(state => state.game.greenSoldiers);
-    const blueCards = useSelector(state => state.game.blueCards);
-    const redCards = useSelector(state => state.game.redCards);
-    const yellowCards = useSelector(state => state.game.yellowCards);
-    const greenCards = useSelector(state => state.game.greenCards);
-    const theme = useSelector(state => state.theme.current);
-    const showClone = useSelector(state => state.animation.showClone);
-    const systemLang = useSelector(state => state.language.systemLang);
-    const user = useSelector(state => state.auth.user);
-    const currentMatch = useSelector(state => state.session.currentMatch);
+    const dispatch           = useDispatch();
+    const currentPlayer      = useSelector(state => state.game.currentPlayer);
+    const activePlayer       = useSelector(state => state.game.activePlayer);
+    const blueSoldiers       = useSelector(state => state.game.blueSoldiers);
+    const redSoldiers        = useSelector(state => state.game.redSoldiers);
+    const yellowSoldiers     = useSelector(state => state.game.yellowSoldiers);
+    const greenSoldiers      = useSelector(state => state.game.greenSoldiers);
+    const blueCards          = useSelector(state => state.game.blueCards);
+    const redCards           = useSelector(state => state.game.redCards);
+    const yellowCards        = useSelector(state => state.game.yellowCards);
+    const greenCards         = useSelector(state => state.game.greenCards);
+    const theme              = useSelector(state => state.theme.current);
+    const showClone          = useSelector(state => state.animation.showClone);
+    const systemLang         = useSelector(state => state.language.systemLang);
+    const user               = useSelector(state => state.auth.user);
+    const currentMatch       = useSelector(state => state.session.currentMatch);
     const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
-    const playerColors = useSelector(state => state.game.playerColors);
+    const playerColors       = useSelector(state => state.game.playerColors);
 
+    const { connected, subscribe, sendMessage, sendMatchCommand, emitWithAck, requestFullSync, socketClient } = useWebSocket();
 
-     const { connected, subscribe, sendMessage, sendMatchCommand, emitWithAck, requestFullSync, socketClient } = useWebSocket();
+    // ─── Keep latest values accessible in callbacks without stale closures ──
+    const activePlayerRef       = useRef(activePlayer);
+    const currentPlayerRef      = useRef(currentPlayer);
+    const currentMatchRef       = useRef(currentMatch);
+    const currentPlayerColorRef = useRef(currentPlayerColor);
+    useEffect(() => { activePlayerRef.current       = activePlayer;       }, [activePlayer]);
+    useEffect(() => { currentPlayerRef.current      = currentPlayer;      }, [currentPlayer]);
+    useEffect(() => { currentMatchRef.current       = currentMatch;       }, [currentMatch]);
+    useEffect(() => { currentPlayerColorRef.current = currentPlayerColor; }, [currentPlayerColor]);
 
-    const windowWidth = Dimensions.get('window').width;
-    const windowHeight = Dimensions.get('window').height;
-    const isSmallScreen = windowWidth < 375 || windowHeight < 667;
+    // ─── Pending move guard — prevents double submitting ──────────────────
+    const movePendingRef = useRef(false);
 
-      const movePendingRef = useRef(false);
+    const windowWidth    = Dimensions.get('window').width;
+    const windowHeight   = Dimensions.get('window').height;
+    const isSmallScreen  = windowWidth < 375 || windowHeight < 667;
 
-    // ─── Styles ───────────────────────────────────────────────────────────
-    const styles = StyleSheet.create({
-        circleContainer: {
-            position: "absolute",
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: isSmallScreen ? 5 : 40,
-        },
-        corner: {
-            width: isSmallScreen ? 50 : 120,
-            height: isSmallScreen ? 50 : 120,
-            borderRadius: 10,
-            flexWrap: "wrap",
-            flexDirection: "row",
-            justifyContent: "space-around",
-            alignItems: "center",
-            padding: isSmallScreen ? 5 : 10,
-            borderWidth: isSmallScreen ? 1 : 2,
-            elevation: isSmallScreen ? 4 : 5,
-        },
-        circle: {
-            width: isSmallScreen ? 10 : 30,
-            height: isSmallScreen ? 10 : 30,
-            borderRadius: isSmallScreen ? 14 : 15,
-            backgroundColor: "white",
-            margin: isSmallScreen ? 4 : 5,
-            borderWidth: isSmallScreen ? 0.5 : 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            position: 'relative',
-            overflow: 'hidden',
-        },
-        cornerPlayer: {
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: [
-                { translateX: isSmallScreen ? -9 : -10 },
-                { translateY: isSmallScreen ? -9 : -10 }
-            ],
-        },
-        button: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            padding: isSmallScreen ? 0 : 10,
-            paddingHorizontal: isSmallScreen ? 12 : 15,
-            backgroundColor: theme.colors.button,
-            borderRadius: 8,
-            borderWidth: isSmallScreen ? 0.5 : 1,
-            borderColor: theme.colors.buttonBorder,
-            gap: 8,
-            elevation: isSmallScreen ? 2 : 0,
-            minWidth: isSmallScreen ? 5 : 'auto',
-        },
-        buttonText: {
-            fontSize: isSmallScreen ? 12 : 14,
-            color: theme.colors.buttonText,
-            fontWeight: isSmallScreen ? 'bold' : '1000',
-        },
-        left:   { top: isSmallScreen ? 3 : 20, left: isSmallScreen ? 3 : 20 },
-        top:    { top: isSmallScreen ? 3 : 20, right: isSmallScreen ? 3 : 20, transform: [{ rotate: '180deg' }] },
-        bottom: { bottom: isSmallScreen ? 3 : 20, left: isSmallScreen ? 3 : 20 },
-        right:  { bottom: isSmallScreen ? 3 : 20, right: isSmallScreen ? 3 : 20, transform: [{ rotate: '180deg' }] },
-        red:    { backgroundColor: theme.colors.red,    borderColor: theme.colors.border, shadowColor: activePlayer === "red"    ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 50 },
-        yellow: { backgroundColor: theme.colors.yellow, borderColor: theme.colors.border, shadowColor: activePlayer === "yellow" ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 50 },
-        blue:   { backgroundColor: theme.colors.blue,   borderColor: theme.colors.border, shadowColor: activePlayer === "blue"   ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 50 },
-        green:  { backgroundColor: theme.colors.green,  borderColor: theme.colors.border, shadowColor: activePlayer === "green"  ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 50 },
-        blue2:   { shadowColor: activePlayer === "blue"   ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: activePlayer === "blue"   ? 0.7 : "", shadowRadius: activePlayer === "blue"   ? 50 : "" },
-        red0:    { shadowColor: activePlayer === "red"    ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: activePlayer === "red"    ? 0.7 : "", shadowRadius: activePlayer === "red"    ? 50 : "" },
-        yellow1: { shadowColor: activePlayer === "yellow" ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: activePlayer === "yellow" ? 0.7 : "", shadowRadius: activePlayer === "yellow" ? 50 : "" },
-        green3:  { shadowColor: activePlayer === "green"  ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: activePlayer === "green"  ? 0.7 : "", shadowRadius: activePlayer === "green"  ? 50 : "" },
-    });
+    // ─── Player move subscription ─────────────────────────────────────────
+    useEffect(() => {
+        if (!connected || !currentMatch?.id) return;
 
-        const activePlayerRef       = useRef(activePlayer);
-        const currentPlayerRef      = useRef(currentPlayer);
-        const currentMatchRef       = useRef(currentMatch);
-        const currentPlayerColorRef = useRef(currentPlayerColor);
-        useEffect(() => { activePlayerRef.current       = activePlayer;       }, [activePlayer]);
-        useEffect(() => { currentPlayerRef.current      = currentPlayer;      }, [currentPlayer]);
-        useEffect(() => { currentMatchRef.current       = currentMatch;       }, [currentMatch]);
-        useEffect(() => { currentPlayerColorRef.current = currentPlayerColor; }, [currentPlayerColor]);
-        
-        useEffect(() => {
-        if (!connected || !currentMatch?.id) return; // single combined guard
         const subscription = subscribe(`/topic/playerMove/${currentMatch.id}`, (data) => {
             console.log("Received move update:", data);
+
             if (data?.type === 'movePlayer') {
                 const { color, steps } = data.payload || {};
                 movePlayer(color, steps);
+
             } else if (data?.type === 'enterNewSoldier') {
                 const { color } = data.payload || {};
                 handleEnterNewSoldier(color);
+
             } else if (data?.type === 'skipTurn') {
                 HandleskipTurn();
+
             } else if (data?.type === 'userDisconnected') {
                 console.log("User disconnected:", data);
                 handleUserDisconnected(data);
             }
-
         });
-        return () => {
-            subscription?.unsubscribe();
-        };
 
-    }, [connected, socketClient, currentMatch, user, currentPlayer]);
+        return () => subscription?.unsubscribe();
 
+    }, [connected, socketClient, currentMatch?.id]);
+
+    // ─── Handlers ─────────────────────────────────────────────────────────
     const handleUserDisconnected = (data) => {
-        console.log("Handling user disconnection:", data);
-        if (data.userId) {
-            const disconnectedColor = playerColors
-                ? Object.entries(playerColors).find(([, id]) => String(id) === String(data.userId))?.[0]
-                : 'blue';
-            dispatch(setDisconnectedPlayer({ name: data.sender, color: disconnectedColor || 'blue' }));
-            dispatch(setPausedGame(true));
-        }
+        if (!data.userId) return;
+
+        const disconnectedColor = playerColors
+            ? Object.entries(playerColors).find(([, id]) => String(id) === String(data.userId))?.[0]
+            : 'blue';
+
+        dispatch(setDisconnectedPlayer({ name: data.sender, color: disconnectedColor || 'blue' }));
+        dispatch(setPausedGame(true));
+
+        Toast.show({
+            type: 'error',
+            text1: 'Player Disconnected',
+            text2: `${data.sender} has left the game`,
+            position: 'top',
+            visibilityTime: 3000,
+        });
     };
+
     const handleEnterNewSoldier = (color) => {
         const result = handleEnterNewSoldierCore({ activePlayer, color, dispatch });
-        if (result.error === 'wrongTurn') {
+        if (result?.error === 'wrongTurn') {
             const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
             Toast.show({
                 type: 'error',
@@ -186,10 +127,6 @@ export default function Bases() {
         playSound('move').catch(() => { });
     };
 
-    const sendMoveUpdate = (message) => {
-        sendMoveUpdateCore({ connected, message, sendMatchCommand, currentMatch, user, sendMessage });
-    };
-
     const HandleskipTurn = () => {
         dispatch(setActivePlayer());
         dispatch(resetTimer());
@@ -197,24 +134,16 @@ export default function Bases() {
 
     const movePlayer = (color, steps) => {
         const result = movePlayerCore({ color, steps, currentPlayer, activePlayer, showClone, dispatch });
-        console.log("Move player result:", result);
         if (result?.error) {
             const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
-            let text1, text2;
-            if (result.error === 'wrongColor') {
-                text1 = uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer);
-                text2 = result.error === 'wrongColor'
-                    ? uiStrings[systemLang].wrongColor
-                    : uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer);
-
-            } else {
-                text1 = uiStrings[systemLang].selectPlayer.replace('{color}', localizedActivePlayer);
-                text2 = uiStrings[systemLang].playerNotSelected;
-            }
             Toast.show({
                 type: 'error',
-                text1,
-                text2,
+                text1: result.error === 'wrongColor'
+                    ? uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer)
+                    : uiStrings[systemLang].selectPlayer.replace('{color}', localizedActivePlayer),
+                text2: result.error === 'wrongColor'
+                    ? uiStrings[systemLang].wrongColor
+                    : uiStrings[systemLang].playerNotSelected,
                 position: 'bottom',
                 visibilityTime: 2000,
             });
@@ -351,11 +280,82 @@ export default function Bases() {
         }
     }, [connected, user?.id, emitWithAck, requestFullSync]);
 
+    // ─── Styles ───────────────────────────────────────────────────────────
+    const styles = StyleSheet.create({
+        circleContainer: {
+            position: "absolute",
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: isSmallScreen ? 5 : 40,
+        },
+        corner: {
+            width: isSmallScreen ? 50 : 120,
+            height: isSmallScreen ? 50 : 120,
+            borderRadius: 10,
+            flexWrap: "wrap",
+            flexDirection: "row",
+            justifyContent: "space-around",
+            alignItems: "center",
+            padding: isSmallScreen ? 5 : 10,
+            borderWidth: isSmallScreen ? 1 : 2,
+            elevation: isSmallScreen ? 4 : 5,
+        },
+        circle: {
+            width: isSmallScreen ? 10 : 30,
+            height: isSmallScreen ? 10 : 30,
+            borderRadius: isSmallScreen ? 14 : 15,
+            backgroundColor: "white",
+            margin: isSmallScreen ? 4 : 5,
+            borderWidth: isSmallScreen ? 0.5 : 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            position: 'relative',
+            overflow: 'hidden',
+        },
+        cornerPlayer: {
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: [
+                { translateX: isSmallScreen ? -9 : -10 },
+                { translateY: isSmallScreen ? -9 : -10 }
+            ],
+        },
+        button: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            padding: isSmallScreen ? 0 : 10,
+            paddingHorizontal: isSmallScreen ? 12 : 15,
+            backgroundColor: theme.colors.button,
+            borderRadius: 8,
+            borderWidth: isSmallScreen ? 0.5 : 1,
+            borderColor: theme.colors.buttonBorder,
+            gap: 8,
+            elevation: isSmallScreen ? 2 : 0,
+            minWidth: isSmallScreen ? 5 : 'auto',
+        },
+        buttonText: {
+            fontSize: isSmallScreen ? 12 : 14,
+            color: theme.colors.buttonText,
+            fontWeight: isSmallScreen ? 'bold' : '1000',
+        },
+        left:   { top: isSmallScreen ? 3 : 20, left: isSmallScreen ? 3 : 20 },
+        top:    { top: isSmallScreen ? 3 : 20, right: isSmallScreen ? 3 : 20, transform: [{ rotate: '180deg' }] },
+        bottom: { bottom: isSmallScreen ? 3 : 20, left: isSmallScreen ? 3 : 20 },
+        right:  { bottom: isSmallScreen ? 3 : 20, right: isSmallScreen ? 3 : 20, transform: [{ rotate: '180deg' }] },
+        red:    { backgroundColor: theme.colors.red,    borderColor: theme.colors.border, shadowColor: activePlayer === "red"    ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 50 },
+        yellow: { backgroundColor: theme.colors.yellow, borderColor: theme.colors.border, shadowColor: activePlayer === "yellow" ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 50 },
+        blue:   { backgroundColor: theme.colors.blue,   borderColor: theme.colors.border, shadowColor: activePlayer === "blue"   ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 50 },
+        green:  { backgroundColor: theme.colors.green,  borderColor: theme.colors.border, shadowColor: activePlayer === "green"  ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 50 },
+        blue2:   { shadowColor: activePlayer === "blue"   ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: activePlayer === "blue"   ? 0.7 : "", shadowRadius: activePlayer === "blue"   ? 50 : "" },
+        red0:    { shadowColor: activePlayer === "red"    ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: activePlayer === "red"    ? 0.7 : "", shadowRadius: activePlayer === "red"    ? 50 : "" },
+        yellow1: { shadowColor: activePlayer === "yellow" ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: activePlayer === "yellow" ? 0.7 : "", shadowRadius: activePlayer === "yellow" ? 50 : "" },
+        green3:  { shadowColor: activePlayer === "green"  ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: activePlayer === "green"  ? 0.7 : "", shadowRadius: activePlayer === "green"  ? 50 : "" },
+    });
+
+    // ─── Render helpers ───────────────────────────────────────────────────
     const cardsByColor = {
-        blue: blueCards,
-        red: redCards,
-        yellow: yellowCards,
-        green: greenCards,
+        blue: blueCards, red: redCards, yellow: yellowCards, green: greenCards,
     };
 
     const getCardTextStyle = (color, cardUsed) => ([
@@ -375,10 +375,10 @@ export default function Bases() {
     const renderInCirclePlayers = (j, playerType, i) => (
         <>
             {[
-                ...blueSoldiers.map(soldier => ({ player: soldier })),
-                ...redSoldiers.map(soldier => ({ player: soldier })),
-                ...yellowSoldiers.map(soldier => ({ player: soldier })),
-                ...greenSoldiers.map(soldier => ({ player: soldier }))
+                ...blueSoldiers.map(s => ({ player: s })),
+                ...redSoldiers.map(s => ({ player: s })),
+                ...yellowSoldiers.map(s => ({ player: s })),
+                ...greenSoldiers.map(s => ({ player: s })),
             ].map((item, index) => (
                 item.player.position === `${j + 1}${playerType[i]}` && (
                     <Soldier
@@ -391,6 +391,8 @@ export default function Bases() {
             ))}
         </>
     );
+
+    // ─── JSX ──────────────────────────────────────────────────────────────
     return (
         <>
             {playerType.map((color, i) => (
@@ -401,7 +403,7 @@ export default function Bases() {
                                 <Pressable
                                     key={card.id}
                                     testID={`move-card-${color}-${card.value}`}
-                                    disabled={card.used}
+                                    disabled={card.used || movePendingRef.current}
                                     style={getCardButtonStyle(color, i, card.used)}
                                     onPress={() => movePlayerHanlder(color, card.value)}
                                 >
@@ -419,13 +421,13 @@ export default function Bases() {
                     </View>
                     <Pressable
                         testID={`enter-soldier-${color}`}
+                        disabled={movePendingRef.current}
                         style={[styles.button, styles[color + i], { marginVertical: 5 }]}
                         onPress={() => enterNewSoldierHandler(color)}
                     >
-                        {
-                            color === "yellow" ?
-                                <Feather name="arrow-right" size={24} color={theme.name === "modernDark" ? "white" : "black"} /> :
-                                <MaterialIcons name={getArrowNameByColor(color)} size={24} color={theme.name === "modernDark" ? "white" : "black"} />
+                        {color === "yellow"
+                            ? <Feather name="arrow-right" size={24} color={theme.name === "modernDark" ? "white" : "black"} />
+                            : <MaterialIcons name={getArrowNameByColor(color)} size={24} color={theme.name === "modernDark" ? "white" : "black"} />
                         }
                     </Pressable>
                 </View>
@@ -433,5 +435,3 @@ export default function Bases() {
         </>
     );
 }
-
-

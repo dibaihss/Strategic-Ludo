@@ -1,137 +1,246 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { Platform } from 'react-native';
 
-// --- WebSocket URL Configuration ---
+// ─── WebSocket URL Configuration ──────────────────────────────────────────
 const PRODUCTION_WS_URL = process.env.EXPO_PUBLIC_WS_URL;
-const LOCALHOST_WS_URL = process.env.EXPO_PUBLIC_LOCALHOST_WS_URL;
-const ANDROID_WS_URL = 'http://192.168.178.130:3000';
+const LOCALHOST_WS_URL  = process.env.EXPO_PUBLIC_LOCALHOST_WS_URL;
+const ANDROID_WS_URL    = 'http://192.168.178.130:3000';
 
-// Choose the appropriate WebSocket URL based on platform and environment
 let WEBSOCKET_URL;
 if (__DEV__) {
-  if (Platform.OS === 'android') {
-    WEBSOCKET_URL = ANDROID_WS_URL;
-  } else {
-    WEBSOCKET_URL = LOCALHOST_WS_URL;
-  }
+  WEBSOCKET_URL = Platform.OS === 'android' ? ANDROID_WS_URL : LOCALHOST_WS_URL;
 } else {
   WEBSOCKET_URL = PRODUCTION_WS_URL;
 }
+// ──────────────────────────────────────────────────────────────────────────
 
-// --- END: WebSocket URL Configuration ---
-// Create the context
 const WebSocketContext = createContext(null);
 
-// Create a provider component
 export const WebSocketProvider = ({ children }) => {
-
-  const [socketClient, setSocketClient] = useState(null);
-  const [connected, setConnected] = useState(false);
-  const [messages, setMessages] = useState({});
-  const isOnline = useSelector(state => state.game.isOnline);
+  const dispatch    = useDispatch();
+  const isOnline    = useSelector(state => state.game.isOnline);
   const currentMatch = useSelector(state => state.session.currentMatch);
-  const user = useSelector(state => state.auth.user);
+  const user        = useSelector(state => state.auth.user);
 
-  const reconnectSocket = () => {
-    if (socketClient && !socketClient.connected) {
-      console.log('Reconnecting Socket.IO client...');
-      socketClient.connect();
-    }
-  };
+  // ✅ useRef instead of useState — no stale closures
+  const socketRef   = useRef(null);
+  const [connected, setConnected] = useState(false);
 
-  const sendMessage = (destination, body) => {
-    if (socketClient && socketClient.connected) {
-      socketClient.emit(destination, body);
+  // ─── Keep latest values in refs so callbacks never go stale ───────────
+  const userRef         = useRef(user);
+  const currentMatchRef = useRef(currentMatch);
+  useEffect(() => { userRef.current = user; }, [user]);
+  useEffect(() => { currentMatchRef.current = currentMatch; }, [currentMatch]);
+
+  // ─── Register user on server ───────────────────────────────────────────
+  const registerUser = useCallback((client) => {
+    const u = userRef.current;
+    const m = currentMatchRef.current;
+    if (!u?.name) return;
+
+    client.emit('chat.addUser', {
+      sender:    u.name,
+      userId:    u.id,
+      sessionId: m?.id ?? null,
+    }, (response) => {
+      // ✅ Acknowledgement — know if registration succeeded
+      if (response?.status === 'ok') {
+        console.log('User registered on server:', response.user);
+      } else {
+        console.warn('User registration failed:', response?.reason);
+      }
+    });
+  }, []);
+
+  // ─── Emit with acknowledgement + timeout ──────────────────────────────
+  const emitWithAck = useCallback((event, payload, timeout = 5000) => {
+    return new Promise((resolve, reject) => {
+      const client = socketRef.current;
+
+      if (!client?.connected) {
+        return reject(new Error('Socket not connected'));
+      }
+
+      const timer = setTimeout(() => {
+        reject(new Error(`${event} timed out after ${timeout}ms`));
+      }, timeout);
+
+      client.emit(event, payload, (response) => {
+        clearTimeout(timer);
+        resolve(response);
+      });
+    });
+  }, []);
+
+  // ─── Send raw message (fire and forget) ───────────────────────────────
+  const sendMessage = useCallback((destination, body) => {
+    const client = socketRef.current;
+    if (client?.connected) {
+      client.emit(destination, body);
       return true;
     }
+    console.warn('sendMessage failed — socket not connected');
     return false;
-  };
+  }, []);
 
-  const sendMatchCommand = ({ type, payload = {}, matchId, playerId }) => {
-    if (!matchId || !type) return false;
-    const message = { type, payload };
-    if (playerId) {
-      message.playerId = playerId;
+  // ─── Send match command with acknowledgement ───────────────────────────
+  const sendMatchCommand = useCallback(async ({ type, payload = {}, matchId, playerId }) => {
+    if (!matchId || !type) {
+      console.warn('sendMatchCommand: missing matchId or type');
+      return { status: 'error', reason: 'missing_params' };
     }
-    return sendMessage(`/app/player.Move/${matchId}`, message);
-  };
 
+    const message = {
+      type,
+      payload,
+      userId:    userRef.current?.id,
+      sessionId: matchId,
+      ...(playerId && { playerId }),
+    };
+
+    try {
+      const response = await emitWithAck(`/app/player.Move/${matchId}`, message);
+
+      if (response?.status === 'error') {
+        console.warn('sendMatchCommand rejected:', response.reason);
+
+        if (response.reason === 'not_your_turn') {
+          // Desync detected — request full state from server
+          requestFullSync(matchId);
+        }
+      }
+
+      return response;
+
+    } catch (err) {
+      // Timeout — server never responded
+      console.error('sendMatchCommand timed out:', err.message);
+      requestFullSync(matchId);
+      return { status: 'error', reason: 'timeout' };
+    }
+  }, [emitWithAck]);
+
+  // ─── Request full game state (fixes desync) ────────────────────────────
+  const requestFullSync = useCallback((matchId) => {
+    const id = matchId || currentMatchRef.current?.id;
+    if (!id) return;
+
+    emitWithAck('requestGameState', { sessionId: id })
+      .then((response) => {
+        if (response?.status === 'ok' && response.gameState) {
+          console.log('Syncing game state from server');
+          dispatch({ type: 'game/syncGameState', payload: response.gameState });
+        }
+      })
+      .catch((err) => {
+        console.error('Full sync failed:', err.message);
+      });
+  }, [emitWithAck, dispatch]);
+
+  // ─── Subscribe to a topic ──────────────────────────────────────────────
+  const subscribe = useCallback((topic, callback) => {
+    const client = socketRef.current;
+
+    if (!client) {
+      console.warn(`subscribe('${topic}') called before socket initialized`);
+      return null;
+    }
+
+    const handler = (data) => {
+      if (callback) callback(data);
+    };
+
+    // ✅ Works even if not connected yet — registers for when it connects
+    client.on(topic, handler);
+
+    return {
+      unsubscribe: () => client.off(topic, handler),
+    };
+  }, []);
+
+  // ─── Reconnect manually ───────────────────────────────────────────────
+  const reconnectSocket = useCallback(() => {
+    const client = socketRef.current;
+    if (client && !client.connected) {
+      console.log('Manually reconnecting socket...');
+      client.connect();
+    }
+  }, []);
+
+  // ─── Main socket setup ─────────────────────────────────────────────────
   useEffect(() => {
     if (!isOnline) {
-      if (socketClient) {
-        socketClient.disconnect();
-        setSocketClient(null);
-      }
+      socketRef.current?.disconnect();
+      socketRef.current = null;
       setConnected(false);
       return;
     }
 
     const client = io(WEBSOCKET_URL, {
-      transports: ['websocket', 'polling'],
-      timeout: 10000,
-      reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      withCredentials: false,
-      autoConnect: true,
+      transports:              ['websocket', 'polling'],
+      timeout:                 10000,
+      reconnection:            true,
+      reconnectionAttempts:    Infinity,
+      reconnectionDelay:       1000,
+      reconnectionDelayMax:    5000,
+      withCredentials:         false,
+      autoConnect:             true,
     });
 
-client.on('connect', () => {
-  console.log('Connected to Socket.IO');
-  setConnected(true);
-  
-  // Small delay to ensure backend socket is fully registered
-  setTimeout(() => {
-    if (user?.name) {
-      client.emit('chat.addUser', { sender: user.name, userId: user.id, sessionId: currentMatch?.id });
-    }
-  }, 500);
-});
+    socketRef.current = client;
 
-    client.on('disconnect', () => {
-      console.log('Disconnected from Socket.IO');
+    client.on('connect', () => {
+      console.log('Socket connected:', client.id);
+      setConnected(true);
+
+      // ✅ Register user on EVERY connect — not just the first time
+      // This covers reconnects too
+      setTimeout(() => registerUser(client), 500);
+    });
+
+    client.on('reconnect', (attemptNumber) => {
+      console.log(`Socket reconnected after ${attemptNumber} attempts`);
+
+      // ✅ Re-sync game state after reconnect — catch up on missed moves
+      const matchId = currentMatchRef.current?.id;
+      if (matchId) {
+        requestFullSync(matchId);
+      }
+    });
+
+    client.on('disconnect', (reason) => {
+      console.log('Socket disconnected:', reason);
       setConnected(false);
+
+      // Auto-reconnect unless server forced disconnect
+      if (reason === 'io server disconnect') {
+        console.log('Server forced disconnect — reconnecting...');
+        client.connect();
+      }
     });
 
     client.on('connect_error', (error) => {
-      console.error('Socket.IO error:', error?.message || error);
+      console.error('Socket connection error:', error?.message || error);
     });
 
-    setSocketClient(client);
-
-    // Cleanup on unmount
     return () => {
       client.disconnect();
+      socketRef.current = null;
       setConnected(false);
     };
   }, [isOnline]);
 
-  // Subscribe to a topic
-  const subscribe = (topic, callback) => {
-    if (socketClient && socketClient.connected) {
-      const handler = (data) => {
-        if (callback) callback(data);
-      };
-      socketClient.on(topic, handler);
-      return {
-        unsubscribe: () => socketClient.off(topic, handler)
-      };
-    }
-    return null;
-  };
-
-  // The value that will be provided to consumers of this context
+  // ─── Context value ─────────────────────────────────────────────────────
   const value = {
-    stompClient: socketClient,
-    socketClient,
+    socketClient: socketRef.current,
     connected,
-    messages,
     subscribe,
     sendMessage,
     sendMatchCommand,
+    emitWithAck,       // ✅ exposed so components can use it directly
+    requestFullSync,   // ✅ exposed so components can trigger resync
     reconnect: reconnectSocket,
   };
 
@@ -142,7 +251,6 @@ client.on('connect', () => {
   );
 };
 
-// Custom hook for using the WebSocket context
 export const useWebSocket = () => {
   const context = useContext(WebSocketContext);
   if (!context) {
