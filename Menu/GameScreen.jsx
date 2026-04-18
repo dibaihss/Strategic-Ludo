@@ -12,7 +12,7 @@ import { uiStrings, getLocalizedColor } from '../assets/shared/hardCodedData.js'
 
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx'; // Import useWebSocket
 import { setCurrentUserPage } from '../assets/store/authSlice.jsx';
-import { leaveMatch } from '../assets/store/sessionSlice.jsx';
+import { leaveMatch, updateMatch } from '../assets/store/sessionSlice.jsx';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { createGameScreenStyles } from './GameScreen.styles.js';
 import Instructions from './Instructions.jsx';
@@ -322,28 +322,28 @@ export default function GameScreen({ route, navigation }) {
     setShowExitModal(true);
   };
 
-  const confirmExitGame = () => {
+  const confirmExitGame = async () => {
     setShowExitModal(false); // Close the modal
     if (mode === 'local') {
       navigation.replace('Home');
     } else {
+      await handleLeaveMatch();
       navigation.replace('Home');
-      handleLeaveMatch(); // Call the function to leave the match
     }
   };
 
-  const handleLeaveMatch = () => {
+  const handleLeaveMatch = async () => {
     if (currentMatch && currentMatch.id) {
       console.log("Leaving match", currentMatch.id)
       sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userLeft', userId: user.id, colors: currentPlayerColor })
-      dispatch(leaveMatch({ matchId: currentMatch.id, playerId: user.id }))
-        .unwrap()
-        .then(() => {
-          console.log('User left successfully');
-        })
-        .catch(error => {
-          console.error('Failed to leave match:', error);
-        });
+      try {
+        await dispatch(leaveMatch({ matchId: currentMatch.id, playerId: user.id })).unwrap();
+        console.log('User left successfully');
+      } catch (error) {
+        console.error('Failed to leave match:', error);
+      } finally {
+        dispatch(updateMatch(null));
+      }
     }
   };
 
@@ -464,6 +464,7 @@ export default function GameScreen({ route, navigation }) {
             </Text>
             <View style={styles.modalButtonRow}>
               <Pressable
+                testID="game-exit-cancel-button"
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={cancelExitGame}
               >
@@ -472,6 +473,7 @@ export default function GameScreen({ route, navigation }) {
                 </Text>
               </Pressable>
               <Pressable
+                testID="game-exit-confirm-button"
                 style={[styles.modalButton, styles.confirmButton]}
                 onPress={confirmExitGame}
               >

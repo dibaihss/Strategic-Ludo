@@ -1,3 +1,22 @@
+//  13 tests total
+    // │
+    // ├── Single player tests (1-10)  — one browser, one user
+    // │   ├── 1.  Guest login
+    // │   ├── 2.  Navigate to multiplayer
+    // │   ├── 3.  Create match
+    // │   ├── 4.  Waiting room UI elements
+    // │   ├── 5.  Add bot
+    // │   ├── 6.  Leave match
+    // │   ├── 7.  Start game with bot → game screen
+    // │   ├── 8.  Game screen UI elements
+    // │   ├── 9.  Player move action
+    // │   └── 10. Exit game
+    // │
+    // └── Dual-client tests (11-13) — two browsers, two users
+    //     ├── 11. Player B sees and joins Player A's match
+    //     ├── 12. Game starts after both players join
+    //     └── 13. Back navigation resilience
+
 const { test, expect, chromium } = require('@playwright/test');
 
 const useRealBackend = process.env.PLAYWRIGHT_USE_REAL_BACKEND === 'true';
@@ -365,11 +384,13 @@ test.describe('Ludo multiplayer flow', () => {
 
     // Exit game
     await page.getByTestId('game-exit-button').click();
+    await page.getByTestId('game-exit-confirm-button').click();
 
     // Should navigate away from game
     await expect(page.getByTestId('game-screen')).not.toBeVisible({
       timeout: 5000,
     });
+    
   });
 
   // ─── 11. Dual-Client Match Joining (Real Multiplayer) ────────────────────

@@ -311,18 +311,24 @@ const WaitingRoom = ({ navigation, route }) => {
   };
 
 
-  const handleLeaveMatch = () => {
-    navigation.navigate('MatchList');
+  const handleLeaveMatch = async () => {
     if (currentMatch && currentMatch.id) {
-      dispatch(leaveMatch({ matchId: currentMatch.id, playerId: user.id }))
-        .unwrap()
-        .then(() => {
-          sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userLeft', userId: user.id })
-        })
-        .catch(error => {
-          console.error('Failed to delete match:', error);
-        });
+      try {
+        await dispatch(leaveMatch({ matchId: currentMatch.id, playerId: user.id })).unwrap();
+        sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userLeft', userId: user.id });
+      } catch (error) {
+        console.error('Failed to delete match:', error);
+      } finally {
+        dispatch(updateMatch(null));
+      }
     }
+
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+
+    navigation.navigate('MatchList');
   };
 
   if (loading && !currentMatch) {
