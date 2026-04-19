@@ -12,7 +12,7 @@ export const canControlColor = (currentPlayerColor, color) => {
     if (Array.isArray(currentPlayerColor)) {
         return currentPlayerColor[0] === color || currentPlayerColor[1] === color;
     }
-    return false;
+    return true;
 };
 
 export const canEnterPiece = (activePlayer, color, currentPlayerColor) => {
