@@ -8,10 +8,10 @@ export const getNumberFromPosition = (position) => parseInt(position.match(/\d+/
 
 export const canControlColor = (currentPlayerColor, color) => {
     console.log('currentPlayerColor', currentPlayerColor, color);
-    if (currentPlayerColor === color) return true;
-    if (Array.isArray(currentPlayerColor)) {
-        return currentPlayerColor[0] === color || currentPlayerColor[1] === color;
-    }
+    // if (currentPlayerColor === color) return true;
+    // if (Array.isArray(currentPlayerColor)) {
+    //     return currentPlayerColor[0] === color || currentPlayerColor[1] === color;
+    // }
     return true;
 };
 
