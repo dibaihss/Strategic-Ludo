@@ -1,8 +1,8 @@
 import { Audio } from 'expo-av';
 import { Platform } from 'react-native';
-import { store } from '../store/store';
 
 const players = {};
+let cachedStore = null;
 
 const soundConfig = {
   move:       { looping: false, isBackgroundMusic: false },
@@ -14,7 +14,11 @@ const soundConfig = {
 
 const getAudioState = () => {
   try {
-    const state = store.getState();
+    if (!cachedStore) {
+      cachedStore = require('../store/store').store;
+    }
+
+    const state = cachedStore?.getState?.();
     return {
       isMuted:     state.audio?.isMuted      ?? false,
       musicVolume: state.audio?.musicVolume  ?? 1,

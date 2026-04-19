@@ -7,11 +7,11 @@ export const getCategoryFromPosition = (position) => position.match(/[a-zA-Z]+/)
 export const getNumberFromPosition = (position) => parseInt(position.match(/\d+/)[0], 10);
 
 export const canControlColor = (currentPlayerColor, color) => {
-    // if (currentPlayerColor === color) return true;
-    // if (Array.isArray(currentPlayerColor)) {
-    //     return currentPlayerColor[0] === color || currentPlayerColor[1] === color;
-    // }
-    return true;
+    if (!currentPlayerColor || !color) return false;
+    if (Array.isArray(currentPlayerColor)) {
+        return currentPlayerColor.includes(color);
+    }
+    return currentPlayerColor === color;
 };
 
 export const canEnterPiece = (activePlayer, color, currentPlayerColor) => {
