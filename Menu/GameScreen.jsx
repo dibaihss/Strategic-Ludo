@@ -398,7 +398,7 @@ export default function GameScreen({ route, navigation }) {
               testID="game-skip-turn-button"
               style={styles.button}
               onPress={() => {
-                skipTurn();
+                handleSyncGameState();
               }}
             >
               <MaterialIcons name="casino" size={24} color={theme.colors.buttonText} />
