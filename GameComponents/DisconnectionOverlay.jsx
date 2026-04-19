@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Modal, Dimensions, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Modal, Pressable } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { MaterialIcons } from '@expo/vector-icons';
 import { getLocalizedColor } from "../assets/shared/hardCodedData.js";
@@ -17,11 +17,11 @@ const DisconnectionOverlay = ({ navigation }) => {
   const currentMatch = useSelector(state => state.session.currentMatch);
   const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
   const { sendMessage } = useWebSocket();
-  const windowWidth = Dimensions.get('window').width;
-  const isSmallScreen = windowWidth < 375;
+  const isHost = Boolean(currentMatch?.users?.[0]?.id) && String(currentMatch?.users?.[0]?.id) === String(user?.id);
+  const isInactive = disconnectedPlayer?.status === 'inactive';
 
   const handleExitGame = () => {
-    if (currentMatch && currentMatch.id) {
+    if (currentMatch?.id) {
       sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'userLeft', userId: user.id, colors: currentPlayerColor });
       dispatch(leaveMatch({ matchId: currentMatch.id, playerId: user.id }))
         .unwrap()
@@ -34,6 +34,25 @@ const DisconnectionOverlay = ({ navigation }) => {
     navigation.navigate('Home');
   };
 
+  const handleKickPlayer = async () => {
+    if (!currentMatch?.id || !disconnectedPlayer?.userId || !isHost) {
+      return;
+    }
+
+    try {
+      await dispatch(leaveMatch({ matchId: currentMatch.id, playerId: disconnectedPlayer.userId })).unwrap();
+      sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, {
+        type: 'userKicked',
+        userId: disconnectedPlayer.userId,
+        colors: disconnectedPlayer.colors || [disconnectedPlayer.color].filter(Boolean),
+      });
+      dispatch(setDisconnectedPlayer(null));
+      dispatch(setPausedGame(false));
+    } catch (error) {
+      console.error('Failed to kick inactive player:', error);
+    }
+  };
+
   if (!disconnectedPlayer || !gamePaused) {
     return null;
   }
@@ -42,6 +61,12 @@ const DisconnectionOverlay = ({ navigation }) => {
   const playerName = disconnectedPlayer.name || 'Unknown Player';
   const playerColor = disconnectedPlayer.color || 'blue';
   const localizedColor = getLocalizedColor(playerColor, systemLang);
+  const title = isInactive ? 'Player Inactive' : 'Player Disconnected';
+  const message = isInactive
+    ? `${playerName} controlling ${localizedColor} is not active right now.`
+    : `${playerName} controlling ${localizedColor} has disconnected.`;
+  const waitingText = isInactive ? 'Waiting for player to return...' : 'Waiting for reconnection...';
+  const hintText = isInactive ? 'Game is paused until the player returns' : 'Game is paused until player reconnects';
 
   return (
     <Modal
@@ -56,30 +81,36 @@ const DisconnectionOverlay = ({ navigation }) => {
           </View>
           
           <Text style={[styles.title, { color: theme.colors.text }]}>
-            Player Disconnected
+            {title}
           </Text>
           
           <Text style={[styles.message, { color: theme.colors.textSecondary }]}>
-            <Text style={{ fontWeight: 'bold', color: theme.colors[playerColor] || theme.colors.blue }}>
-              {playerName}
-            </Text>
-            {' '}controlling{' '}
-            <Text style={{ fontWeight: 'bold', color: theme.colors[playerColor] || theme.colors.blue }}>
-              {localizedColor}
-            </Text>
-            {' '}has disconnected.
+            {message}
           </Text>
           
           <View style={styles.waitingContainer}>
             <MaterialIcons name="hourglass-empty" size={24} color={theme.colors.warning || '#f59e0b'} />
             <Text style={[styles.waitingText, { color: theme.colors.warning || '#f59e0b' }]}>
-              Waiting for reconnection...
+              {waitingText}
             </Text>
           </View>
           
           <Text style={[styles.hint, { color: theme.colors.textSecondary }]}>
-            Game is paused until player reconnects
+            {hintText}
           </Text>
+
+          {isInactive && isHost ? (
+            <Pressable
+              testID="overlay-kick-button"
+              style={[styles.exitButton, { backgroundColor: theme.colors.warning || '#f59e0b' }]}
+              onPress={handleKickPlayer}
+            >
+              <MaterialIcons name="person-remove" size={20} color="#ffffff" />
+              <Text style={[styles.exitButtonText, { color: '#ffffff' }]}>
+                Kick Player
+              </Text>
+            </Pressable>
+          ) : null}
 
           <Pressable
             testID="overlay-exit-button"
@@ -157,6 +188,7 @@ const styles = StyleSheet.create({
   hint: {
     fontSize: 12,
     fontStyle: 'italic',
+    textAlign: 'center',
   },
   exitButton: {
     flexDirection: 'row',

@@ -3,7 +3,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import Goals from '../GameComponents/Goals.jsx';
 import Bases from '../GameComponents/Bases.jsx';
 import Timer from '../GameComponents/Timer.jsx';
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { View, Text, Pressable, ActivityIndicator, Modal, Animated, AppState } from 'react-native';
 import { setActivePlayer, resetTimer, setIsOnline, resetGameState, setCurrentPlayerColor, setPlayerColors, setPausedGame } from '../assets/store/gameSlice.jsx';
@@ -12,7 +12,7 @@ import { uiStrings, getLocalizedColor } from '../assets/shared/hardCodedData.js'
 
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx'; // Import useWebSocket
 import { setCurrentUserPage } from '../assets/store/authSlice.jsx';
-import { leaveMatch, updateMatch } from '../assets/store/sessionSlice.jsx';
+import { fetchCurrentMatch, leaveMatch, updateMatch } from '../assets/store/sessionSlice.jsx';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { createGameScreenStyles } from './GameScreen.styles.js';
 import Instructions from './Instructions.jsx';
@@ -37,6 +37,7 @@ export default function GameScreen({ route, navigation }) {
   const activePlayer = useSelector(state => state.game.activePlayer);
   const isOnline = useSelector(state => state.game.isOnline);
   const gamePaused = useSelector(state => state.game.gamePaused);
+  const disconnectedPlayer = useSelector(state => state.game.disconnectedPlayer);
   const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
   const blueSoldiers = useSelector(state => state.game.blueSoldiers);
   const redSoldiers = useSelector(state => state.game.redSoldiers);
@@ -60,6 +61,9 @@ export default function GameScreen({ route, navigation }) {
   const keepAwakeActivatedRef = useRef(false);
   const screenActiveRef = useRef(true);
   const exitInProgressRef = useRef(false);
+  const presencePauseRef = useRef(false);
+  const presenceStateRef = useRef(isAppStateActive(AppState.currentState) ? 'active' : 'inactive');
+  const disconnectedPlayerRef = useRef(disconnectedPlayer);
 
   // Memoize styles to avoid recreating on every render
   const styles = useMemo(() => createGameScreenStyles(theme), [theme]);
@@ -87,9 +91,87 @@ export default function GameScreen({ route, navigation }) {
   );
 
   useEffect(() => {
+    disconnectedPlayerRef.current = disconnectedPlayer;
+  }, [disconnectedPlayer]);
+
+  const buildPresencePayload = useCallback((type) => {
+    if (mode !== 'multiplayer' || !currentMatch?.id || !user?.id) {
+      return null;
+    }
+
+    return {
+      type,
+      userId: user.id,
+      sender: user.name,
+      colors: Array.isArray(currentPlayerColor) ? currentPlayerColor : [currentPlayerColor].filter(Boolean),
+    };
+  }, [currentMatch?.id, currentPlayerColor, mode, user?.id, user?.name]);
+
+  const syncCurrentMatchMembership = useCallback(async () => {
+    if (mode !== 'multiplayer' || !currentMatch?.id || !user?.id) {
+      return;
+    }
+
+    try {
+      const refreshedMatch = await dispatch(fetchCurrentMatch(currentMatch.id)).unwrap();
+      dispatch(updateMatch(refreshedMatch));
+
+      const isStillInMatch = Array.isArray(refreshedMatch?.users)
+        && refreshedMatch.users.some((matchUser) => String(matchUser.id) === String(user.id));
+
+      if (!isStillInMatch) {
+        dispatch(setPausedGame(false));
+        dispatch(setIsOnline(false));
+        navigation.replace('Home');
+      }
+    } catch (error) {
+      console.warn('Failed to refresh match membership:', error);
+    }
+  }, [currentMatch?.id, dispatch, mode, navigation, user?.id]);
+
+  const handlePresenceChange = useCallback((appIsActive) => {
+    setIsAppActive(appIsActive);
+
+    if (presenceStateRef.current === (appIsActive ? 'active' : 'inactive')) {
+      return;
+    }
+
+    presenceStateRef.current = appIsActive ? 'active' : 'inactive';
+
+    if (!appIsActive) {
+      cancelPendingBotTurn();
+
+      if (!exitInProgressRef.current) {
+        presencePauseRef.current = true;
+        dispatch(setPausedGame(true));
+      }
+
+      const inactivePayload = buildPresencePayload('userInactive');
+      if (inactivePayload) {
+        sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, inactivePayload);
+      }
+
+      return;
+    }
+
+    const backPayload = buildPresencePayload('userBack');
+    if (backPayload) {
+      sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, backPayload);
+      syncCurrentMatchMembership();
+    }
+
+    if (presencePauseRef.current && !disconnectedPlayerRef.current && !exitInProgressRef.current) {
+      presencePauseRef.current = false;
+      dispatch(setPausedGame(false));
+    }
+  }, [buildPresencePayload, currentMatch?.id, dispatch, sendMessage, syncCurrentMatchMembership]);
+
+  useEffect(() => {
     let mounted = true;
     screenActiveRef.current = true;
     exitInProgressRef.current = false;
+    presencePauseRef.current = false;
+    presenceStateRef.current = isAppStateActive(AppState.currentState) ? 'active' : 'inactive';
 
     setCurrentUserPage('Game');
     dispatch(resetGameState());
@@ -126,21 +208,21 @@ export default function GameScreen({ route, navigation }) {
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextState) => {
-      const appIsActive = isAppStateActive(nextState);
-      setIsAppActive(appIsActive);
-
-      if (!appIsActive) {
-        cancelPendingBotTurn();
-      }
+      handlePresenceChange(isAppStateActive(nextState));
     });
 
     return () => subscription.remove();
-  }, []);
+  }, [handlePresenceChange]);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') {
+    if (globalThis.window === undefined || typeof globalThis.window.addEventListener !== 'function') {
       return undefined;
     }
+
+    const handleVisibilityChange = () => {
+      if (globalThis.document === undefined) return;
+      handlePresenceChange(globalThis.document.visibilityState === 'visible');
+    };
 
     const handleBeforeUnload = () => {
       exitInProgressRef.current = true;
@@ -148,9 +230,13 @@ export default function GameScreen({ route, navigation }) {
       dispatch(setPausedGame(true));
     };
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [dispatch]);
+    globalThis.document.addEventListener('visibilitychange', handleVisibilityChange);
+    globalThis.window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      globalThis.document.removeEventListener('visibilitychange', handleVisibilityChange);
+      globalThis.window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [dispatch, handlePresenceChange]);
 
   useEffect(() => {
     if (gamePaused || !isAppActive) {

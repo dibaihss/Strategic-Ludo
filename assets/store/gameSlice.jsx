@@ -554,6 +554,11 @@ export const gameSlice = createSlice({
         },
         setPausedGame: (state, action) => {
             state.gamePaused = action.payload;
+            if (action.payload) {
+                state.isTimerRunning = false;
+            } else {
+                state.isTimerRunning = true;
+            }
         },
         setDisconnectedPlayer: (state, action) => {
             state.disconnectedPlayer = action.payload;
