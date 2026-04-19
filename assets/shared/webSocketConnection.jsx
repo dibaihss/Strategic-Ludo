@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { io } from 'socket.io-client';
 import { useSelector, useDispatch } from 'react-redux';
@@ -20,6 +21,7 @@ if (__DEV__) {
 const WebSocketContext = createContext(null);
 
 export const WebSocketProvider = ({ children }) => {
+
   const dispatch    = useDispatch();
   const isOnline    = useSelector(state => state.game.isOnline);
   const currentMatch = useSelector(state => state.session.currentMatch);
@@ -57,6 +59,7 @@ export const WebSocketProvider = ({ children }) => {
 
   // ─── Emit with acknowledgement + timeout ──────────────────────────────
   const emitWithAck = useCallback((event, payload, timeout = 5000) => {
+    console.log(`Emitting event '${event}' with payload:`, payload);
     return new Promise((resolve, reject) => {
       const client = socketRef.current;
 
@@ -87,18 +90,52 @@ export const WebSocketProvider = ({ children }) => {
   }, []);
 
   // ─── Send match command with acknowledgement ───────────────────────────
+  // Helper to build canonical gameState snapshot for socket payloads
+  const buildGameStateSnapshot = useCallback(() => {
+    // Use latest Redux state for snapshot
+    const state = globalThis.__REDUX_STORE__?.getState?.() || {};
+    const game = state.game || {};
+    console.log(state.game)
+    return {
+      activePlayer: game.activePlayer,
+      currentPlayer: game.currentPlayer,
+      timeRemaining: game.timeRemaining,
+      isTimerRunning: game.isTimerRunning,
+      stateVersion: game.stateVersion,
+      status: game.gamePaused ? 'paused' : 'active',
+      soldiers: {
+        blue: game.blueSoldiers || [],
+        red: game.redSoldiers || [],
+        yellow: game.yellowSoldiers || [],
+        green: game.greenSoldiers || [],
+      },
+      cards: {
+        blue: game.blueCards || [],
+        red: game.redCards || [],
+        yellow: game.yellowCards || [],
+        green: game.greenCards || [],
+      },
+    };
+  }, []);
+
   const sendMatchCommand = useCallback(async ({ type, payload = {}, matchId, playerId }) => {
+    console.log(`Preparing to send match command: ${type} with payload:`, payload);
+      const includeSnapshot = type === 'movePlayer' || type === 'enterNewSoldier' || type === 'skipTurn';
+    console.log(includeSnapshot, 'Sending command without gameState snapshot');
     if (!matchId || !type) {
       console.warn('sendMatchCommand: missing matchId or type');
       return { status: 'error', reason: 'missing_params' };
     }
 
+    // Only include gameState for move/turn events
+  
     const message = {
       type,
       payload,
       userId:    userRef.current?.id,
       sessionId: matchId,
       ...(playerId && { playerId }),
+      ...(includeSnapshot ? { gameState: buildGameStateSnapshot() } : {}),
     };
 
     try {
@@ -121,7 +158,7 @@ export const WebSocketProvider = ({ children }) => {
       requestFullSync(matchId);
       return { status: 'error', reason: 'timeout' };
     }
-  }, [emitWithAck]);
+  }, [emitWithAck, buildGameStateSnapshot]);
 
   // ─── Request full game state (fixes desync) ────────────────────────────
   const requestFullSync = useCallback((matchId) => {

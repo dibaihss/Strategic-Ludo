@@ -46,13 +46,13 @@ export default function Bases() {
     const playerColors = useSelector(state => state.game.playerColors);
 
 
-     const { connected, subscribe, sendMessage, sendMatchCommand, emitWithAck, requestFullSync, socketClient } = useWebSocket();
+    const { connected, subscribe, sendMessage, sendMatchCommand, emitWithAck, requestFullSync, socketClient } = useWebSocket();
 
     const windowWidth = Dimensions.get('window').width;
     const windowHeight = Dimensions.get('window').height;
     const isSmallScreen = windowWidth < 375 || windowHeight < 667;
 
-      const movePendingRef = useRef(false);
+    const movePendingRef = useRef(false);
 
     // ─── Styles ───────────────────────────────────────────────────────────
     const styles = StyleSheet.create({
@@ -113,30 +113,30 @@ export default function Bases() {
             color: theme.colors.buttonText,
             fontWeight: isSmallScreen ? 'bold' : '1000',
         },
-        left:   { top: isSmallScreen ? 3 : 20, left: isSmallScreen ? 3 : 20 },
-        top:    { top: isSmallScreen ? 3 : 20, right: isSmallScreen ? 3 : 20, transform: [{ rotate: '180deg' }] },
+        left: { top: isSmallScreen ? 3 : 20, left: isSmallScreen ? 3 : 20 },
+        top: { top: isSmallScreen ? 3 : 20, right: isSmallScreen ? 3 : 20, transform: [{ rotate: '180deg' }] },
         bottom: { bottom: isSmallScreen ? 3 : 20, left: isSmallScreen ? 3 : 20 },
-        right:  { bottom: isSmallScreen ? 3 : 20, right: isSmallScreen ? 3 : 20, transform: [{ rotate: '180deg' }] },
-        red:    { backgroundColor: theme.colors.red,    borderColor: theme.colors.border, shadowColor: activePlayer === "red"    ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 50 },
+        right: { bottom: isSmallScreen ? 3 : 20, right: isSmallScreen ? 3 : 20, transform: [{ rotate: '180deg' }] },
+        red: { backgroundColor: theme.colors.red, borderColor: theme.colors.border, shadowColor: activePlayer === "red" ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 50 },
         yellow: { backgroundColor: theme.colors.yellow, borderColor: theme.colors.border, shadowColor: activePlayer === "yellow" ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 50 },
-        blue:   { backgroundColor: theme.colors.blue,   borderColor: theme.colors.border, shadowColor: activePlayer === "blue"   ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 50 },
-        green:  { backgroundColor: theme.colors.green,  borderColor: theme.colors.border, shadowColor: activePlayer === "green"  ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 50 },
-        blue2:   { shadowColor: activePlayer === "blue"   ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: activePlayer === "blue"   ? 0.7 : "", shadowRadius: activePlayer === "blue"   ? 50 : "" },
-        red0:    { shadowColor: activePlayer === "red"    ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: activePlayer === "red"    ? 0.7 : "", shadowRadius: activePlayer === "red"    ? 50 : "" },
+        blue: { backgroundColor: theme.colors.blue, borderColor: theme.colors.border, shadowColor: activePlayer === "blue" ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 50 },
+        green: { backgroundColor: theme.colors.green, borderColor: theme.colors.border, shadowColor: activePlayer === "green" ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 50 },
+        blue2: { shadowColor: activePlayer === "blue" ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: activePlayer === "blue" ? 0.7 : "", shadowRadius: activePlayer === "blue" ? 50 : "" },
+        red0: { shadowColor: activePlayer === "red" ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: activePlayer === "red" ? 0.7 : "", shadowRadius: activePlayer === "red" ? 50 : "" },
         yellow1: { shadowColor: activePlayer === "yellow" ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: activePlayer === "yellow" ? 0.7 : "", shadowRadius: activePlayer === "yellow" ? 50 : "" },
-        green3:  { shadowColor: activePlayer === "green"  ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: activePlayer === "green"  ? 0.7 : "", shadowRadius: activePlayer === "green"  ? 50 : "" },
+        green3: { shadowColor: activePlayer === "green" ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: activePlayer === "green" ? 0.7 : "", shadowRadius: activePlayer === "green" ? 50 : "" },
     });
 
-        const activePlayerRef       = useRef(activePlayer);
-        const currentPlayerRef      = useRef(currentPlayer);
-        const currentMatchRef       = useRef(currentMatch);
-        const currentPlayerColorRef = useRef(currentPlayerColor);
-        useEffect(() => { activePlayerRef.current       = activePlayer;       }, [activePlayer]);
-        useEffect(() => { currentPlayerRef.current      = currentPlayer;      }, [currentPlayer]);
-        useEffect(() => { currentMatchRef.current       = currentMatch;       }, [currentMatch]);
-        useEffect(() => { currentPlayerColorRef.current = currentPlayerColor; }, [currentPlayerColor]);
-        
-        useEffect(() => {
+    const activePlayerRef = useRef(activePlayer);
+    const currentPlayerRef = useRef(currentPlayer);
+    const currentMatchRef = useRef(currentMatch);
+    const currentPlayerColorRef = useRef(currentPlayerColor);
+    useEffect(() => { activePlayerRef.current = activePlayer; }, [activePlayer]);
+    useEffect(() => { currentPlayerRef.current = currentPlayer; }, [currentPlayer]);
+    useEffect(() => { currentMatchRef.current = currentMatch; }, [currentMatch]);
+    useEffect(() => { currentPlayerColorRef.current = currentPlayerColor; }, [currentPlayerColor]);
+
+    useEffect(() => {
         if (!connected || !currentMatch?.id) return; // single combined guard
         const subscription = subscribe(`/topic/playerMove/${currentMatch.id}`, (data) => {
             console.log("Received move update:", data);
@@ -245,18 +245,15 @@ export default function Bases() {
         movePendingRef.current = true;
 
         try {
-            const response = await emitWithAck(
-                `/app/player.Move/${currentMatchRef.current?.id}`,
-                {
-                    type: 'movePlayer',
-                    payload: {
-                        color: currentPlayerRef.current?.color,
-                        steps,
-                    },
-                    userId:    user?.id,
-                    sessionId: currentMatchRef.current?.id,
-                }
-            );
+            const response = await sendMatchCommand({
+                type: 'movePlayer',
+                payload: {
+                    color: currentPlayerRef.current?.color,
+                    steps,
+                },
+                matchId: currentMatchRef.current?.id,
+                playerId: user?.id,
+            });
 
             if (response?.status === 'ok') {
                 // ✅ Server confirmed — do NOT dispatch here
@@ -295,7 +292,7 @@ export default function Bases() {
             // ✅ Always release the lock
             movePendingRef.current = false;
         }
-    }, [connected, user?.id, emitWithAck, requestFullSync]);
+    }, [connected, user?.id, sendMatchCommand, requestFullSync]);
 
     // ─── Multiplayer enter soldier with acknowledgement ───────────────────
     const enterNewSoldierHandler = useCallback(async (color) => {
@@ -316,15 +313,12 @@ export default function Bases() {
         movePendingRef.current = true;
 
         try {
-            const response = await emitWithAck(
-                `/app/player.Move/${currentMatchRef.current?.id}`,
-                {
-                    type: 'enterNewSoldier',
-                    payload: { color },
-                    userId:    user?.id,
-                    sessionId: currentMatchRef.current?.id,
-                }
-            );
+            const response = await sendMatchCommand({
+                type: 'enterNewSoldier',
+                payload: { color },
+                matchId: currentMatchRef.current?.id,
+                playerId: user?.id,
+            });
 
             if (response?.status === 'ok') {
                 console.log('Enter soldier accepted by server');
