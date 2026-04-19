@@ -4,6 +4,7 @@ import { io } from 'socket.io-client';
 import { useSelector, useDispatch } from 'react-redux';
 import { Platform } from 'react-native';
 import { applyServerStateSnapshot } from '../store/gameSlice.jsx';
+import { store } from '../store/store.jsx';
 
 // ─── WebSocket URL Configuration ──────────────────────────────────────────
 const PRODUCTION_WS_URL = process.env.EXPO_PUBLIC_WS_URL;
@@ -93,7 +94,7 @@ export const WebSocketProvider = ({ children }) => {
   // Helper to build canonical gameState snapshot for socket payloads
   const buildGameStateSnapshot = useCallback(() => {
     // Use latest Redux state for snapshot
-    const state = globalThis.__REDUX_STORE__?.getState?.() || {};
+    const state = store.getState() || {};
     const game = state.game || {};
     console.log(state.game)
     return {

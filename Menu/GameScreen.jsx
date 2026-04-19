@@ -394,20 +394,6 @@ export default function GameScreen({ route, navigation }) {
           <Goals />
           <Bases />
           <View style={styles.controls}>
-            {mode === 'multiplayer' ? (
-              <Pressable
-                testID="game-sync-state-button"
-                style={[styles.button, !canSyncGameState && { opacity: 0.5 }]}
-                onPress={handleSyncGameState}
-                disabled={!canSyncGameState}
-              >
-                <MaterialIcons name="sync" size={24} color={theme.colors.buttonText} />
-                <Text style={styles.buttonText}>
-                  {uiStrings[systemLang]?.syncGameState || 'Sync Game State'}
-                </Text>
-              </Pressable>
-            ) : null}
-
             <Pressable
               testID="game-skip-turn-button"
               style={styles.button}
