@@ -8,6 +8,9 @@ import {
     setPausedGame,
     setDisconnectedPlayer,
     applyServerStateSnapshot,
+    updateSoldiersPosition,
+    removeColorFromAvailableColors,
+    setPlayerColors,
 } from '../assets/store/gameSlice.jsx';
 import { directions, playerType, uiStrings, getLocalizedColor } from "../assets/shared/hardCodedData.js";
 import Toast from 'react-native-toast-message';
@@ -45,6 +48,7 @@ export default function Bases() {
     const currentMatch = useSelector(state => state.session.currentMatch);
     const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
     const playerColors = useSelector(state => state.game.playerColors);
+    const disconnectedPlayer = useSelector(state => state.game.disconnectedPlayer);
 
 
     const { connected, subscribe, sendMessage, sendMatchCommand, emitWithAck, requestFullSync, socketClient } = useWebSocket();
@@ -54,6 +58,51 @@ export default function Bases() {
     const isSmallScreen = windowWidth < 375 || windowHeight < 667;
 
     const movePendingRef = useRef(false);
+    const disconnectedPlayerRef = useRef(disconnectedPlayer);
+
+    const getUserOwnedColors = useCallback((targetUserId) => {
+        if (!playerColors || !targetUserId) return [];
+
+        return Object.entries(playerColors)
+            .filter(([, id]) => String(id) === String(targetUserId))
+            .map(([color]) => color);
+    }, [playerColors]);
+
+    const handleRemotePause = useCallback((data, status = 'disconnected') => {
+        if (!data?.userId || String(data.userId) === String(user?.id)) {
+            return;
+        }
+
+        const ownedColors = getUserOwnedColors(data.userId);
+        const primaryColor = ownedColors[0] || 'blue';
+
+        dispatch(setDisconnectedPlayer({
+            name: data.sender,
+            color: primaryColor,
+            colors: ownedColors,
+            userId: data.userId,
+            status,
+        }));
+        dispatch(setPausedGame(true));
+    }, [dispatch, getUserOwnedColors, user?.id]);
+
+    const handleUserBack = useCallback((data) => {
+        if (!data?.userId || String(data.userId) === String(user?.id)) {
+            return;
+        }
+
+        const pausedPlayer = disconnectedPlayerRef.current;
+        if (pausedPlayer?.status !== 'inactive') {
+            return;
+        }
+
+        if (String(pausedPlayer.userId) !== String(data.userId)) {
+            return;
+        }
+
+        dispatch(setDisconnectedPlayer(null));
+        dispatch(setPausedGame(false));
+    }, [dispatch, user?.id]);
 
     // ─── Styles ───────────────────────────────────────────────────────────
     const styles = StyleSheet.create({
@@ -136,11 +185,11 @@ export default function Bases() {
     useEffect(() => { currentPlayerRef.current = currentPlayer; }, [currentPlayer]);
     useEffect(() => { currentMatchRef.current = currentMatch; }, [currentMatch]);
     useEffect(() => { currentPlayerColorRef.current = currentPlayerColor; }, [currentPlayerColor]);
+    useEffect(() => { disconnectedPlayerRef.current = disconnectedPlayer; }, [disconnectedPlayer]);
 
     useEffect(() => {
         if (!connected || !currentMatch?.id) return; // single combined guard
         const subscription = subscribe(`/topic/playerMove/${currentMatch.id}`, (data) => {
-            console.log("Received move update:", data);
             if (data?.type === 'movePlayer') {
                 const { color, steps } = data.payload || {};
                 movePlayer(color, steps);
@@ -150,7 +199,6 @@ export default function Bases() {
             } else if (data?.type === 'skipTurn') {
                 HandleskipTurn();
             } else if (data?.type === 'userDisconnected') {
-                console.log("User disconnected:", data);
                 handleUserDisconnected(data);
             }
 
@@ -159,8 +207,45 @@ export default function Bases() {
                 dispatch(applyServerStateSnapshot({ stateVersion: data.stateVersion }));
             }
         });
+        const gameStartedSubscription = subscribe(`/topic/gameStarted/${currentMatch.id}`, (data) => {
+            if (data?.type === 'userInactive') {
+                handleRemotePause(data, 'inactive');
+            } else if (data?.type === 'userBack') {
+                handleUserBack(data);
+            } else if (data?.type === 'userKicked') {
+                const kickedColors = Array.isArray(data?.colors) ? data.colors : [];
+
+                if (kickedColors.length > 0) {
+                    const updatedPlayerColors = Object.fromEntries(
+                        Object.entries(playerColors || {}).filter(([color]) => !kickedColors.includes(color))
+                    );
+
+                    kickedColors.forEach((color) => {
+                        dispatch(updateSoldiersPosition({ color, position: '' }));
+                        dispatch(removeColorFromAvailableColors({ color }));
+                    });
+
+                    dispatch(setPlayerColors(updatedPlayerColors));
+
+                    if (kickedColors.includes(activePlayerRef.current)) {
+                        dispatch(setActivePlayer());
+                        dispatch(resetTimer());
+                    }
+                }
+
+                const pausedPlayer = disconnectedPlayerRef.current;
+                if (
+                    data?.userId
+                    && String(data.userId) !== String(user?.id)
+                    && pausedPlayer?.status === 'inactive'
+                    && String(pausedPlayer.userId) === String(data.userId)
+                ) {
+                    dispatch(setDisconnectedPlayer(null));
+                    dispatch(setPausedGame(false));
+                }
+            }
+        });
         const gameStateSubscription = subscribe(`/topic/gameState/${currentMatch.id}`, (data) => {
-            console.log('Received authoritative game state broadcast:', data);
             if (data) {
                 dispatch(applyServerStateSnapshot(data));
             }
@@ -168,22 +253,16 @@ export default function Bases() {
 
         return () => {
             subscription?.unsubscribe();
+            gameStartedSubscription?.unsubscribe();
             gameStateSubscription?.unsubscribe();
         };
 
-    }, [connected, socketClient, currentMatch, user, currentPlayer]);
+    }, [connected, socketClient, currentMatch, user, currentPlayer, handleRemotePause, handleUserBack, dispatch, playerColors]);
 
 
 
     const handleUserDisconnected = (data) => {
-        console.log("Handling user disconnection:", data);
-        if (data.userId) {
-            const disconnectedColor = playerColors
-                ? Object.entries(playerColors).find(([, id]) => String(id) === String(data.userId))?.[0]
-                : 'blue';
-            dispatch(setDisconnectedPlayer({ name: data.sender, color: disconnectedColor || 'blue' }));
-            dispatch(setPausedGame(true));
-        }
+        handleRemotePause(data, 'disconnected');
     };
     const handleEnterNewSoldier = (color) => {
         const result = handleEnterNewSoldierCore({ activePlayer, color, dispatch });
@@ -213,9 +292,7 @@ export default function Bases() {
     const movePlayer = (color, steps) => {
         const activePlayer = activePlayerRef.current;
         const currentPlayer = currentPlayerRef.current;
-        console.log(`Attempting to move player of color ${color} by ${steps} steps. Active player: ${activePlayer}, Current player color: ${currentPlayerColorRef.current}`);
         const result = movePlayerCore({ color, steps, currentPlayer, activePlayer, showClone, dispatch });
-        console.log("Move player result:", result);
         if (result?.error) {
             const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
             let text1, text2;
@@ -273,8 +350,6 @@ export default function Bases() {
             if (response?.status === 'ok') {
                 // ✅ Server confirmed — do NOT dispatch here
                 // State arrives via /topic/playerMove subscription above
-                console.log('Move accepted, new version:', response.newVersion);
-
             } else if (response?.status === 'error') {
                 console.warn('Move rejected:', response.reason);
 
@@ -345,8 +420,6 @@ export default function Bases() {
             });
 
             if (response?.status === 'ok') {
-                console.log('Enter soldier accepted, new version:', response.newVersion);
-
             } else if (response?.status === 'error') {
                 console.warn('Enter soldier rejected:', response.reason);
 

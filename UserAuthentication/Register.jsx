@@ -31,8 +31,6 @@ const RegisterPage = ({ navigation }) => {
   const [password, setPassword] = useState('');
 
   const handleRegister = () => {
-    console.log("Registering user:", { username, email, password }); // Debugging line
-    
     // Basic validation
     if (!username.trim() || !email.trim() || !password.trim()) {
       Toast.show({

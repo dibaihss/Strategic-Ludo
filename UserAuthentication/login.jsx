@@ -62,13 +62,11 @@ const LoginPage = ({ navigation }) => {
       return;
     }
 
-    console.log("Logging in as guest", { name: trimmedGuestName });
     setGuestNameError("");
     dispatch(setIsOnline(true));
     dispatch(loginGuest(trimmedGuestName))
       .unwrap()
       .then((result) => {
-        console.log("Guest login successful:", result);
         setShowGuestNameModal(false);
         setGuestName("");
         Toast.show({

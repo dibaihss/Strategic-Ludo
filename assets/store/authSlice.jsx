@@ -18,8 +18,6 @@ export const updateUserStatus = createAsyncThunk(
       if (authResult.error) return authResult.error;
       const { token } = authResult;
 
-      console.log(`Updating user ${user.id} status to: ${status}`);
-
       const response = await fetch(`${API_URL}/users/${user.id}/status`, {
         method: "PUT",
         headers: {

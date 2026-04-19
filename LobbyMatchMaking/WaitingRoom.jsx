@@ -106,8 +106,6 @@ const WaitingRoom = ({ navigation, route }) => {
     if (connected) {
       // Check if the user is already in the match
       const subscription = subscribe(`/topic/gameStarted/${currentMatch.id}`, async (data) => {
-
-        console.log("WebSocket data received:", data);
         if (data.type === 'startGame') {
           setShowCountdown(true);
 
@@ -127,7 +125,6 @@ const WaitingRoom = ({ navigation, route }) => {
         } else if (data.type === 'userDisconnected') {
           debounceHandleRefresh();
         } else if (data.type === 'userLeft' || data.type === 'userKicked') {
-          if (data.type === "userKicked") console.log("user kicked", data.userId)
           if (user.id !== data.userId) {
             debounceHandleRefresh();
             // remove player soldier and player turn
@@ -245,7 +242,6 @@ const WaitingRoom = ({ navigation, route }) => {
     if (!match || !match.id) return;
     const users = Array.isArray(match.users) ? match.users : [];
     const userInMatch = users.find(u => u.id === user.id);
-    console.log('User in match:', users, userInMatch);
     if (!userInMatch) {
       navigation.navigate('Home');
       dispatch(updateMatch(null))

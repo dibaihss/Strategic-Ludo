@@ -76,7 +76,6 @@ export default function SmalBoard() {
     const isSmallScreen = windowWidth < 375 || windowHeight < 667;
 
     const currentSelectedPlayer = (selectedPlayer) => {
-        console.log(selectedPlayer);
         playSound('click').catch(() => {});
         if (!connected) {
             if (canControlColor(currentPlayerColor, selectedPlayer.color, systemLang, activePlayer))

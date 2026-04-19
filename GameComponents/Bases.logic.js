@@ -7,7 +7,6 @@ export const getCategoryFromPosition = (position) => position.match(/[a-zA-Z]+/)
 export const getNumberFromPosition = (position) => parseInt(position.match(/\d+/)[0], 10);
 
 export const canControlColor = (currentPlayerColor, color) => {
-    console.log('currentPlayerColor', currentPlayerColor, color);
     // if (currentPlayerColor === color) return true;
     // if (Array.isArray(currentPlayerColor)) {
     //     return currentPlayerColor[0] === color || currentPlayerColor[1] === color;
@@ -16,7 +15,6 @@ export const canControlColor = (currentPlayerColor, color) => {
 };
 
 export const canEnterPiece = (activePlayer, color, currentPlayerColor) => {
-    console.log('canEnterPiece', activePlayer, color, currentPlayerColor);
     if (activePlayer === color && currentPlayerColor === color 
         || activePlayer === color && currentPlayerColor[0] === color  
         || activePlayer === color && currentPlayerColor[1] === color 
