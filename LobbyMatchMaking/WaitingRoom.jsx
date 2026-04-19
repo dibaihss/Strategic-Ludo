@@ -263,7 +263,16 @@ const WaitingRoom = ({ navigation, route }) => {
       return;
     }
 
-    sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, { type: 'startGame' });
+    const resolveId = (p) => (p?.isBot ? user?.id : p?.id);
+    sendMessage(`/app/waitingRoom.gameStarted/${currentMatch.id}`, {
+      type: 'startGame',
+      playerColors: {
+        blue:   resolveId(users[0]),
+        red:    resolveId(users[1]),
+        yellow: users[2] ? resolveId(users[2]) : resolveId(users[1]),
+        green:  users[3] ? resolveId(users[3]) : resolveId(users[0]),
+      },
+    });
   };
 
   const handleStartGame = async () => {

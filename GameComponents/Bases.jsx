@@ -1,5 +1,5 @@
 import { View, Pressable, Text, StyleSheet, Dimensions } from "react-native";
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import Soldier from './Soldier';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -7,6 +7,7 @@ import {
     resetTimer,
     setPausedGame,
     setDisconnectedPlayer,
+    applyServerStateSnapshot,
 } from '../assets/store/gameSlice.jsx';
 import { directions, playerType, uiStrings, getLocalizedColor } from "../assets/shared/hardCodedData.js";
 import Toast from 'react-native-toast-message';
@@ -46,12 +47,15 @@ export default function Bases() {
     const playerColors = useSelector(state => state.game.playerColors);
 
 
-    const { connected, subscribe, sendMessage, sendMatchCommand, socketClient } = useWebSocket();
+    const { connected, subscribe, sendMessage, sendMatchCommand, emitWithAck, requestFullSync, socketClient } = useWebSocket();
 
     const windowWidth = Dimensions.get('window').width;
     const windowHeight = Dimensions.get('window').height;
     const isSmallScreen = windowWidth < 375 || windowHeight < 667;
 
+    const movePendingRef = useRef(false);
+
+    // ─── Styles ───────────────────────────────────────────────────────────
     const styles = StyleSheet.create({
         circleContainer: {
             position: "absolute",
@@ -110,106 +114,28 @@ export default function Bases() {
             color: theme.colors.buttonText,
             fontWeight: isSmallScreen ? 'bold' : '1000',
         },
-        // Update positioning for corners
-        left: {
-            top: isSmallScreen ? 3 : 20,
-            left: isSmallScreen ? 3 : 20,
-        },
-        top: {
-            top: isSmallScreen ? 3 : 20,
-            right: isSmallScreen ? 3 : 20,
-            transform: [{ rotate: '180deg' }]
-        },
-        bottom: {
-            bottom: isSmallScreen ? 3 : 20,
-            left: isSmallScreen ? 3 : 20,
-        },
-        right: {
-            bottom: isSmallScreen ? 3 : 20,
-            right: isSmallScreen ? 3 : 20,
-            transform: [{ rotate: '180deg' }]
-        },
-        red: {
-            backgroundColor: theme.colors.red,
-            borderColor: theme.colors.border,
-            shadowColor: activePlayer === "red" ? theme.colors.shadowColor : "",
-            shadowOffset: {
-                width: 0,
-                height: 0,
-            },
-            shadowOpacity: 0.7,
-            shadowRadius: 50,
-        },
-        yellow: {
-            backgroundColor: theme.colors.yellow,
-            borderColor: theme.colors.border,
-            shadowColor: activePlayer === "yellow" ? theme.colors.shadowColor : "",
-            shadowOffset: {
-                width: 0,
-                height: 0,
-            },
-            shadowOpacity: 0.7,
-            shadowRadius: 50,
-        },
-        blue: {
-            backgroundColor: theme.colors.blue,
-            borderColor: theme.colors.border,
-            shadowColor: activePlayer === "blue" ? theme.colors.shadowColor : "",
-            shadowOffset: {
-                width: 0,
-                height: 0,
-            },
-            shadowOpacity: 0.7,
-            shadowRadius: 50,
-        },
-        green: {
-            backgroundColor: theme.colors.green,
-            borderColor: theme.colors.border,
-            shadowColor: activePlayer === "green" ? theme.colors.shadowColor : "",
-            shadowOffset: {
-                width: 0,
-                height: 0,
-            },
-            shadowOpacity: 0.7,
-            shadowRadius: 50,
-        },
-        blue2: {
-            shadowColor: activePlayer === "blue" ? theme.colors.shadowColor : "",
-            shadowOffset: {
-                width: 0,
-                height: 0,
-            },
-            shadowOpacity: activePlayer === "blue" ? 0.7 : "",
-            shadowRadius: activePlayer === "blue" ? 50 : "",
-        },
-        red0: {
-            shadowColor: activePlayer === "red" ? theme.colors.shadowColor : "",
-            shadowOffset: {
-                width: 0,
-                height: 0,
-            },
-            shadowOpacity: activePlayer === "red" ? 0.7 : "",
-            shadowRadius: activePlayer === "red" ? 50 : "",
-        },
-        yellow1: {
-            shadowColor: activePlayer === "yellow" ? theme.colors.shadowColor : "",
-            shadowOffset: {
-                width: 0,
-                height: 0,
-            },
-            shadowOpacity: activePlayer === "yellow" ? 0.7 : "",
-            shadowRadius: activePlayer === "yellow" ? 50 : "",
-        },
-        green3: {
-            shadowColor: activePlayer === "green" ? theme.colors.shadowColor : "",
-            shadowOffset: {
-                width: 0,
-                height: 0,
-            },
-            shadowOpacity: activePlayer === "green" ? 0.7 : "",
-            shadowRadius: activePlayer === "green" ? 50 : "",
-        },
+        left: { top: isSmallScreen ? 3 : 20, left: isSmallScreen ? 3 : 20 },
+        top: { top: isSmallScreen ? 3 : 20, right: isSmallScreen ? 3 : 20, transform: [{ rotate: '180deg' }] },
+        bottom: { bottom: isSmallScreen ? 3 : 20, left: isSmallScreen ? 3 : 20 },
+        right: { bottom: isSmallScreen ? 3 : 20, right: isSmallScreen ? 3 : 20, transform: [{ rotate: '180deg' }] },
+        red: { backgroundColor: theme.colors.red, borderColor: theme.colors.border, shadowColor: activePlayer === "red" ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 50 },
+        yellow: { backgroundColor: theme.colors.yellow, borderColor: theme.colors.border, shadowColor: activePlayer === "yellow" ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 50 },
+        blue: { backgroundColor: theme.colors.blue, borderColor: theme.colors.border, shadowColor: activePlayer === "blue" ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 50 },
+        green: { backgroundColor: theme.colors.green, borderColor: theme.colors.border, shadowColor: activePlayer === "green" ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 50 },
+        blue2: { shadowColor: activePlayer === "blue" ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: activePlayer === "blue" ? 0.7 : "", shadowRadius: activePlayer === "blue" ? 50 : "" },
+        red0: { shadowColor: activePlayer === "red" ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: activePlayer === "red" ? 0.7 : "", shadowRadius: activePlayer === "red" ? 50 : "" },
+        yellow1: { shadowColor: activePlayer === "yellow" ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: activePlayer === "yellow" ? 0.7 : "", shadowRadius: activePlayer === "yellow" ? 50 : "" },
+        green3: { shadowColor: activePlayer === "green" ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: activePlayer === "green" ? 0.7 : "", shadowRadius: activePlayer === "green" ? 50 : "" },
     });
+
+    const activePlayerRef = useRef(activePlayer);
+    const currentPlayerRef = useRef(currentPlayer);
+    const currentMatchRef = useRef(currentMatch);
+    const currentPlayerColorRef = useRef(currentPlayerColor);
+    useEffect(() => { activePlayerRef.current = activePlayer; }, [activePlayer]);
+    useEffect(() => { currentPlayerRef.current = currentPlayer; }, [currentPlayer]);
+    useEffect(() => { currentMatchRef.current = currentMatch; }, [currentMatch]);
+    useEffect(() => { currentPlayerColorRef.current = currentPlayerColor; }, [currentPlayerColor]);
 
     useEffect(() => {
         if (!connected || !currentMatch?.id) return; // single combined guard
@@ -228,12 +154,26 @@ export default function Bases() {
                 handleUserDisconnected(data);
             }
 
+            // Sync stateVersion from server broadcast
+            if (typeof data?.stateVersion === 'number') {
+                dispatch(applyServerStateSnapshot({ stateVersion: data.stateVersion }));
+            }
         });
+        const gameStateSubscription = subscribe(`/topic/gameState/${currentMatch.id}`, (data) => {
+            console.log('Received authoritative game state broadcast:', data);
+            if (data) {
+                dispatch(applyServerStateSnapshot(data));
+            }
+        });
+
         return () => {
             subscription?.unsubscribe();
+            gameStateSubscription?.unsubscribe();
         };
 
     }, [connected, socketClient, currentMatch, user, currentPlayer]);
+
+
 
     const handleUserDisconnected = (data) => {
         console.log("Handling user disconnection:", data);
@@ -271,6 +211,9 @@ export default function Bases() {
     };
 
     const movePlayer = (color, steps) => {
+        const activePlayer = activePlayerRef.current;
+        const currentPlayer = currentPlayerRef.current;
+        console.log(`Attempting to move player of color ${color} by ${steps} steps. Active player: ${activePlayer}, Current player color: ${currentPlayerColorRef.current}`);
         const result = movePlayerCore({ color, steps, currentPlayer, activePlayer, showClone, dispatch });
         console.log("Move player result:", result);
         if (result?.error) {
@@ -296,38 +239,147 @@ export default function Bases() {
         }
     };
 
-    // Mutliplayer Functions
-    const movePlayerHanlder = (color, steps) => {
-        if (activePlayer !== color) return;
+    // ─── Multiplayer move with acknowledgement ────────────────────────────
+    const movePlayerHanlder = useCallback(async (color, steps) => {
         if (!connected) {
             movePlayer(color, steps);
             return;
         }
 
-        if (!canControlColor(currentPlayerColor, color, activePlayer)) return;
-        sendMoveUpdate({
-            type: 'movePlayer',
-            payload: {
-                color: currentPlayer.color,
-                steps
-            },
-        });
-    };
+        if (activePlayerRef.current !== color) return;
 
-    const enterNewSoldierHandler = (color) => {
+
+        if (!canControlColor(currentPlayerColorRef.current, color, activePlayerRef.current)) return;
+
+        // ✅ Prevent double-tap / double submit
+        if (movePendingRef.current) {
+            console.warn('Move already pending, ignoring duplicate');
+            return;
+        }
+
+        movePendingRef.current = true;
+
+        try {
+            const response = await sendMatchCommand({
+                type: 'movePlayer',
+                payload: {
+                    color: currentPlayerRef.current?.color,
+                    steps,
+                },
+                matchId: currentMatchRef.current?.id,
+                playerId: user?.id,
+            });
+
+            if (response?.status === 'ok') {
+                // ✅ Server confirmed — do NOT dispatch here
+                // State arrives via /topic/playerMove subscription above
+                console.log('Move accepted, new version:', response.newVersion);
+
+            } else if (response?.status === 'error') {
+                console.warn('Move rejected:', response.reason);
+
+                if (response.reason === 'stale_state') {
+                    console.warn(`Stale state: client behind server v${response.serverVersion}`);
+                    Toast.show({
+                        type: 'info',
+                        text1: 'Syncing...',
+                        text2: 'Your game state was outdated, resyncing',
+                        position: 'bottom',
+                        visibilityTime: 2000,
+                    });
+                    requestFullSync(currentMatchRef.current?.id);
+                } else if (response.reason === 'not_your_turn') {
+                    Toast.show({
+                        type: 'error',
+                        text1: 'Sync Error',
+                        text2: 'Resyncing game state...',
+                        position: 'bottom',
+                        visibilityTime: 2000,
+                    });
+                    requestFullSync(currentMatchRef.current?.id);
+                }
+            }
+
+        } catch (err) {
+            // Timeout — server never responded in 5s
+            console.error('Move timed out:', err.message);
+            Toast.show({
+                type: 'error',
+                text1: 'Connection Issue',
+                text2: 'Move timed out. Resyncing...',
+                position: 'bottom',
+                visibilityTime: 3000,
+            });
+            requestFullSync(currentMatchRef.current?.id);
+
+        } finally {
+            // ✅ Always release the lock
+            movePendingRef.current = false;
+        }
+    }, [connected, user?.id, sendMatchCommand, requestFullSync]);
+
+    // ─── Multiplayer enter soldier with acknowledgement ───────────────────
+    const enterNewSoldierHandler = useCallback(async (color) => {
+
+        // Offline mode — apply locally
         if (!connected) {
             handleEnterNewSoldier(color);
             return;
         }
 
-        if (!canEnterPiece(activePlayer, color, currentPlayerColor)) return;
-        sendMoveUpdate({
-            type: 'enterNewSoldier',
-            payload: {
-                color: color,
-            },
-        });
-    };
+        if (!canEnterPiece(activePlayerRef.current, color, currentPlayerColorRef.current)) return;
+
+        if (movePendingRef.current) {
+            console.warn('Move already pending, ignoring duplicate');
+            return;
+        }
+
+        movePendingRef.current = true;
+
+        try {
+            const response = await sendMatchCommand({
+                type: 'enterNewSoldier',
+                payload: { color },
+                matchId: currentMatchRef.current?.id,
+                playerId: user?.id,
+            });
+
+            if (response?.status === 'ok') {
+                console.log('Enter soldier accepted, new version:', response.newVersion);
+
+            } else if (response?.status === 'error') {
+                console.warn('Enter soldier rejected:', response.reason);
+
+                if (response.reason === 'stale_state') {
+                    console.warn(`Stale state: client behind server v${response.serverVersion}`);
+                    Toast.show({
+                        type: 'info',
+                        text1: 'Syncing...',
+                        text2: 'Your game state was outdated, resyncing',
+                        position: 'bottom',
+                        visibilityTime: 2000,
+                    });
+                    requestFullSync(currentMatchRef.current?.id);
+                } else if (response.reason === 'not_your_turn') {
+                    requestFullSync(currentMatchRef.current?.id);
+                }
+            }
+
+        } catch (err) {
+            console.error('Enter soldier timed out:', err.message);
+            Toast.show({
+                type: 'error',
+                text1: 'Connection Issue',
+                text2: 'Action timed out. Resyncing...',
+                position: 'bottom',
+                visibilityTime: 3000,
+            });
+            requestFullSync(currentMatchRef.current?.id);
+
+        } finally {
+            movePendingRef.current = false;
+        }
+    }, [connected, user?.id, emitWithAck, requestFullSync]);
 
     const cardsByColor = {
         blue: blueCards,

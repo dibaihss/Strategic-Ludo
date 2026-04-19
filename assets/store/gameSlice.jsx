@@ -9,7 +9,7 @@ import { playSound } from '../shared/audioManager';
 const initialState = {
     currentPlayer: "blue",
     activePlayer: "blue",
-    stateVersion: null,
+    stateVersion: 0,
     isOnline: false,
     timeRemaining: 35,
     isTimerRunning: false,
@@ -150,7 +150,7 @@ const getNextPlayerType = (currentPlayerType, availableTypesPara) => {
 };
 
 const assignIfArray = (state, source, key, targetKey) => {
-    if (Array.isArray(source[key])) {
+    if (Array.isArray(source[key]) && source[key].length > 0) {
         state[targetKey] = source[key];
     }
 };
@@ -336,19 +336,9 @@ export const gameSlice = createSlice({
                 state.currentPlayer = snapshot.currentPlayer;
             }
 
-            const snapshotTimeRemaining = typeof snapshot.timeRemaining === 'number'
-                ? snapshot.timeRemaining
-                : snapshot.timer?.timeRemaining;
-            if (typeof snapshotTimeRemaining === 'number') {
-                state.timeRemaining = snapshotTimeRemaining;
-            }
-
-            const snapshotIsTimerRunning = typeof snapshot.isTimerRunning === 'boolean'
-                ? snapshot.isTimerRunning
-                : snapshot.timer?.isRunning;
-            if (typeof snapshotIsTimerRunning === 'boolean') {
-                state.isTimerRunning = snapshotIsTimerRunning;
-            }
+            // Timer state (isTimerRunning, timeRemaining) is managed locally
+            // by the Timer component — do NOT overwrite from server snapshots
+            // because the server does not track real-time timer values.
 
             if (typeof snapshot.stateVersion !== 'undefined') {
                 state.stateVersion = snapshot.stateVersion;

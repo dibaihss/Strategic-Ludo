@@ -166,6 +166,7 @@ const uiStrings = {
     en: {
         timer: 'Time: {time}s',
         themeButton: 'Theme: {name}',
+        syncGameState: 'Sync Game State',
         skipButton: "skip my turn",
         selectPlayer: 'Select a {color} Piece',
         playerNotSelected: 'A Piece should be selected to move',
@@ -252,6 +253,7 @@ const uiStrings = {
     ar: {
         timer: '{time} :الوقت',
         themeButton: '{name} :النمط',
+        syncGameState: 'مزامنة حالة اللعبة',
         skipButton: "تخطي الدور",
         selectPlayer: '{color} اختر قطعة',
         playerNotSelected: 'يجب اختيار قطعة للتحرك',
@@ -338,6 +340,7 @@ const uiStrings = {
     de: {
         timer: 'Zeit: {time}s',
         themeButton: 'Thema: {name}',
+        syncGameState: 'Spielstatus synchronisieren',
         skipButton: "nicht spielen",
         selectPlayer: 'Wählen Sie einen {color} Spieler',
         playerNotSelected: 'Ein Spieler muss zum Bewegen ausgewählt werden',
