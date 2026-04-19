@@ -154,11 +154,23 @@ export default function Bases() {
             }
 
         });
+        const gameStateSubscription = subscribe(`/topic/gameState/${currentMatch.id}`, (data) => {
+            const snapshot = data?.snapshot;
+            console.log(data)
+            requestFullSync(currentMatchRef.current?.id);
+            if (!snapshot) {
+                return;
+            }
+        });
+
         return () => {
             subscription?.unsubscribe();
+            gameStateSubscription?.unsubscribe();
         };
 
     }, [connected, socketClient, currentMatch, user, currentPlayer]);
+
+
 
     const handleUserDisconnected = (data) => {
         console.log("Handling user disconnection:", data);
