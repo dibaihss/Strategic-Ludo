@@ -145,7 +145,10 @@ export const WebSocketProvider = ({ children }) => {
       if (response?.status === 'error') {
         console.warn('sendMatchCommand rejected:', response.reason);
 
-        if (response.reason === 'not_your_turn') {
+        if (response.reason === 'stale_state') {
+          // Server already broadcast authoritative state to all clients
+          console.warn(`Stale state: client behind server v${response.serverVersion}`);
+        } else if (response.reason === 'not_your_turn') {
           // Desync detected — request full state from server
           requestFullSync(matchId);
         }

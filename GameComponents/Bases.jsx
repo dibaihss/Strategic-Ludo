@@ -7,6 +7,7 @@ import {
     resetTimer,
     setPausedGame,
     setDisconnectedPlayer,
+    applyServerStateSnapshot,
 } from '../assets/store/gameSlice.jsx';
 import { directions, playerType, uiStrings, getLocalizedColor } from "../assets/shared/hardCodedData.js";
 import Toast from 'react-native-toast-message';
@@ -153,13 +154,15 @@ export default function Bases() {
                 handleUserDisconnected(data);
             }
 
+            // Sync stateVersion from server broadcast
+            if (typeof data?.stateVersion === 'number') {
+                dispatch(applyServerStateSnapshot({ stateVersion: data.stateVersion }));
+            }
         });
         const gameStateSubscription = subscribe(`/topic/gameState/${currentMatch.id}`, (data) => {
-            const snapshot = data?.snapshot;
-            console.log(data)
-            requestFullSync(currentMatchRef.current?.id);
-            if (!snapshot) {
-                return;
+            console.log('Received authoritative game state broadcast:', data);
+            if (data) {
+                dispatch(applyServerStateSnapshot(data));
             }
         });
 
@@ -270,13 +273,22 @@ export default function Bases() {
             if (response?.status === 'ok') {
                 // ✅ Server confirmed — do NOT dispatch here
                 // State arrives via /topic/playerMove subscription above
-                console.log('Move accepted by server');
+                console.log('Move accepted, new version:', response.newVersion);
 
             } else if (response?.status === 'error') {
                 console.warn('Move rejected:', response.reason);
 
-                if (response.reason === 'not_your_turn') {
-                    // Local Redux thinks it's our turn but server disagrees → desync
+                if (response.reason === 'stale_state') {
+                    console.warn(`Stale state: client behind server v${response.serverVersion}`);
+                    Toast.show({
+                        type: 'info',
+                        text1: 'Syncing...',
+                        text2: 'Your game state was outdated, resyncing',
+                        position: 'bottom',
+                        visibilityTime: 2000,
+                    });
+                    requestFullSync(currentMatchRef.current?.id);
+                } else if (response.reason === 'not_your_turn') {
                     Toast.show({
                         type: 'error',
                         text1: 'Sync Error',
@@ -333,13 +345,22 @@ export default function Bases() {
             });
 
             if (response?.status === 'ok') {
-                console.log('Enter soldier accepted by server');
-                // ✅ State arrives via /topic/playerMove subscription
+                console.log('Enter soldier accepted, new version:', response.newVersion);
 
             } else if (response?.status === 'error') {
                 console.warn('Enter soldier rejected:', response.reason);
 
-                if (response.reason === 'not_your_turn') {
+                if (response.reason === 'stale_state') {
+                    console.warn(`Stale state: client behind server v${response.serverVersion}`);
+                    Toast.show({
+                        type: 'info',
+                        text1: 'Syncing...',
+                        text2: 'Your game state was outdated, resyncing',
+                        position: 'bottom',
+                        visibilityTime: 2000,
+                    });
+                    requestFullSync(currentMatchRef.current?.id);
+                } else if (response.reason === 'not_your_turn') {
                     requestFullSync(currentMatchRef.current?.id);
                 }
             }

@@ -9,7 +9,7 @@ import { playSound } from '../shared/audioManager';
 const initialState = {
     currentPlayer: "blue",
     activePlayer: "blue",
-    stateVersion: null,
+    stateVersion: 0,
     isOnline: false,
     timeRemaining: 35,
     isTimerRunning: false,
@@ -150,7 +150,7 @@ const getNextPlayerType = (currentPlayerType, availableTypesPara) => {
 };
 
 const assignIfArray = (state, source, key, targetKey) => {
-    if (Array.isArray(source[key])) {
+    if (Array.isArray(source[key]) && source[key].length > 0) {
         state[targetKey] = source[key];
     }
 };
