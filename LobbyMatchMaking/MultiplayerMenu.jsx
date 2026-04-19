@@ -46,17 +46,14 @@ const MatchListPage = ({ navigation }) => {
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
-        console.log("Cleared createMatch fetch timeout on unmount.");
       }
     };
   }, []);
 
   const fetchCurrentMatchData = (id) => {
-    console.log("fetchCurrentMatch", id)
     dispatch(fetchCurrentMatch(id))
       .unwrap() // Extract the Promise from the Thunk
       .then(result => {
-        console.log("Match data fetched:", result);
         // Update the match data in the store
         dispatch(updateMatch(result));
       })
@@ -64,7 +61,6 @@ const MatchListPage = ({ navigation }) => {
         console.error("Error refreshing match data:", error);
       })
       .finally(() => {
-        console.log("Refresh operation complete");
       });
   }
 
@@ -99,7 +95,6 @@ const MatchListPage = ({ navigation }) => {
 
         // Store the new timeout ID in the ref
         timeoutRef.current = setTimeout(() => {
-          console.log("Executing delayed fetch for created match:", createdMatch.id);
           fetchCurrentMatchData(createdMatch.id);
           timeoutRef.current = null; // Clear the ref after execution
         }, 1000); // Fetch match data after 1 second

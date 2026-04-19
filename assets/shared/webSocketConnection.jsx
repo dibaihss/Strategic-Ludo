@@ -50,9 +50,7 @@ export const WebSocketProvider = ({ children }) => {
       sessionId: m?.id ?? null,
     }, (response) => {
       // ✅ Acknowledgement — know if registration succeeded
-      if (response?.status === 'ok') {
-        console.log('User registered on server:', response.user);
-      } else {
+      if (response?.status !== 'ok') {
         console.warn('User registration failed:', response?.reason);
       }
     });
@@ -60,7 +58,6 @@ export const WebSocketProvider = ({ children }) => {
 
   // ─── Emit with acknowledgement + timeout ──────────────────────────────
   const emitWithAck = useCallback((event, payload, timeout = 5000) => {
-    console.log(`Emitting event '${event}' with payload:`, payload);
     return new Promise((resolve, reject) => {
       const client = socketRef.current;
 
@@ -96,7 +93,6 @@ export const WebSocketProvider = ({ children }) => {
     // Use latest Redux state for snapshot
     const state = store.getState() || {};
     const game = state.game || {};
-    console.log(state.game)
     return {
       activePlayer: game.activePlayer,
       currentPlayer: game.currentPlayer,
@@ -120,9 +116,7 @@ export const WebSocketProvider = ({ children }) => {
   }, []);
 
   const sendMatchCommand = useCallback(async ({ type, payload = {}, matchId, playerId }) => {
-    console.log(`Preparing to send match command: ${type} with payload:`, payload);
-      const includeSnapshot = type === 'movePlayer' || type === 'enterNewSoldier' || type === 'skipTurn';
-    console.log(includeSnapshot, 'Sending command without gameState snapshot');
+    const includeSnapshot = type === 'movePlayer' || type === 'enterNewSoldier' || type === 'skipTurn';
     if (!matchId || !type) {
       console.warn('sendMatchCommand: missing matchId or type');
       return { status: 'error', reason: 'missing_params' };
@@ -172,7 +166,6 @@ export const WebSocketProvider = ({ children }) => {
     emitWithAck('requestGameState', { sessionId: id })
       .then((response) => {
         if (response?.status === 'ok' && response.gameState) {
-          console.log('Syncing game state from server', response.gameState);
           dispatch(applyServerStateSnapshot(response.gameState));
         }
       })
@@ -206,7 +199,6 @@ export const WebSocketProvider = ({ children }) => {
   const reconnectSocket = useCallback(() => {
     const client = socketRef.current;
     if (client && !client.connected) {
-      console.log('Manually reconnecting socket...');
       client.connect();
     }
   }, []);
@@ -234,7 +226,6 @@ export const WebSocketProvider = ({ children }) => {
     socketRef.current = client;
 
     client.on('connect', () => {
-      console.log('Socket connected:', client.id);
       setConnected(true);
 
       // ✅ Register user on EVERY connect — not just the first time
@@ -243,8 +234,6 @@ export const WebSocketProvider = ({ children }) => {
     });
 
     client.on('reconnect', (attemptNumber) => {
-      console.log(`Socket reconnected after ${attemptNumber} attempts`);
-
       // ✅ Re-sync game state after reconnect — catch up on missed moves
       const matchId = currentMatchRef.current?.id;
       if (matchId) {
@@ -253,12 +242,10 @@ export const WebSocketProvider = ({ children }) => {
     });
 
     client.on('disconnect', (reason) => {
-      console.log('Socket disconnected:', reason);
       setConnected(false);
 
       // Auto-reconnect unless server forced disconnect
       if (reason === 'io server disconnect') {
-        console.log('Server forced disconnect — reconnecting...');
         client.connect();
       }
     });

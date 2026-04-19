@@ -140,7 +140,6 @@ export default function Bases() {
     useEffect(() => {
         if (!connected || !currentMatch?.id) return; // single combined guard
         const subscription = subscribe(`/topic/playerMove/${currentMatch.id}`, (data) => {
-            console.log("Received move update:", data);
             if (data?.type === 'movePlayer') {
                 const { color, steps } = data.payload || {};
                 movePlayer(color, steps);
@@ -150,7 +149,6 @@ export default function Bases() {
             } else if (data?.type === 'skipTurn') {
                 HandleskipTurn();
             } else if (data?.type === 'userDisconnected') {
-                console.log("User disconnected:", data);
                 handleUserDisconnected(data);
             }
 
@@ -160,7 +158,6 @@ export default function Bases() {
             }
         });
         const gameStateSubscription = subscribe(`/topic/gameState/${currentMatch.id}`, (data) => {
-            console.log('Received authoritative game state broadcast:', data);
             if (data) {
                 dispatch(applyServerStateSnapshot(data));
             }
@@ -176,7 +173,6 @@ export default function Bases() {
 
 
     const handleUserDisconnected = (data) => {
-        console.log("Handling user disconnection:", data);
         if (data.userId) {
             const disconnectedColor = playerColors
                 ? Object.entries(playerColors).find(([, id]) => String(id) === String(data.userId))?.[0]
@@ -213,9 +209,7 @@ export default function Bases() {
     const movePlayer = (color, steps) => {
         const activePlayer = activePlayerRef.current;
         const currentPlayer = currentPlayerRef.current;
-        console.log(`Attempting to move player of color ${color} by ${steps} steps. Active player: ${activePlayer}, Current player color: ${currentPlayerColorRef.current}`);
         const result = movePlayerCore({ color, steps, currentPlayer, activePlayer, showClone, dispatch });
-        console.log("Move player result:", result);
         if (result?.error) {
             const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
             let text1, text2;
@@ -273,8 +267,6 @@ export default function Bases() {
             if (response?.status === 'ok') {
                 // ✅ Server confirmed — do NOT dispatch here
                 // State arrives via /topic/playerMove subscription above
-                console.log('Move accepted, new version:', response.newVersion);
-
             } else if (response?.status === 'error') {
                 console.warn('Move rejected:', response.reason);
 
@@ -345,8 +337,6 @@ export default function Bases() {
             });
 
             if (response?.status === 'ok') {
-                console.log('Enter soldier accepted, new version:', response.newVersion);
-
             } else if (response?.status === 'error') {
                 console.warn('Enter soldier rejected:', response.reason);
 

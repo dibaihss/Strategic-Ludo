@@ -124,7 +124,6 @@ export const loadGameState = createAsyncThunk(
             const savedState = await AsyncStorage.getItem('gameState');
             if (savedState) {
                 const parsedState = JSON.parse(savedState);
-                console.log('Loaded saved game state from:', parsedState.timestamp);
 
                 // Update match in auth slice if needed
                 if (parsedState.currentMatch) {
@@ -143,7 +142,6 @@ export const loadGameState = createAsyncThunk(
 );
 
 const getNextPlayerType = (currentPlayerType, availableTypesPara) => {
-    console.log(availableTypesPara)
     const currentIndex = availableTypesPara.indexOf(currentPlayerType);
     const nextIndex = (currentIndex + 1) % availableTypesPara.length;
     return availableTypesPara[nextIndex];
@@ -237,8 +235,6 @@ export const enterNewSoldier = (color) => (dispatch, getState) => {
             onBoard: true
         }));
         checkIfGotEnemy({ color: soldier.color, position: startingPositions[color] })(dispatch, getState);
-    } else {
-        console.log("No available soldiers to enter the board.");
     }
 };
 
@@ -409,7 +405,6 @@ export const gameSlice = createSlice({
                 green: state.greenSoldiers
             };
 
-            console.log(position)
             const updatedSoldiers = soldiersByColor[color].map(soldier =>
                 soldier.id === soldierID
                     ? returenToBase
@@ -452,7 +447,6 @@ export const gameSlice = createSlice({
             state.isOnline = action.payload;
         },
         setPlayerColors: (state, action) => {
-            console.log(action.payload)
             state.playerColors = action.payload;
         },   
         updateAllSoldiers: (state, action) => {
@@ -569,7 +563,6 @@ export const gameSlice = createSlice({
         builder
             .addCase(loadGameState.fulfilled, (state, action) => {
                 if (action.payload) {
-                    console.log('Loaded saved game state:', action.payload);
                     // Restore saved state properties
                     state.playerColors = action.payload.playerColors;
                     state.activePlayer = action.payload.activePlayer;
@@ -586,7 +579,6 @@ export const gameSlice = createSlice({
             // Optional: Add a case for saveGameState.fulfilled if you want to take action after saving
             .addCase(saveGameState.fulfilled, (state, action) => {
                 // You could add a flag or timestamp for the last save if needed
-                console.log('Game state saved at:', action.payload.timestamp);
             });
     }
 });

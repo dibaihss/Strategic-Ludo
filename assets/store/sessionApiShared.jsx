@@ -27,8 +27,6 @@ const ANDROID_API_URL = "http://192.168.178.130:8080/api";
 export const API_URL =
   ENV_API || (__DEV__ ? (Platform.OS === "android" ? ANDROID_API_URL : LOCALHOST_API_URL) : PRODUCTION_API_URL);
 
-console.log(`Using API URL: ${API_URL} on platform: ${Platform.OS}`);
-
 export const isE2EMode = (() => {
   const envFlag =
     (typeof process !== "undefined" && process?.env?.EXPO_PUBLIC_E2E === "true") ||

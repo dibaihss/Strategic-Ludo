@@ -356,7 +356,6 @@ export const deleteMatch = createAsyncThunk(
   "session/deleteMatch",
   async (matchId, { rejectWithValue, getState }) => {
     try {
-      console.log("Deleting match with ID:", matchId);
       const authResult = await requireAuthToken(getState, rejectWithValue, "deleteMatch");
       if (authResult.error) return authResult.error;
       const { token } = authResult;
