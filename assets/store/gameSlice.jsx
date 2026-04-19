@@ -147,6 +147,20 @@ const getNextPlayerType = (currentPlayerType, availableTypesPara) => {
     return availableTypesPara[nextIndex];
 };
 
+const COLOR_KEYS = ['blue', 'red', 'yellow', 'green'];
+
+const getActiveSnapshotColors = (state) => {
+    const activeTypes = Array.isArray(state.availableTypes) ? state.availableTypes : [];
+    const mappedColors = state.playerColors && typeof state.playerColors === 'object'
+        ? Object.keys(state.playerColors)
+        : [];
+
+    const allowedColors = mappedColors.length > 0 ? mappedColors : activeTypes;
+    return COLOR_KEYS.filter((color) => allowedColors.includes(color));
+};
+
+const isSnapshotColorActive = (state, color) => getActiveSnapshotColors(state).includes(color);
+
 const assignIfArray = (state, source, key, targetKey) => {
     if (Array.isArray(source[key]) && source[key].length > 0) {
         state[targetKey] = source[key];
@@ -325,10 +339,10 @@ export const gameSlice = createSlice({
             const soldiers = snapshot.soldiers || {};
             const cards = snapshot.cards || {};
 
-            if (snapshot.activePlayer) {
+            if (snapshot.activePlayer && isSnapshotColorActive(state, snapshot.activePlayer)) {
                 state.activePlayer = snapshot.activePlayer;
             }
-            if (snapshot.currentPlayer) {
+            if (snapshot.currentPlayer && isSnapshotColorActive(state, snapshot.currentPlayer.color)) {
                 state.currentPlayer = snapshot.currentPlayer;
             }
 
@@ -343,15 +357,22 @@ export const gameSlice = createSlice({
                 state.gamePaused = snapshot.status === 'paused';
             }
 
-            assignIfArray(state, soldiers, 'blue', 'blueSoldiers');
-            assignIfArray(state, soldiers, 'red', 'redSoldiers');
-            assignIfArray(state, soldiers, 'yellow', 'yellowSoldiers');
-            assignIfArray(state, soldiers, 'green', 'greenSoldiers');
-
-            assignIfArray(state, cards, 'blue', 'blueCards');
-            assignIfArray(state, cards, 'red', 'redCards');
-            assignIfArray(state, cards, 'yellow', 'yellowCards');
-            assignIfArray(state, cards, 'green', 'greenCards');
+            if (isSnapshotColorActive(state, 'blue')) {
+                assignIfArray(state, soldiers, 'blue', 'blueSoldiers');
+                assignIfArray(state, cards, 'blue', 'blueCards');
+            }
+            if (isSnapshotColorActive(state, 'red')) {
+                assignIfArray(state, soldiers, 'red', 'redSoldiers');
+                assignIfArray(state, cards, 'red', 'redCards');
+            }
+            if (isSnapshotColorActive(state, 'yellow')) {
+                assignIfArray(state, soldiers, 'yellow', 'yellowSoldiers');
+                assignIfArray(state, cards, 'yellow', 'yellowCards');
+            }
+            if (isSnapshotColorActive(state, 'green')) {
+                assignIfArray(state, soldiers, 'green', 'greenSoldiers');
+                assignIfArray(state, cards, 'green', 'greenCards');
+            }
         },
         updateBlueCards: (state, action) => {
             const { used, value, updateAll } = action.payload;
