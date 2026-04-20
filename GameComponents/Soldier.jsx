@@ -257,7 +257,7 @@ const createPieceContainerStyle = ({ isSelected, isSmallScreen, theme, color }) 
         borderRadius: size / 2,
         borderWidth,
         borderColor:  theme.colors.selected,
-        backgroundColor: isSelected ? withAlpha(theme.colors[color], 0.18) : withAlpha(theme.colors[color], 0.18) ,
+        backgroundColor: withAlpha(theme.colors[color], 0.18),
         elevation,
         shadowColor,
         shadowOffset: {
@@ -360,8 +360,11 @@ export default function Player({ color, isSelected, onPress }) {
 
     const styles = StyleSheet.create({
         clone: {
-            width: isSmallScreen ? 20 : "",
-            height: isSmallScreen ? 20 : "",
+            width: '100%',
+            height: '100%',
+            justifyContent: 'center',
+            alignItems: 'center',
+            overflow: 'visible',
             zIndex: 999,
             elevation: isSmallScreen ? 999 : 0,
         }
