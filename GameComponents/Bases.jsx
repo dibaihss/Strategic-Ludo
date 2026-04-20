@@ -113,8 +113,8 @@ export default function Bases() {
             gap: isSmallScreen ? 5 : 40,
         },
         corner: {
-            width: isSmallScreen ? 58 : 128,
-            height: isSmallScreen ? 58 : 128,
+            width: isSmallScreen ? 64 : 132,
+            height: isSmallScreen ? 64 : 132,
             borderRadius: 10,
             flexWrap: "wrap",
             flexDirection: "row",
@@ -125,8 +125,8 @@ export default function Bases() {
             elevation: isSmallScreen ? 4 : 5,
         },
         circle: {
-            width: isSmallScreen ? 16 : 34,
-            height: isSmallScreen ? 16 : 34,
+            width: isSmallScreen ? 20 : 38,
+            height: isSmallScreen ? 20 : 38,
             borderRadius: isSmallScreen ? 16 : 17,
             backgroundColor: "white",
             margin: isSmallScreen ? 3 : 4,
@@ -280,10 +280,6 @@ export default function Bases() {
         playSound('move').catch(() => { });
     };
 
-    const sendMoveUpdate = (message) => {
-        sendMoveUpdateCore({ connected, message, sendMatchCommand, currentMatch, user, sendMessage });
-    };
-
     const HandleskipTurn = () => {
         dispatch(setActivePlayer());
         dispatch(resetTimer());
@@ -420,6 +416,7 @@ export default function Bases() {
             });
 
             if (response?.status === 'ok') {
+                return;
             } else if (response?.status === 'error') {
                 console.warn('Enter soldier rejected:', response.reason);
 
