@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import PropTypes from 'prop-types';
 import {
     StyleSheet,
     Pressable,
@@ -15,7 +16,98 @@ import {
 } from '../assets/store/gameSlice.jsx';
 import { setShowClone } from '../assets/store/animationSlice.jsx';
 import { useDispatch, useSelector } from 'react-redux';
-import { playSound, stopSound } from '../assets/shared/audioManager';
+import { playSound } from '../assets/shared/audioManager';
+import PawnGraphic from './PawnGraphic';
+
+const NAMED_COLOR_MAP = {
+    black: '#000000',
+    blue: '#0000ff',
+    green: '#008000',
+    red: '#ff0000',
+    white: '#ffffff',
+    yellow: '#ffff00',
+};
+
+const parseColorChannels = (value) => {
+    if (typeof value !== 'string') return null;
+
+    const trimmed = value.trim();
+    if (/^#[0-9A-Fa-f]{6}$/.test(trimmed)) {
+        return {
+            red: Number.parseInt(trimmed.slice(1, 3), 16),
+            green: Number.parseInt(trimmed.slice(3, 5), 16),
+            blue: Number.parseInt(trimmed.slice(5, 7), 16),
+        };
+    }
+
+    if (/^#[0-9A-Fa-f]{3}$/.test(trimmed)) {
+        return {
+            red: Number.parseInt(`${trimmed[1]}${trimmed[1]}`, 16),
+            green: Number.parseInt(`${trimmed[2]}${trimmed[2]}`, 16),
+            blue: Number.parseInt(`${trimmed[3]}${trimmed[3]}`, 16),
+        };
+    }
+
+    const rgbMatch = /^rgba?\(([^)]+)\)$/i.exec(trimmed);
+    if (rgbMatch) {
+        const channels = rgbMatch[1]
+            .trim()
+            .split(/[\s,/]+/)
+            .filter(Boolean)
+            .slice(0, 3)
+            .map(Number);
+
+        if (channels.length === 3 && channels.every((channel) => Number.isFinite(channel))) {
+            return {
+                red: channels[0],
+                green: channels[1],
+                blue: channels[2],
+            };
+        }
+    }
+
+    const namedColor = NAMED_COLOR_MAP[trimmed.toLowerCase()];
+    return namedColor ? parseColorChannels(namedColor) : null;
+};
+
+const withAlpha = (colorValue, alpha, fallback = 'transparent') => {
+    const channels = parseColorChannels(colorValue);
+    if (!channels) return fallback;
+
+    return `rgba(${channels.red}, ${channels.green}, ${channels.blue}, ${alpha})`;
+};
+
+const getPieceContainerSize = (isSelected, isSmallScreen) => {
+    if (isSelected) {
+        return isSmallScreen ? 24 : 46;
+    }
+
+    return isSmallScreen ? 18 : 36;
+};
+
+const getPieceImageSize = (isSelected, isSmallScreen) => {
+    if (isSelected) {
+        return isSmallScreen ? 20 : 38;
+    }
+
+    return isSmallScreen ? 16 : 30;
+};
+
+const getPieceBorderWidth = (isSelected, isSmallScreen) => {
+    if (!isSelected) {
+        return 0;
+    }
+
+    return isSmallScreen ? 2 : 3;
+};
+
+const getPieceElevation = (isSelected, isSmallScreen) => {
+    if (!isSmallScreen) {
+        return 0;
+    }
+
+    return isSelected ? 4 : 2;
+};
 
 const getCategory = (position) => position?.match(/[a-zA-Z]+/)?.[0];
 
@@ -151,23 +243,41 @@ const buildMovementSequence = (boxesPosition, currentPlayer, boxSize) => {
     return movement;
 };
 
-const createPieceStyle = ({ isSelected, isSmallScreen, theme, color }) => ({
-    width: isSelected ? (isSmallScreen ? 10 : 30) : (isSmallScreen ? 3 : 25),
-    height: isSelected ? (isSmallScreen ? 10 : 30) : (isSmallScreen ? 3 : 25),
-    borderRadius: isSmallScreen ? 12 : 12.5,
-    backgroundColor: theme.colors[color],
-    borderWidth: isSelected ? (isSmallScreen ? 3 : 5) : (isSmallScreen ? 3 : 2),
-    borderColor: isSelected ? theme.colors.selected : '#ffffff',
-    padding: isSmallScreen ? 6.5 : 15,
-    elevation: isSmallScreen ? (isSelected ? 4 : 2) : 0,
-    shadowColor: isSelected ? (theme.colors.shadowColor ? theme.colors.shadowColor : "") : "",
-    shadowOffset: {
-        width: 0,
-        height: 0,
-    },
-    shadowOpacity: isSelected ? 0.7 : 0,
-    shadowRadius: isSelected ? 50 : 0,
-});
+const createPieceContainerStyle = ({ isSelected, isSmallScreen, theme, color }) => {
+    const size = getPieceContainerSize(isSelected, isSmallScreen);
+    const borderWidth = getPieceBorderWidth(isSelected, isSmallScreen);
+    const elevation = getPieceElevation(isSelected, isSmallScreen);
+    const shadowColor = isSelected ? (theme.colors.shadowColor || '') : '';
+
+    return {
+        width: size,
+        height: size,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: size / 2,
+        borderWidth,
+        borderColor: isSelected ? theme.colors.selected : 'transparent',
+        backgroundColor: isSelected ? withAlpha(theme.colors[color], 0.18) : 'transparent',
+        elevation,
+        shadowColor,
+        shadowOffset: {
+            width: 0,
+            height: 0,
+        },
+        shadowOpacity: isSelected ? 0.7 : 0,
+        shadowRadius: isSelected ? 24 : 0,
+        overflow: 'visible',
+    };
+};
+
+const createPieceImageStyle = ({ isSelected, isSmallScreen }) => {
+    const size = getPieceImageSize(isSelected, isSmallScreen);
+
+    return {
+        width: size,
+        height: size,
+    };
+};
 
 const createPointerStyle = ({ isSelected, isSmallScreen, theme }) => {
     if (!isSelected) return { display: 'none' };
@@ -195,7 +305,7 @@ const moveElementWithState = ({ boxesPosition, currentPlayer, dispatch }) => {
             color: kickedPlayer.color,
             position: kickedPlayer.initialPosition,
             soldierID: kickedPlayer.id,
-            returenToBase: returenToBase ? returenToBase : false
+            returenToBase,
         }));
         dispatch(setActivePlayer());
         dispatch(resetTimer());
@@ -308,10 +418,25 @@ export default function Player({ color, isSelected, onPress }) {
                 <Animated.View style={[pointerStyle, { transform: [{ translateY: pointerBounce }] }]} />
             )}
             <Pressable
-                onPress={() => onPress()}
+                onPress={onPress}
                 android_ripple={isSmallScreen ? { color: 'rgba(255,255,255,0.3)', borderless: true } : null}
-                style={createPieceStyle({ isSelected, isSmallScreen, theme, color })}
-            />
+                style={createPieceContainerStyle({ isSelected, isSmallScreen, theme, color })}
+            >
+                <PawnGraphic
+                    fillColor={theme.colors[color]}
+                    style={createPieceImageStyle({ isSelected, isSmallScreen })}
+                />
+            </Pressable>
         </Animated.View>
     );
 }
+
+Player.propTypes = {
+    color: PropTypes.string.isRequired,
+    isSelected: PropTypes.bool,
+    onPress: PropTypes.func.isRequired,
+};
+
+Player.defaultProps = {
+    isSelected: false,
+};
