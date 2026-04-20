@@ -305,7 +305,6 @@ export default function GameScreen({ route, navigation }) {
     }),
     [activePlayer, currentMatch?.users, mode, playerColors, routeBotDifficulty]
   );
-  const canSyncGameState = mode === 'multiplayer' && connected && Boolean(currentMatch?.id);
 
   useEffect(() => {
     if (winnerDetected || loading || shouldPauseBotActions()) return;
@@ -421,11 +420,6 @@ export default function GameScreen({ route, navigation }) {
     setShowExitModal(true);
   };
 
-  const handleSyncGameState = () => {
-    if (!canSyncGameState) return;
-    requestFullSync(currentMatch?.id);
-  };
-
   const confirmExitGame = async () => {
     setShowExitModal(false); // Close the modal
     exitInProgressRef.current = true;
@@ -484,7 +478,7 @@ export default function GameScreen({ route, navigation }) {
               testID="game-skip-turn-button"
               style={styles.button}
               onPress={() => {
-                handleSyncGameState();
+                skipTurn();
               }}
             >
               <MaterialIcons name="casino" size={24} color={theme.colors.buttonText} />
