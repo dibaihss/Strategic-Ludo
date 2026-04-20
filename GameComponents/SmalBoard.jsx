@@ -2,7 +2,8 @@ import {
     View,
     StyleSheet,
     Dimensions,
-    Text
+    Text,
+    Image
 } from 'react-native';
 import React, { useEffect } from 'react';
 import Soldier from './Soldier';
@@ -12,8 +13,12 @@ import {
     setCurrentPlayer
 } from '../assets/store/gameSlice.jsx';
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
-import { playSound, stopSound } from '../assets/shared/audioManager';
+import { playSound } from '../assets/shared/audioManager';
 import Toast from 'react-native-toast-message';
+
+const arrowGifSource = {
+    uri: 'https://media1.tenor.com/m/ST02u_i1Z2oAAAAd/banner-gif-arrows.gif'
+};
 
 const showErrorToast = (text1, text2) => {
     Toast.show({
@@ -204,9 +209,22 @@ export default function SmalBoard() {
                 <Text style={styles.safeZoneIcon}>🛡️</Text>
             )}
 
-            {isArrow(number) && (
-                <Text style={styles.arrowIcon}>{getArrowDirection(number)}</Text>
-            )}
+            {isArrow(number) && (() => {
+                // Map emoji to rotation degrees
+                const direction = getArrowDirection(number);
+                let rotateDeg = '0deg';
+                if (direction === '⬆️') rotateDeg = '-90deg';
+                else if (direction === '➡️') rotateDeg = '0deg';
+                else if (direction === '⬇️') rotateDeg = '90deg';
+                else if (direction === '⬅️') rotateDeg = '180deg';
+                return (
+                    <Image
+                        source={arrowGifSource}
+                        style={[styles.arrowIcon, { transform: [{ rotate: rotateDeg }] }]}
+                        resizeMode="contain"
+                    />
+                );
+            })()}
 
             {renderSoldiersForBox({ soldiers: redSoldiers, keyPrefix: 'red', number, currentPlayer, onSelect: currentSelectedPlayer })}
             {renderSoldiersForBox({ soldiers: blueSoldiers, keyPrefix: 'blue', number, currentPlayer, onSelect: currentSelectedPlayer })}

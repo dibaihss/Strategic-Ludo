@@ -54,6 +54,7 @@ const getArrowDirection = (cellId) => {
         case '10b': return '⬆️';
         case '3d': return '⬅️';
         case '10d': return '⬇️';
+        case '11d': return '⬇️';
         default:  return '➡️';
     }
 };
