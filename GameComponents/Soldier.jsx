@@ -77,7 +77,15 @@ const withAlpha = (colorValue, alpha, fallback = 'transparent') => {
     return `rgba(${channels.red}, ${channels.green}, ${channels.blue}, ${alpha})`;
 };
 
-const getPieceContainerSize = (isSelected, isSmallScreen) => {
+const getPieceContainerSize = (isSelected, isSmallScreen, sizeVariant) => {
+    if (sizeVariant === 'stacked') {
+        if (isSelected) {
+            return isSmallScreen ? 16 : 28;
+        }
+
+        return isSmallScreen ? 13 : 22;
+    }
+
     if (isSelected) {
         return isSmallScreen ? 30 : 52;
     }
@@ -85,7 +93,15 @@ const getPieceContainerSize = (isSelected, isSmallScreen) => {
     return isSmallScreen ? 24 : 42;
 };
 
-const getPieceImageSize = (isSelected, isSmallScreen) => {
+const getPieceImageSize = (isSelected, isSmallScreen, sizeVariant) => {
+    if (sizeVariant === 'stacked') {
+        if (isSelected) {
+            return isSmallScreen ? 12 : 22;
+        }
+
+        return isSmallScreen ? 10 : 18;
+    }
+
     if (isSelected) {
         return isSmallScreen ? 26 : 54;
     }
@@ -93,7 +109,15 @@ const getPieceImageSize = (isSelected, isSmallScreen) => {
     return isSmallScreen ? 22 : 36;
 };
 
-const getPieceBorderWidth = (isSelected, isSmallScreen) => {
+const getPieceBorderWidth = (isSelected, isSmallScreen, sizeVariant) => {
+    if (sizeVariant === 'stacked') {
+        if (isSelected) {
+            return isSmallScreen ? 2 : 3;
+        }
+
+        return 1;
+    }
+
     if (!isSelected) {
         return 0;
     }
@@ -243,11 +267,29 @@ const buildMovementSequence = (boxesPosition, currentPlayer, boxSize) => {
     return movement;
 };
 
-const createPieceContainerStyle = ({ isSelected, isSmallScreen, theme, color }) => {
-    const size = getPieceContainerSize(isSelected, isSmallScreen);
-    const borderWidth = getPieceBorderWidth(isSelected, isSmallScreen);
+const createPieceContainerStyle = ({ isSelected, isSmallScreen, theme, color, sizeVariant }) => {
+    const size = getPieceContainerSize(isSelected, isSmallScreen, sizeVariant);
+    const borderWidth = getPieceBorderWidth(isSelected, isSmallScreen, sizeVariant);
     const elevation = getPieceElevation(isSelected, isSmallScreen);
-    const shadowColor = isSelected ? (theme.colors.shadowColor || '') : '';
+    const isStacked = sizeVariant === 'stacked';
+    let shadowColor = '';
+    let borderColor = theme.colors.selected;
+    let backgroundColor = withAlpha(theme.colors[color], 0.18);
+    let shadowOpacity = isSelected ? 0.8 : 0;
+    let shadowRadius = isSelected ? 24 : 0;
+
+    if (isStacked) {
+        borderColor = isSelected
+            ? theme.colors.selected
+            : withAlpha(theme.colors[color], 0.95, theme.colors[color]);
+        backgroundColor = withAlpha(theme.colors[color], isSelected ? 0.82 : 0.62);
+        shadowOpacity = isSelected ? 0.95 : 0;
+        shadowRadius = isSelected ? 8 : 0;
+    }
+
+    if (isSelected) {
+        shadowColor = isStacked ? theme.colors.selected : (theme.colors.shadowColor || '');
+    }
 
     return {
         width: size,
@@ -256,22 +298,22 @@ const createPieceContainerStyle = ({ isSelected, isSmallScreen, theme, color }) 
         alignItems: 'center',
         borderRadius: size / 2,
         borderWidth,
-        borderColor:  theme.colors.selected,
-        backgroundColor: withAlpha(theme.colors[color], 0.18),
+        borderColor,
+        backgroundColor,
         elevation,
         shadowColor,
         shadowOffset: {
             width: 0,
             height: 0,
         },
-        shadowOpacity: isSelected ? 0.8 : 0,
-        shadowRadius: isSelected ? 24 : 0,
+        shadowOpacity,
+        shadowRadius,
         overflow: 'visible',
     };
 };
 
-const createPieceImageStyle = ({ isSelected, isSmallScreen }) => {
-    const size = getPieceImageSize(isSelected, isSmallScreen);
+const createPieceImageStyle = ({ isSelected, isSmallScreen, sizeVariant }) => {
+    const size = getPieceImageSize(isSelected, isSmallScreen, sizeVariant);
 
     return {
         width: size,
@@ -279,8 +321,8 @@ const createPieceImageStyle = ({ isSelected, isSmallScreen }) => {
     };
 };
 
-const createPointerStyle = ({ isSelected, isSmallScreen, theme }) => {
-    if (!isSelected) return { display: 'none' };
+const createPointerStyle = ({ isSelected, isSmallScreen, theme, sizeVariant }) => {
+    if (!isSelected || sizeVariant === 'stacked') return { display: 'none' };
     const size = isSmallScreen ? 8 : 16;
     return {
         position: 'absolute',
@@ -345,7 +387,7 @@ const runAnimationSequence = ({ animatedValue, sequence, dispatch, onComplete, i
     });
 };
 
-export default function Player({ color, isSelected, onPress }) {
+export default function Player({ color, isSelected, onPress, containerStyle, sizeVariant }) {
     const animatedValue = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
     const pointerBounce = useRef(new Animated.Value(0)).current;
     const currentPlayer = useSelector(state => state.game.currentPlayer);
@@ -409,10 +451,13 @@ export default function Player({ color, isSelected, onPress }) {
         }
     }, [isSelected, pointerBounce]);
 
-    const pointerStyle = React.useMemo(() => createPointerStyle({ isSelected, isSmallScreen, theme }), [isSelected, isSmallScreen, theme]);
+    const pointerStyle = React.useMemo(
+        () => createPointerStyle({ isSelected, isSmallScreen, theme, sizeVariant }),
+        [isSelected, isSmallScreen, sizeVariant, theme]
+    );
 
     return (
-        <Animated.View style={[styles.clone, showClone ? { zIndex: 999 * 2 } : {},
+        <Animated.View style={[styles.clone, containerStyle, showClone ? { zIndex: 999 * 2 } : {},
         {
             top: animatedValue.y,
             left: animatedValue.x,
@@ -423,11 +468,11 @@ export default function Player({ color, isSelected, onPress }) {
             <Pressable
                 onPress={onPress}
                 android_ripple={isSmallScreen ? { color: 'rgba(255,255,255,0.3)', borderless: true } : null}
-                style={createPieceContainerStyle({ isSelected, isSmallScreen, theme, color })}
+                style={createPieceContainerStyle({ isSelected, isSmallScreen, theme, color, sizeVariant })}
             >
                 <PawnGraphic
                     fillColor={theme.colors[color]}
-                    style={createPieceImageStyle({ isSelected, isSmallScreen })}
+                    style={createPieceImageStyle({ isSelected, isSmallScreen, sizeVariant })}
                 />
             </Pressable>
         </Animated.View>
@@ -436,10 +481,14 @@ export default function Player({ color, isSelected, onPress }) {
 
 Player.propTypes = {
     color: PropTypes.string.isRequired,
+    containerStyle: PropTypes.oneOfType([PropTypes.array, PropTypes.object]),
     isSelected: PropTypes.bool,
     onPress: PropTypes.func.isRequired,
+    sizeVariant: PropTypes.oneOf(['default', 'stacked']),
 };
 
 Player.defaultProps = {
+    containerStyle: undefined,
     isSelected: false,
+    sizeVariant: 'default',
 };
