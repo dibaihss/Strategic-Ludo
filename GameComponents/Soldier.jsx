@@ -281,7 +281,7 @@ const createPieceContainerStyle = ({ isSelected, isSmallScreen, theme, color, si
     if (isStacked) {
         borderColor = isSelected
             ? theme.colors.selected
-            : withAlpha(theme.colors[color], 0.95, theme.colors[color]);
+            : withAlpha(theme.colors[color], 0.8, theme.colors[color]);
         backgroundColor = withAlpha(theme.colors[color], isSelected ? 0.82 : 0.62);
         shadowOpacity = isSelected ? 0.95 : 0;
         shadowRadius = isSelected ? 8 : 0;
