@@ -31,8 +31,22 @@ export const createInstructionsStyles = (theme) =>
         },
       }),
     },
-    modalScroll: {
-      maxHeight: '100%',
+    mediaFrame: {
+      width: '100%',
+      minHeight: 280,
+      maxHeight: 460,
+      borderRadius: 16,
+      overflow: 'hidden',
+      backgroundColor: theme.colors.background,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    instructionsGif: {
+      width: '100%',
+      height: '100%',
     },
     modalTitle: {
       fontSize: 28,
@@ -40,12 +54,6 @@ export const createInstructionsStyles = (theme) =>
       marginBottom: 20,
       color: theme.colors.text,
       textAlign: 'center',
-    },
-    modalText: {
-      fontSize: 16,
-      color: theme.colors.text,
-      marginBottom: 20,
-      lineHeight: 24,
     },
     closeButton: {
       backgroundColor: theme.colors.accent,
