@@ -3,10 +3,12 @@ import {
     StyleSheet,
     Dimensions,
     Text,
-    Image
+    Image,
+    Pressable
 } from 'react-native';
 import React, { useEffect } from 'react';
 import Soldier from './Soldier';
+import PawnGraphic from './PawnGraphic';
 import { boxes, isSafeZone, isArrow, getArrowDirection, getLocalizedColor, uiStrings } from "../assets/shared/hardCodedData.js"
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -15,7 +17,7 @@ import {
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
 import { playSound } from '../assets/shared/audioManager';
 import Toast from 'react-native-toast-message';
-import { getSoldiersForBox, getStackedSoldierSlots, getVisibleSoldiersForBox, getColorCountsForSoldiers, getVisibleColorChips } from './SmalBoard.helpers';
+import { getSoldiersForBox, getStackedSoldierSlots, getVisibleSoldiersForBox, getColorCountsForSoldiers, getVisibleColorChips, getOrderedSoldiersForStack, getStackSelectorSoldier, getNextStackSelectorSoldier } from './SmalBoard.helpers';
 
 const arrowGifSource = {
     uri: 'https://media1.tenor.com/m/ST02u_i1Z2oAAAAd/banner-gif-arrows.gif'
@@ -168,11 +170,37 @@ export default function SmalBoard() {
         soldierSlot: {
             position: 'absolute',
         },
+        stackSelectorButton: {
+            position: 'absolute',
+            top: isSmallScreen ? -18 : -26,
+            left: '50%',
+            width: isSmallScreen ? 16 : 24,
+            height: isSmallScreen ? 16 : 24,
+            marginLeft: isSmallScreen ? -8 : -12,
+            borderRadius: isSmallScreen ? 8 : 12,
+            borderWidth: isSmallScreen ? 1.5 : 2,
+            borderColor: theme.colors.selected,
+            backgroundColor: theme.colors.background,
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 5,
+            elevation: isSmallScreen ? 5 : 0,
+        },
+        stackSelectorActive: {
+            shadowColor: theme.colors.selected,
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.7,
+            shadowRadius: 8,
+        },
+        stackSelectorPawn: {
+            width: isSmallScreen ? 10 : 14,
+            height: isSmallScreen ? 10 : 14,
+        },
         colorChipRow: {
             position: 'absolute',
             left: isSmallScreen ? -1 : 1,
             right: isSmallScreen ? -1 : 1,
-            top: isSmallScreen ? -8 : -10,
+            top: isSmallScreen ? -4 : -6,
             flexDirection: 'row',
             justifyContent: 'center',
             gap: isSmallScreen ? 2 : 4,
@@ -225,11 +253,7 @@ export default function SmalBoard() {
             number,
             soldierGroups: [redSoldiers, blueSoldiers, yellowSoldiers, greenSoldiers],
         });
-        const orderedSoldiers = [...soldiersInBox].sort((leftSoldier, rightSoldier) => {
-            const leftSelected = currentPlayer?.id === leftSoldier.id ? 1 : 0;
-            const rightSelected = currentPlayer?.id === rightSoldier.id ? 1 : 0;
-            return leftSelected - rightSelected;
-        });
+        const orderedSoldiers = getOrderedSoldiersForStack(soldiersInBox);
         const visibleSoldiers = getVisibleSoldiersForBox({
             soldiers: orderedSoldiers,
             selectedSoldierId: currentPlayer?.id,
@@ -237,6 +261,15 @@ export default function SmalBoard() {
         const stackSlots = getStackedSoldierSlots(visibleSoldiers.length, isSmallScreen);
         const colorCounts = getColorCountsForSoldiers(soldiersInBox);
         const visibleColorChips = getVisibleColorChips(colorCounts);
+        const selectorSoldier = getStackSelectorSoldier({
+            soldiers: soldiersInBox,
+            selectedSoldierId: currentPlayer?.id,
+        });
+        const nextSelectorSoldier = getNextStackSelectorSoldier({
+            soldiers: soldiersInBox,
+            selectedSoldierId: currentPlayer?.id,
+        });
+        const isSelectorActive = Boolean(selectorSoldier && currentPlayer?.id === selectorSoldier.id);
 
         return (
         <View
@@ -266,6 +299,20 @@ export default function SmalBoard() {
             })()}
 
             <View pointerEvents="box-none" style={styles.soldierLayer}>
+                {soldiersInBox.length > 1 && selectorSoldier && nextSelectorSoldier && (
+                    <Pressable
+                        onPress={() => currentSelectedPlayer(nextSelectorSoldier)}
+                        style={[
+                            styles.stackSelectorButton,
+                            isSelectorActive ? styles.stackSelectorActive : null,
+                        ]}
+                    >
+                        <PawnGraphic
+                            fillColor={theme.colors[selectorSoldier.color]}
+                            style={styles.stackSelectorPawn}
+                        />
+                    </Pressable>
+                )}
                 {visibleColorChips.length > 0 && soldiersInBox.length > 1 && (
                     <View style={styles.colorChipRow} pointerEvents="none">
                         {visibleColorChips.map((chip) => (

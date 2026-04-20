@@ -2,8 +2,23 @@ const MAX_STACK_PREVIEW = 4;
 const MAX_COLOR_CHIPS = 3;
 const COLOR_ORDER = ['red', 'blue', 'yellow', 'green'];
 
+const getColorSortIndex = (color) => {
+    const index = COLOR_ORDER.indexOf(color);
+    return index === -1 ? COLOR_ORDER.length : index;
+};
+
 export const getSoldiersForBox = ({ number, soldierGroups }) =>
     soldierGroups.flatMap((soldiers) => soldiers.filter((soldier) => soldier.position === number));
+
+export const getOrderedSoldiersForStack = (soldiers) =>
+    [...soldiers].sort((leftSoldier, rightSoldier) => {
+        const colorDelta = getColorSortIndex(leftSoldier.color) - getColorSortIndex(rightSoldier.color);
+        if (colorDelta !== 0) {
+            return colorDelta;
+        }
+
+        return leftSoldier.id - rightSoldier.id;
+    });
 
 export const getStackedSoldierSlots = (count, isSmallScreen) => {
     const inset = isSmallScreen ? 0 : 4;
@@ -80,4 +95,28 @@ export const getVisibleColorChips = (colorCounts) => {
         ...visibleChips,
         { color: 'overflow', count: overflowCount },
     ];
+};
+
+export const getStackSelectorSoldier = ({ soldiers, selectedSoldierId }) => {
+    if (soldiers.length === 0) {
+        return null;
+    }
+
+    const orderedSoldiers = getOrderedSoldiersForStack(soldiers);
+    return orderedSoldiers.find((soldier) => soldier.id === selectedSoldierId) || orderedSoldiers[0];
+};
+
+export const getNextStackSelectorSoldier = ({ soldiers, selectedSoldierId }) => {
+    if (soldiers.length === 0) {
+        return null;
+    }
+
+    const orderedSoldiers = getOrderedSoldiersForStack(soldiers);
+    const currentIndex = orderedSoldiers.findIndex((soldier) => soldier.id === selectedSoldierId);
+
+    if (currentIndex === -1) {
+        return orderedSoldiers[0];
+    }
+
+    return orderedSoldiers[(currentIndex + 1) % orderedSoldiers.length];
 };

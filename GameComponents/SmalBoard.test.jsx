@@ -1,4 +1,4 @@
-import { getSoldiersForBox, getStackedSoldierSlots, getColorCountsForSoldiers, getVisibleColorChips } from './SmalBoard.helpers';
+import { getSoldiersForBox, getStackedSoldierSlots, getColorCountsForSoldiers, getVisibleColorChips, getOrderedSoldiersForStack, getStackSelectorSoldier, getNextStackSelectorSoldier } from './SmalBoard.helpers';
 
 describe('SmalBoard stack helpers', () => {
     test('collects every soldier in a board cell across colors', () => {
@@ -56,5 +56,49 @@ describe('SmalBoard stack helpers', () => {
             { color: 'blue', count: 1 },
             { color: 'overflow', count: 4 },
         ]);
+    });
+
+    test('orders stack soldiers deterministically by color then id', () => {
+        expect(getOrderedSoldiersForStack([
+            { id: 8, color: 'green' },
+            { id: 2, color: 'red' },
+            { id: 7, color: 'blue' },
+            { id: 1, color: 'red' },
+        ])).toEqual([
+            { id: 1, color: 'red' },
+            { id: 2, color: 'red' },
+            { id: 7, color: 'blue' },
+            { id: 8, color: 'green' },
+        ]);
+    });
+
+    test('uses the selected soldier for the stack selector when present', () => {
+        expect(getStackSelectorSoldier({
+            soldiers: [
+                { id: 1, color: 'red' },
+                { id: 7, color: 'blue' },
+                { id: 9, color: 'yellow' },
+            ],
+            selectedSoldierId: 7,
+        })).toEqual({ id: 7, color: 'blue' });
+    });
+
+    test('cycles stack selector to the next soldier in order', () => {
+        expect(getNextStackSelectorSoldier({
+            soldiers: [
+                { id: 1, color: 'red' },
+                { id: 7, color: 'blue' },
+                { id: 9, color: 'yellow' },
+            ],
+            selectedSoldierId: 7,
+        })).toEqual({ id: 9, color: 'yellow' });
+
+        expect(getNextStackSelectorSoldier({
+            soldiers: [
+                { id: 1, color: 'red' },
+                { id: 7, color: 'blue' },
+            ],
+            selectedSoldierId: 7,
+        })).toEqual({ id: 1, color: 'red' });
     });
 });

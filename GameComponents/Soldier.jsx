@@ -80,10 +80,10 @@ const withAlpha = (colorValue, alpha, fallback = 'transparent') => {
 const getPieceContainerSize = (isSelected, isSmallScreen, sizeVariant) => {
     if (sizeVariant === 'stacked') {
         if (isSelected) {
-            return isSmallScreen ? 16 : 28;
+            return isSmallScreen ? 20 : 32;
         }
 
-        return isSmallScreen ? 13 : 22;
+        return isSmallScreen ? 16 : 32;
     }
 
     if (isSelected) {
