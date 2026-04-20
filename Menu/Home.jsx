@@ -1,10 +1,13 @@
 import React, { useMemo } from 'react';
+import PropTypes from 'prop-types';
 import {
   View,
   Text,
   Pressable,
   Image,
-  Modal
+  Modal,
+  ScrollView,
+  useWindowDimensions
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
@@ -30,7 +33,105 @@ const HomePage = ({
   const theme = useSelector(state => state.theme.current);
   const systemLang = useSelector(state => state.language.systemLang);
   const user = useSelector(state => state.auth.user);
-  const styles = useMemo(() => createHomeStyles(theme), [theme]);
+  const { width, height } = useWindowDimensions();
+
+  const layout = useMemo(() => {
+    if (height < 760 || width < 360) {
+      return {
+        horizontalPadding: 16,
+        topPadding: 20,
+        bottomPadding: 24,
+        sectionGap: 16,
+        headerMarginBottom: 12,
+        logoSize: 82,
+        titleFontSize: 28,
+        titleMarginBottom: 10,
+        cardPadding: 16,
+        cardMarginBottom: 12,
+        welcomeFontSize: 14,
+        usernameFontSize: 20,
+        logoutPadding: 8,
+        dashboardMarginBottom: 12,
+        dashboardTitleFontSize: 18,
+        dashboardTitleMarginBottom: 14,
+        statsGap: 6,
+        statValueFontSize: 22,
+        statLabelFontSize: 12,
+        buttonsGap: 12,
+        buttonsMarginBottom: 12,
+        buttonVerticalPadding: 14,
+        buttonHorizontalPadding: 16,
+        buttonGap: 8,
+        buttonTextFontSize: 16,
+        footerPaddingTop: 8,
+        footerFontSize: 11,
+      };
+    }
+
+    if (height < 920 || width < 430) {
+      return {
+        horizontalPadding: 20,
+        topPadding: 28,
+        bottomPadding: 32,
+        sectionGap: 20,
+        headerMarginBottom: 18,
+        logoSize: 104,
+        titleFontSize: 32,
+        titleMarginBottom: 12,
+        cardPadding: 20,
+        cardMarginBottom: 18,
+        welcomeFontSize: 15,
+        usernameFontSize: 22,
+        logoutPadding: 10,
+        dashboardMarginBottom: 20,
+        dashboardTitleFontSize: 20,
+        dashboardTitleMarginBottom: 18,
+        statsGap: 10,
+        statValueFontSize: 24,
+        statLabelFontSize: 13,
+        buttonsGap: 14,
+        buttonsMarginBottom: 20,
+        buttonVerticalPadding: 17,
+        buttonHorizontalPadding: 20,
+        buttonGap: 10,
+        buttonTextFontSize: 17,
+        footerPaddingTop: 10,
+        footerFontSize: 12,
+      };
+    }
+
+    return {
+      horizontalPadding: 24,
+      topPadding: 40,
+      bottomPadding: 40,
+      sectionGap: 24,
+      headerMarginBottom: 24,
+      logoSize: 120,
+      titleFontSize: 36,
+      titleMarginBottom: 16,
+      cardPadding: 24,
+      cardMarginBottom: 24,
+      welcomeFontSize: 16,
+      usernameFontSize: 24,
+      logoutPadding: 12,
+      dashboardMarginBottom: 24,
+      dashboardTitleFontSize: 22,
+      dashboardTitleMarginBottom: 20,
+      statsGap: 12,
+      statValueFontSize: 28,
+      statLabelFontSize: 14,
+      buttonsGap: 16,
+      buttonsMarginBottom: 28,
+      buttonVerticalPadding: 20,
+      buttonHorizontalPadding: 24,
+      buttonGap: 12,
+      buttonTextFontSize: 18,
+      footerPaddingTop: 12,
+      footerFontSize: 12,
+    };
+  }, [height, width]);
+
+  const styles = useMemo(() => createHomeStyles(theme, layout), [theme, layout]);
 
   const handleLogout = () => {
     onLogout();
@@ -42,6 +143,11 @@ const HomePage = ({
 
   return (
     <SafeAreaView testID="home-screen" style={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
       {/* Logo and Title */}
       <View style={styles.header}>
         <Text style={styles.title}>
@@ -138,6 +244,14 @@ const HomePage = ({
           </Text>
         </Pressable>
       </View>
+
+      {/* Version Footer */}
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>
+          {uiStrings[systemLang].developmentPhase}
+        </Text>
+      </View>
+      </ScrollView>
 
       {/* Offline options modal */}
       <Modal
@@ -257,14 +371,23 @@ const HomePage = ({
         </View>
       </Modal>
 
-      {/* Version Footer */}
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          {uiStrings[systemLang].developmentPhase}
-        </Text>
-      </View>
     </SafeAreaView>
   );
+};
+
+HomePage.propTypes = {
+  onStartMultiplayerGame: PropTypes.func.isRequired,
+  onStartOffline: PropTypes.func.isRequired,
+  showOfflineOptions: PropTypes.bool.isRequired,
+  onChooseOfflineMode: PropTypes.func.isRequired,
+  onCancelOfflineChoice: PropTypes.func.isRequired,
+  showBotDifficultyPrompt: PropTypes.bool.isRequired,
+  onChooseBotDifficulty: PropTypes.func.isRequired,
+  onCancelBotDifficultyPrompt: PropTypes.func.isRequired,
+  showLoginPrompt: PropTypes.bool.isRequired,
+  onCancelLoginPrompt: PropTypes.func.isRequired,
+  onConfirmLoginPrompt: PropTypes.func.isRequired,
+  onLogout: PropTypes.func.isRequired,
 };
 
 export default HomePage;

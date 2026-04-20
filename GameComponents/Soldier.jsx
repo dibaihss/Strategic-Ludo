@@ -79,18 +79,18 @@ const withAlpha = (colorValue, alpha, fallback = 'transparent') => {
 
 const getPieceContainerSize = (isSelected, isSmallScreen) => {
     if (isSelected) {
-        return isSmallScreen ? 34 : 56;
+        return isSmallScreen ? 30 : 52;
     }
 
-    return isSmallScreen ? 28 : 46;
+    return isSmallScreen ? 24 : 42;
 };
 
 const getPieceImageSize = (isSelected, isSmallScreen) => {
     if (isSelected) {
-        return isSmallScreen ? 30 : 58;
+        return isSmallScreen ? 26 : 54;
     }
 
-    return isSmallScreen ? 26 : 40;
+    return isSmallScreen ? 22 : 36;
 };
 
 const getPieceBorderWidth = (isSelected, isSmallScreen) => {
