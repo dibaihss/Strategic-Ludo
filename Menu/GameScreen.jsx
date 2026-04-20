@@ -305,8 +305,6 @@ export default function GameScreen({ route, navigation }) {
     }),
     [activePlayer, currentMatch?.users, mode, playerColors, routeBotDifficulty]
   );
-  const canShowSyncGameState = mode === 'multiplayer' && Boolean(currentMatch?.id);
-  const canSyncGameState = canShowSyncGameState && connected;
 
   useEffect(() => {
     if (winnerDetected || loading || shouldPauseBotActions()) return;
@@ -422,11 +420,6 @@ export default function GameScreen({ route, navigation }) {
     setShowExitModal(true);
   };
 
-  const handleSyncGameState = () => {
-    if (!canSyncGameState) return;
-    requestFullSync(currentMatch?.id);
-  };
-
   const confirmExitGame = async () => {
     setShowExitModal(false); // Close the modal
     exitInProgressRef.current = true;
@@ -493,20 +486,6 @@ export default function GameScreen({ route, navigation }) {
                 {uiStrings[systemLang].skipButton || 'Skip Turn'}
               </Text>
             </Pressable>
-
-            {canShowSyncGameState ? (
-              <Pressable
-                testID="game-sync-state-button"
-                style={[styles.button, !canSyncGameState && { opacity: 0.5 }]}
-                onPress={handleSyncGameState}
-                disabled={!canSyncGameState}
-              >
-                <MaterialIcons name="sync" size={24} color={theme.colors.buttonText} />
-                <Text style={styles.buttonText}>
-                  {uiStrings[systemLang].syncGameState || 'Sync Game State'}
-                </Text>
-              </Pressable>
-            ) : null}
 
             <Pressable
               testID="game-exit-button"

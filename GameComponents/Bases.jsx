@@ -265,7 +265,7 @@ export default function Bases() {
         handleRemotePause(data, 'disconnected');
     };
     const handleEnterNewSoldier = (color) => {
-        const result = handleEnterNewSoldierCore({ activePlayer, color, dispatch });
+        const result = handleEnterNewSoldierCore({ activePlayer: activePlayerRef.current, color, dispatch });
         if (result.error === 'wrongTurn') {
             const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
             Toast.show({
