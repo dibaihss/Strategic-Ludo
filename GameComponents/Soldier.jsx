@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import PropTypes from 'prop-types';
 import {
     StyleSheet,
     Pressable,
@@ -15,7 +16,122 @@ import {
 } from '../assets/store/gameSlice.jsx';
 import { setShowClone } from '../assets/store/animationSlice.jsx';
 import { useDispatch, useSelector } from 'react-redux';
-import { playSound, stopSound } from '../assets/shared/audioManager';
+import { playSound } from '../assets/shared/audioManager';
+import PawnGraphic from './PawnGraphic';
+
+const NAMED_COLOR_MAP = {
+    black: '#000000',
+    blue: '#0000ff',
+    green: '#008000',
+    red: '#ff0000',
+    white: '#ffffff',
+    yellow: '#ffff00',
+};
+
+const parseColorChannels = (value) => {
+    if (typeof value !== 'string') return null;
+
+    const trimmed = value.trim();
+    if (/^#[0-9A-Fa-f]{6}$/.test(trimmed)) {
+        return {
+            red: Number.parseInt(trimmed.slice(1, 3), 16),
+            green: Number.parseInt(trimmed.slice(3, 5), 16),
+            blue: Number.parseInt(trimmed.slice(5, 7), 16),
+        };
+    }
+
+    if (/^#[0-9A-Fa-f]{3}$/.test(trimmed)) {
+        return {
+            red: Number.parseInt(`${trimmed[1]}${trimmed[1]}`, 16),
+            green: Number.parseInt(`${trimmed[2]}${trimmed[2]}`, 16),
+            blue: Number.parseInt(`${trimmed[3]}${trimmed[3]}`, 16),
+        };
+    }
+
+    const rgbMatch = /^rgba?\(([^)]+)\)$/i.exec(trimmed);
+    if (rgbMatch) {
+        const channels = rgbMatch[1]
+            .trim()
+            .split(/[\s,/]+/)
+            .filter(Boolean)
+            .slice(0, 3)
+            .map(Number);
+
+        if (channels.length === 3 && channels.every((channel) => Number.isFinite(channel))) {
+            return {
+                red: channels[0],
+                green: channels[1],
+                blue: channels[2],
+            };
+        }
+    }
+
+    const namedColor = NAMED_COLOR_MAP[trimmed.toLowerCase()];
+    return namedColor ? parseColorChannels(namedColor) : null;
+};
+
+const withAlpha = (colorValue, alpha, fallback = 'transparent') => {
+    const channels = parseColorChannels(colorValue);
+    if (!channels) return fallback;
+
+    return `rgba(${channels.red}, ${channels.green}, ${channels.blue}, ${alpha})`;
+};
+
+const getPieceContainerSize = (isSelected, isSmallScreen, sizeVariant) => {
+    if (sizeVariant === 'stacked') {
+        if (isSelected) {
+            return isSmallScreen ? 20 : 32;
+        }
+
+        return isSmallScreen ? 16 : 32;
+    }
+
+    if (isSelected) {
+        return isSmallScreen ? 30 : 52;
+    }
+
+    return isSmallScreen ? 24 : 42;
+};
+
+const getPieceImageSize = (isSelected, isSmallScreen, sizeVariant) => {
+    if (sizeVariant === 'stacked') {
+        if (isSelected) {
+            return isSmallScreen ? 12 : 22;
+        }
+
+        return isSmallScreen ? 10 : 18;
+    }
+
+    if (isSelected) {
+        return isSmallScreen ? 26 : 54;
+    }
+
+    return isSmallScreen ? 22 : 36;
+};
+
+const getPieceBorderWidth = (isSelected, isSmallScreen, sizeVariant) => {
+    if (sizeVariant === 'stacked') {
+        if (isSelected) {
+            return isSmallScreen ? 2 : 3;
+        }
+
+        return 1;
+    }
+
+    if (!isSelected) {
+        return 0;
+    }
+
+    return isSmallScreen ? 2 : 3;
+};
+
+const getPieceElevation = (isSelected, isSmallScreen) => {
+    if (!isSmallScreen) {
+        return 0;
+    }
+
+    return isSelected ? 4 : 2;
+};
 
 const getCategory = (position) => position?.match(/[a-zA-Z]+/)?.[0];
 
@@ -151,26 +267,62 @@ const buildMovementSequence = (boxesPosition, currentPlayer, boxSize) => {
     return movement;
 };
 
-const createPieceStyle = ({ isSelected, isSmallScreen, theme, color }) => ({
-    width: isSelected ? (isSmallScreen ? 10 : 30) : (isSmallScreen ? 3 : 25),
-    height: isSelected ? (isSmallScreen ? 10 : 30) : (isSmallScreen ? 3 : 25),
-    borderRadius: isSmallScreen ? 12 : 12.5,
-    backgroundColor: theme.colors[color],
-    borderWidth: isSelected ? (isSmallScreen ? 3 : 5) : (isSmallScreen ? 3 : 2),
-    borderColor: isSelected ? theme.colors.selected : '#ffffff',
-    padding: isSmallScreen ? 6.5 : 15,
-    elevation: isSmallScreen ? (isSelected ? 4 : 2) : 0,
-    shadowColor: isSelected ? (theme.colors.shadowColor ? theme.colors.shadowColor : "") : "",
-    shadowOffset: {
-        width: 0,
-        height: 0,
-    },
-    shadowOpacity: isSelected ? 0.7 : 0,
-    shadowRadius: isSelected ? 50 : 0,
-});
+const createPieceContainerStyle = ({ isSelected, isSmallScreen, theme, color, sizeVariant }) => {
+    const size = getPieceContainerSize(isSelected, isSmallScreen, sizeVariant);
+    const borderWidth = getPieceBorderWidth(isSelected, isSmallScreen, sizeVariant);
+    const elevation = getPieceElevation(isSelected, isSmallScreen);
+    const isStacked = sizeVariant === 'stacked';
+    let shadowColor = '';
+    let borderColor = theme.colors.selected;
+    let backgroundColor = withAlpha(theme.colors[color], 0.18);
+    let shadowOpacity = isSelected ? 0.8 : 0;
+    let shadowRadius = isSelected ? 24 : 0;
 
-const createPointerStyle = ({ isSelected, isSmallScreen, theme }) => {
-    if (!isSelected) return { display: 'none' };
+    if (isStacked) {
+        borderColor = isSelected
+            ? theme.colors.selected
+            : withAlpha(theme.colors[color], 0.8, theme.colors[color]);
+        backgroundColor = withAlpha(theme.colors[color], isSelected ? 0.82 : 0.62);
+        shadowOpacity = isSelected ? 0.95 : 0;
+        shadowRadius = isSelected ? 8 : 0;
+    }
+
+    if (isSelected) {
+        shadowColor = isStacked ? theme.colors.selected : (theme.colors.shadowColor || '');
+    }
+
+    return {
+        width: size,
+        height: size,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: size / 2,
+        borderWidth,
+        borderColor,
+        backgroundColor,
+        elevation,
+        shadowColor,
+        shadowOffset: {
+            width: 0,
+            height: 0,
+        },
+        shadowOpacity,
+        shadowRadius,
+        overflow: 'visible',
+    };
+};
+
+const createPieceImageStyle = ({ isSelected, isSmallScreen, sizeVariant }) => {
+    const size = getPieceImageSize(isSelected, isSmallScreen, sizeVariant);
+
+    return {
+        width: size,
+        height: size,
+    };
+};
+
+const createPointerStyle = ({ isSelected, isSmallScreen, theme, sizeVariant }) => {
+    if (!isSelected || sizeVariant === 'stacked') return { display: 'none' };
     const size = isSmallScreen ? 8 : 16;
     return {
         position: 'absolute',
@@ -195,7 +347,7 @@ const moveElementWithState = ({ boxesPosition, currentPlayer, dispatch }) => {
             color: kickedPlayer.color,
             position: kickedPlayer.initialPosition,
             soldierID: kickedPlayer.id,
-            returenToBase: returenToBase ? returenToBase : false
+            returenToBase,
         }));
         dispatch(setActivePlayer());
         dispatch(resetTimer());
@@ -235,7 +387,7 @@ const runAnimationSequence = ({ animatedValue, sequence, dispatch, onComplete, i
     });
 };
 
-export default function Player({ color, isSelected, onPress }) {
+export default function Player({ color, isSelected, onPress, containerStyle, sizeVariant }) {
     const animatedValue = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
     const pointerBounce = useRef(new Animated.Value(0)).current;
     const currentPlayer = useSelector(state => state.game.currentPlayer);
@@ -250,8 +402,11 @@ export default function Player({ color, isSelected, onPress }) {
 
     const styles = StyleSheet.create({
         clone: {
-            width: isSmallScreen ? 20 : "",
-            height: isSmallScreen ? 20 : "",
+            width: '100%',
+            height: '100%',
+            justifyContent: 'center',
+            alignItems: 'center',
+            overflow: 'visible',
             zIndex: 999,
             elevation: isSmallScreen ? 999 : 0,
         }
@@ -296,10 +451,13 @@ export default function Player({ color, isSelected, onPress }) {
         }
     }, [isSelected, pointerBounce]);
 
-    const pointerStyle = React.useMemo(() => createPointerStyle({ isSelected, isSmallScreen, theme }), [isSelected, isSmallScreen, theme]);
+    const pointerStyle = React.useMemo(
+        () => createPointerStyle({ isSelected, isSmallScreen, theme, sizeVariant }),
+        [isSelected, isSmallScreen, sizeVariant, theme]
+    );
 
     return (
-        <Animated.View style={[styles.clone, showClone ? { zIndex: 999 * 2 } : {},
+        <Animated.View style={[styles.clone, containerStyle, showClone ? { zIndex: 999 * 2 } : {},
         {
             top: animatedValue.y,
             left: animatedValue.x,
@@ -308,10 +466,29 @@ export default function Player({ color, isSelected, onPress }) {
                 <Animated.View style={[pointerStyle, { transform: [{ translateY: pointerBounce }] }]} />
             )}
             <Pressable
-                onPress={() => onPress()}
+                onPress={onPress}
                 android_ripple={isSmallScreen ? { color: 'rgba(255,255,255,0.3)', borderless: true } : null}
-                style={createPieceStyle({ isSelected, isSmallScreen, theme, color })}
-            />
+                style={createPieceContainerStyle({ isSelected, isSmallScreen, theme, color, sizeVariant })}
+            >
+                <PawnGraphic
+                    fillColor={theme.colors[color]}
+                    style={createPieceImageStyle({ isSelected, isSmallScreen, sizeVariant })}
+                />
+            </Pressable>
         </Animated.View>
     );
 }
+
+Player.propTypes = {
+    color: PropTypes.string.isRequired,
+    containerStyle: PropTypes.oneOfType([PropTypes.array, PropTypes.object]),
+    isSelected: PropTypes.bool,
+    onPress: PropTypes.func.isRequired,
+    sizeVariant: PropTypes.oneOf(['default', 'stacked']),
+};
+
+Player.defaultProps = {
+    containerStyle: undefined,
+    isSelected: false,
+    sizeVariant: 'default',
+};

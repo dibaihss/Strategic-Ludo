@@ -2,18 +2,26 @@ import {
     View,
     StyleSheet,
     Dimensions,
-    Text
+    Text,
+    Image,
+    Pressable
 } from 'react-native';
 import React, { useEffect } from 'react';
 import Soldier from './Soldier';
+import PawnGraphic from './PawnGraphic';
 import { boxes, isSafeZone, isArrow, getArrowDirection, getLocalizedColor, uiStrings } from "../assets/shared/hardCodedData.js"
 import { useDispatch, useSelector } from 'react-redux';
 import {
     setCurrentPlayer
 } from '../assets/store/gameSlice.jsx';
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
-import { playSound, stopSound } from '../assets/shared/audioManager';
+import { playSound } from '../assets/shared/audioManager';
 import Toast from 'react-native-toast-message';
+import { getSoldiersForBox, getStackedSoldierSlots, getVisibleSoldiersForBox, getColorCountsForSoldiers, getVisibleColorChips, getOrderedSoldiersForStack, getStackSelectorSoldier, getNextStackSelectorSoldier } from './SmalBoard.helpers';
+
+const arrowGifSource = {
+    uri: 'https://media1.tenor.com/m/ST02u_i1Z2oAAAAd/banner-gif-arrows.gif'
+};
 
 const showErrorToast = (text1, text2) => {
     Toast.show({
@@ -40,19 +48,6 @@ const canControlColor = (currentPlayerColor, selectedColor, systemLang, color) =
     }
     return false;
 };
-
-const renderSoldiersForBox = ({ soldiers, keyPrefix, number, currentPlayer, onSelect }) => (
-    soldiers.map((soldier) =>
-        soldier.position === number && (
-            <Soldier
-                key={`${keyPrefix}-${soldier.id}`}
-                isSelected={currentPlayer?.id === soldier.id}
-                onPress={() => onSelect(soldier)}
-                color={soldier.color}
-            />
-        )
-    )
-);
 
 export default function SmalBoard() {
 
@@ -89,7 +84,7 @@ export default function SmalBoard() {
     };
     useEffect(() => {
         if (connected) {
-            if(!currentMatch || !currentMatch.id) return;
+            if (!currentMatch?.id) return;
             const subscription = subscribe(`/topic/currentPlayer/${currentMatch.id}`, (data) => {
                 const nextPlayer = data?.payload ? data.payload : data;
                 dispatch(setCurrentPlayer(nextPlayer));
@@ -121,9 +116,8 @@ export default function SmalBoard() {
         columnsContainer: {
             position: "fixed",
             flexDirection: "row",
-            justifyContent: "space-between",
             width: 5,
-            left: isSmallScreen ? "50%" : "50%",
+            left: "50%",
             display: "flex",
             justifyContent: "center"
         },
@@ -131,9 +125,8 @@ export default function SmalBoard() {
         rowsContainer: {
             position: "fixed",
             flexDirection: "column",
-            justifyContent: "space-between",
             height: 5,
-            top: isSmallScreen ? "50%" : "50%",
+            top: "50%",
             display: "flex",
             justifyContent: "center"
         },
@@ -160,7 +153,7 @@ export default function SmalBoard() {
             borderWidth: isSmallScreen ? 1 : 2,
             borderColor: theme.colors.border.transparent ? theme.colors.border.transparent : theme.colors.border,
             padding: isSmallScreen ? 9 : 20,
-            margin: isSmallScreen ? 1 : 1,
+            margin: 1,
             width: isSmallScreen ? 21 : boxSize,
             height: isSmallScreen ? 21 : boxSize,
             justifyContent: 'center',
@@ -169,6 +162,68 @@ export default function SmalBoard() {
             borderRadius: isSmallScreen ? 5 : 10,
             zIndex: 1,
             elevation: 1,
+        },
+        soldierLayer: {
+            ...StyleSheet.absoluteFill,
+            zIndex: 2,
+        },
+        soldierSlot: {
+            position: 'absolute',
+        },
+        stackSelectorButton: {
+            position: 'absolute',
+            top: isSmallScreen ? -34 : -44,
+            left: '50%',
+            width: isSmallScreen ? 28 : 38,
+            height: isSmallScreen ? 28 : 38,
+            marginLeft: isSmallScreen ? -14 : -19,
+            borderRadius: isSmallScreen ? 14 : 19,
+            borderWidth: isSmallScreen ? 2 : 2.5,
+            borderColor: theme.colors.selected,
+            backgroundColor: "transparent",
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 5,
+            elevation: isSmallScreen ? 5 : 0,
+        },
+        stackSelectorActive: {
+            shadowColor: theme.colors.selected,
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.7,
+            shadowRadius: 8,
+        },
+        stackSelectorPawn: {
+            width: isSmallScreen ? 20 : 30,
+            height: isSmallScreen ? 20 : 30,
+        },
+        colorChipRow: {
+            position: 'absolute',
+            left: isSmallScreen ? -1 : 1,
+            right: isSmallScreen ? -1 : 1,
+            top: isSmallScreen ? -4 : -6,
+            flexDirection: 'row',
+            justifyContent: 'center',
+            gap: isSmallScreen ? 2 : 4,
+            zIndex: 4,
+        },
+        colorChip: {
+            minWidth: isSmallScreen ? 10 : 15,
+            height: isSmallScreen ? 10 : 15,
+            paddingHorizontal: isSmallScreen ? 2 : 4,
+            borderRadius: isSmallScreen ? 5 : 8,
+            borderWidth: 1,
+            borderColor: theme.colors.background,
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        colorChipOverflow: {
+            backgroundColor: theme.colors.text,
+        },
+        colorChipText: {
+            color: theme.colors.background,
+            fontSize: isSmallScreen ? 7 : 9,
+            fontWeight: '700',
+            lineHeight: isSmallScreen ? 8 : 10,
         },
         verbText: {
             textAlign: 'center',
@@ -193,7 +248,30 @@ export default function SmalBoard() {
             opacity: 0.6,
         },
     });
-    const renderBox = (number, i) => (
+    const renderBox = (number, i) => {
+        const soldiersInBox = getSoldiersForBox({
+            number,
+            soldierGroups: [redSoldiers, blueSoldiers, yellowSoldiers, greenSoldiers],
+        });
+        const orderedSoldiers = getOrderedSoldiersForStack(soldiersInBox);
+        const visibleSoldiers = getVisibleSoldiersForBox({
+            soldiers: orderedSoldiers,
+            selectedSoldierId: currentPlayer?.id,
+        });
+        const stackSlots = getStackedSoldierSlots(visibleSoldiers.length, isSmallScreen);
+        const colorCounts = getColorCountsForSoldiers(soldiersInBox);
+        const visibleColorChips = getVisibleColorChips(colorCounts);
+        const selectorSoldier = getStackSelectorSoldier({
+            soldiers: soldiersInBox,
+            selectedSoldierId: currentPlayer?.id,
+        });
+        const nextSelectorSoldier = getNextStackSelectorSoldier({
+            soldiers: soldiersInBox,
+            selectedSoldierId: currentPlayer?.id,
+        });
+        const isSelectorActive = Boolean(selectorSoldier && currentPlayer?.id === selectorSoldier.id);
+
+        return (
         <View
             key={`box-${i}-${number}`}
             style={[styles.verbBox, styles.getNumber(number),
@@ -204,16 +282,68 @@ export default function SmalBoard() {
                 <Text style={styles.safeZoneIcon}>🛡️</Text>
             )}
 
-            {isArrow(number) && (
-                <Text style={styles.arrowIcon}>{getArrowDirection(number)}</Text>
-            )}
+            {isArrow(number) && (() => {
+                // Map emoji to rotation degrees
+                const direction = getArrowDirection(number);
+                let rotateDeg = '0deg';
+                if (direction === '⬆️') rotateDeg = '-90deg';
+                else if (direction === '⬇️') rotateDeg = '90deg';
+                else if (direction === '⬅️') rotateDeg = '180deg';
+                return (
+                    <Image
+                        source={arrowGifSource}
+                        style={[styles.arrowIcon, { transform: [{ rotate: rotateDeg }] }]}
+                        resizeMode="contain"
+                    />
+                );
+            })()}
 
-            {renderSoldiersForBox({ soldiers: redSoldiers, keyPrefix: 'red', number, currentPlayer, onSelect: currentSelectedPlayer })}
-            {renderSoldiersForBox({ soldiers: blueSoldiers, keyPrefix: 'blue', number, currentPlayer, onSelect: currentSelectedPlayer })}
-            {renderSoldiersForBox({ soldiers: yellowSoldiers, keyPrefix: 'yellow', number, currentPlayer, onSelect: currentSelectedPlayer })}
-            {renderSoldiersForBox({ soldiers: greenSoldiers, keyPrefix: 'green', number, currentPlayer, onSelect: currentSelectedPlayer })}
+            <View pointerEvents="box-none" style={styles.soldierLayer}>
+                {soldiersInBox.length > 1 && selectorSoldier && nextSelectorSoldier && (
+                    <Pressable
+                        onPress={() => currentSelectedPlayer(nextSelectorSoldier)}
+                        style={[
+                            styles.stackSelectorButton,
+                            isSelectorActive ? styles.stackSelectorActive : null,
+                        ]}
+                    >
+                        <PawnGraphic
+                            fillColor={theme.colors[selectorSoldier.color]}
+                            style={styles.stackSelectorPawn}
+                        />
+                    </Pressable>
+                )}
+                {visibleColorChips.length > 0 && soldiersInBox.length > 1 && (
+                    <View style={styles.colorChipRow} pointerEvents="none">
+                        {visibleColorChips.map((chip) => (
+                            <View
+                                key={`${number}-${chip.color}`}
+                                style={[
+                                    styles.colorChip,
+                                    chip.color === 'overflow'
+                                        ? styles.colorChipOverflow
+                                        : { backgroundColor: theme.colors[chip.color] },
+                                ]}
+                            >
+                                <Text style={styles.colorChipText}>{chip.count}</Text>
+                            </View>
+                        ))}
+                    </View>
+                )}
+                {visibleSoldiers.map((soldier, index) => (
+                    <Soldier
+                        key={`${number}-${soldier.id}`}
+                        containerStyle={[styles.soldierSlot, stackSlots[index]]}
+                        isSelected={currentPlayer?.id === soldier.id}
+                        onPress={() => currentSelectedPlayer(soldier)}
+                        color={soldier.color}
+                        sizeVariant={visibleSoldiers.length > 1 ? 'stacked' : 'default'}
+                    />
+                ))}
+            </View>
         </View>
     );
+    };
 
     return (
         <View style={styles.board}>

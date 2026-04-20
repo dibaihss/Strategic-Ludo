@@ -1,8 +1,10 @@
 import React, { useState, useMemo } from 'react'
-import { View, Text, Pressable, Modal, ScrollView } from 'react-native';
+import { View, Text, Pressable, Modal, Image } from 'react-native';
 import { useSelector } from 'react-redux';
-import { gameInstructions, uiStrings } from '../assets/shared/hardCodedData.js';
+import { uiStrings } from '../assets/shared/hardCodedData.js';
 import { createInstructionsStyles } from './Instructions.styles.js';
+
+const instructionsGif = require('../assets/gifs/win workflow.gif');
 
 export default function Instructions({ mode }) {
     const [showModal, setShowModal] = useState(process.env.EXPO_PUBLIC_E2E !== 'true');
@@ -20,15 +22,15 @@ export default function Instructions({ mode }) {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{gameInstructions[systemLang].title}</Text>
-            <ScrollView style={styles.modalScroll}>
-              <Text style={styles.modalText}>
-                {mode === 'multiplayer'
-                  ? uiStrings[systemLang].multiplayerInstructions || gameInstructions[systemLang].content
-                  : gameInstructions[systemLang].content
-                }
-              </Text>
-            </ScrollView>
+            <Text style={styles.modalTitle}>{uiStrings[systemLang].instructionsTitle || 'How To Play'}</Text>
+            <View style={styles.mediaFrame}>
+              <Image
+                source={instructionsGif}
+                style={styles.instructionsGif}
+                resizeMode="contain"
+                accessibilityLabel="Game instructions animation"
+              />
+            </View>
             <Pressable
               style={styles.closeButton}
               onPress={() => {

@@ -1,32 +1,38 @@
 import { StyleSheet } from 'react-native';
 
-export const createHomeStyles = (theme) =>
+export const createHomeStyles = (theme, layout) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      paddingHorizontal: 24,
-      paddingVertical: 40,
-      justifyContent: 'space-between',
       backgroundColor: theme.colors.background,
+    },
+    contentContainer: {
+      flexGrow: 1,
+      paddingHorizontal: layout.horizontalPadding,
+      paddingTop: layout.topPadding,
+      paddingBottom: layout.bottomPadding,
+      justifyContent: 'space-between',
+      gap: layout.sectionGap,
     },
     header: {
       alignItems: 'center',
-      marginBottom: 32,
+      marginBottom: layout.headerMarginBottom,
     },
     logo: {
-      width: 120,
-      height: 120,
+      width: layout.logoSize,
+      height: layout.logoSize,
     },
     title: {
-      fontSize: 36,
+      fontSize: layout.titleFontSize,
       fontWeight: 'bold',
-      marginBottom: 16,
+      marginBottom: layout.titleMarginBottom,
       color: theme.colors.text,
+      textAlign: 'center',
     },
     profileCard: {
-      padding: 24,
+      padding: layout.cardPadding,
       borderRadius: 16,
-      marginBottom: 24,
+      marginBottom: layout.cardMarginBottom,
       backgroundColor: theme.colors.card,
       borderColor: theme.colors.border,
       borderWidth: 1,
@@ -48,12 +54,12 @@ export const createHomeStyles = (theme) =>
       flex: 1,
     },
     welcomeText: {
-      fontSize: 16,
+      fontSize: layout.welcomeFontSize,
       marginBottom: 8,
       color: theme.colors.textSecondary,
     },
     username: {
-      fontSize: 24,
+      fontSize: layout.usernameFontSize,
       fontWeight: '700',
       color: theme.colors.text,
     },
@@ -63,13 +69,13 @@ export const createHomeStyles = (theme) =>
       color: theme.colors.accent,
     },
     logoutButton: {
-      padding: 12,
+      padding: layout.logoutPadding,
       borderRadius: 24,
     },
     dashboard: {
-      padding: 24,
+      padding: layout.cardPadding,
       borderRadius: 16,
-      marginBottom: 32,
+      marginBottom: layout.dashboardMarginBottom,
       backgroundColor: theme.colors.card,
       borderColor: theme.colors.border,
       borderWidth: 1,
@@ -83,14 +89,15 @@ export const createHomeStyles = (theme) =>
       elevation: 6,
     },
     dashboardTitle: {
-      fontSize: 22,
+      fontSize: layout.dashboardTitleFontSize,
       fontWeight: '600',
-      marginBottom: 20,
+      marginBottom: layout.dashboardTitleMarginBottom,
       color: theme.colors.text,
     },
     statsContainer: {
       flexDirection: 'row',
       justifyContent: 'space-between',
+      gap: layout.statsGap,
     },
     statItem: {
       alignItems: 'center',
@@ -98,28 +105,28 @@ export const createHomeStyles = (theme) =>
       flex: 1,
     },
     statValue: {
-      fontSize: 28,
+      fontSize: layout.statValueFontSize,
       fontWeight: 'bold',
       marginVertical: 8,
       color: theme.colors.text,
     },
     statLabel: {
-      fontSize: 14,
+      fontSize: layout.statLabelFontSize,
       textAlign: 'center',
       color: theme.colors.textSecondary,
     },
     buttonsContainer: {
-      gap: 16,
-      marginBottom: 48,
+      gap: layout.buttonsGap,
+      marginBottom: layout.buttonsMarginBottom,
     },
     button: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      paddingVertical: 20,
-      paddingHorizontal: 24,
+      paddingVertical: layout.buttonVerticalPadding,
+      paddingHorizontal: layout.buttonHorizontalPadding,
       borderRadius: 16,
-      gap: 12,
+      gap: layout.buttonGap,
       shadowColor: '#000',
       shadowOffset: {
         width: 0,
@@ -140,8 +147,9 @@ export const createHomeStyles = (theme) =>
       borderWidth: 1,
     },
     buttonText: {
-      fontSize: 18,
+      fontSize: layout.buttonTextFontSize,
       fontWeight: '600',
+      textAlign: 'center',
     },
     buttonTextPrimary: {
       color: theme.colors.buttonText,
@@ -211,9 +219,11 @@ export const createHomeStyles = (theme) =>
     },
     footer: {
       alignItems: 'center',
+      paddingTop: layout.footerPaddingTop,
     },
     footerText: {
-      fontSize: 12,
+      fontSize: layout.footerFontSize,
+      textAlign: 'center',
       color: theme.colors.textSecondary,
     },
   });
