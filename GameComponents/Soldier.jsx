@@ -79,18 +79,18 @@ const withAlpha = (colorValue, alpha, fallback = 'transparent') => {
 
 const getPieceContainerSize = (isSelected, isSmallScreen) => {
     if (isSelected) {
-        return isSmallScreen ? 24 : 46;
+        return isSmallScreen ? 34 : 56;
     }
 
-    return isSmallScreen ? 18 : 36;
+    return isSmallScreen ? 28 : 46;
 };
 
 const getPieceImageSize = (isSelected, isSmallScreen) => {
     if (isSelected) {
-        return isSmallScreen ? 20 : 38;
+        return isSmallScreen ? 30 : 58;
     }
 
-    return isSmallScreen ? 16 : 30;
+    return isSmallScreen ? 26 : 40;
 };
 
 const getPieceBorderWidth = (isSelected, isSmallScreen) => {
@@ -256,15 +256,15 @@ const createPieceContainerStyle = ({ isSelected, isSmallScreen, theme, color }) 
         alignItems: 'center',
         borderRadius: size / 2,
         borderWidth,
-        borderColor: isSelected ? theme.colors.selected : 'transparent',
-        backgroundColor: isSelected ? withAlpha(theme.colors[color], 0.18) : 'transparent',
+        borderColor:  theme.colors.selected,
+        backgroundColor: isSelected ? withAlpha(theme.colors[color], 0.18) : withAlpha(theme.colors[color], 0.18) ,
         elevation,
         shadowColor,
         shadowOffset: {
             width: 0,
             height: 0,
         },
-        shadowOpacity: isSelected ? 0.7 : 0,
+        shadowOpacity: isSelected ? 0.8 : 0,
         shadowRadius: isSelected ? 24 : 0,
         overflow: 'visible',
     };
