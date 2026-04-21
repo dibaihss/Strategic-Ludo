@@ -68,6 +68,13 @@ export default function GameScreen({ route, navigation }) {
   // Memoize styles to avoid recreating on every render
   const styles = useMemo(() => createGameScreenStyles(theme), [theme]);
 
+   useEffect(() => {
+    setTimeout(() => {
+     requestFullSync(currentMatch?.id);
+    }, 1000);
+
+
+   }, [currentMatch?.id]);
   // Get the game mode from navigation params
   const {
     mode,
