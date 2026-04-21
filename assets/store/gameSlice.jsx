@@ -335,6 +335,7 @@ export const gameSlice = createSlice({
             state.currentPlayerColor = action.payload;
         },
         applyServerStateSnapshot: (state, action) => {
+            console.log(action.payload)
             const snapshot = action.payload || {};
             const soldiers = snapshot.soldiers || {};
             const cards = snapshot.cards || {};

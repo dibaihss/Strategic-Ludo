@@ -190,6 +190,7 @@ export default function Bases() {
     useEffect(() => {
         if (!connected || !currentMatch?.id) return; // single combined guard
         const subscription = subscribe(`/topic/playerMove/${currentMatch.id}`, (data) => {
+            console.log(data)
             if (data?.type === 'movePlayer') {
                 const { color, steps } = data.payload || {};
                 movePlayer(color, steps);
@@ -204,10 +205,11 @@ export default function Bases() {
 
             // Sync stateVersion from server broadcast
             if (typeof data?.stateVersion === 'number') {
-                dispatch(applyServerStateSnapshot({ stateVersion: data.stateVersion }));
+                dispatch(applyServerStateSnapshot(data));
             }
         });
         const gameStartedSubscription = subscribe(`/topic/gameStarted/${currentMatch.id}`, (data) => {
+            console.log("date GameStarted: " ,data)
             if (data?.type === 'userInactive') {
                 handleRemotePause(data, 'inactive');
             } else if (data?.type === 'userBack') {
