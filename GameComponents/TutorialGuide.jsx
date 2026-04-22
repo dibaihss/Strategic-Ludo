@@ -23,7 +23,7 @@ const getStepLayout = (step, isSmallScreen) => {
     if (step === 1) {
         return {
             popup: {
-                top: isSmallScreen ? 78 : 501,
+                top: isSmallScreen ? 177 : 501,
                 left: isSmallScreen ? 14 : undefined,
                 right: isSmallScreen ? 14 : 800,
             },
@@ -55,7 +55,7 @@ const getStepLayout = (step, isSmallScreen) => {
     if (step === 3) {
         return {
             popup: {
-               top: isSmallScreen ? '36%' : '50%',
+               top: isSmallScreen ? '54%' : '50%',
                 left: isSmallScreen ? 14 : undefined,
                 right: isSmallScreen ? 14 : 28,
             },
@@ -90,7 +90,7 @@ export default function TutorialGuide({ visible, step, onSkip }) {
     const tutorialAnchorByStep = useSelector((state) => state.tutorial?.anchorByStep || {});
     const { width, height } = Dimensions.get('window');
     const isSmallScreen = width < 375 || height < 667;
-    const popupWidth = isSmallScreen ? width - 28 : Math.min(360, width - 60);
+    const popupWidth = isSmallScreen ? width - 60 : Math.min(360, width - 60);
 
     const styles = useMemo(() => StyleSheet.create({
         overlay: {
@@ -112,7 +112,7 @@ export default function TutorialGuide({ visible, step, onSkip }) {
             borderRadius: 16,
             paddingVertical: 14,
             paddingHorizontal: 14,
-            zIndex: 20002,
+            zIndex: 200020,
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 8 },
             shadowOpacity: 0.25,
@@ -192,7 +192,6 @@ export default function TutorialGuide({ visible, step, onSkip }) {
         {
             title: texts.tutorialStep3Title || 'Enter a new soldier',
             body: texts.tutorialStep3Body || 'Use this control to enter a new soldier from your base.',
-            hint: texts.tutorialStep3Hint || 'This is useful when you want more pieces active.',
         },
     ];
 
