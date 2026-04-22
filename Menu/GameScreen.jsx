@@ -276,7 +276,7 @@ export default function GameScreen({ route, navigation }) {
   useEffect(() => {
     const currentActivePlayer = activePlayer;
     if (lastActivePlayerRef.current !== currentActivePlayer) {
-      dispatch(markTutorialAction({ type: 'turn_changed' }));
+      dispatch(markTutorialAction({ type: 'turn_changed', activePlayer: currentActivePlayer }));
       lastActivePlayerRef.current = currentActivePlayer;
     }
   }, [activePlayer, dispatch]);

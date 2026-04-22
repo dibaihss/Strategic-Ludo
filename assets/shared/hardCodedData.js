@@ -189,9 +189,9 @@ const uiStrings = {
         tutorialStep4Title: 'Choose stacked soldiers',
         tutorialStep4Body: 'If multiple soldiers share one box, use the selector to cycle and choose one.',
         tutorialStep4Hint: 'Tap until the soldier you want becomes active.',
-        tutorialStep5Title: 'Turn changes',
-        tutorialStep5Body: 'After your move, the turn passes to the next player.',
-        tutorialStep5Hint: 'Finish one turn to complete this tutorial.',
+        tutorialStep5Title: 'Wait for your turn',
+        tutorialStep5Body: 'Wait until your turn comes back to blue.',
+        tutorialStep5Hint: 'When blue is active again, continue to step 4.',
         // --- New Exit Modal Strings ---
         exitGameTitle: 'Exit Game?',
         exitGameConfirm: 'Are you sure you want to leave the current game?',

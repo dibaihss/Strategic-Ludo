@@ -134,7 +134,7 @@ export default function Bases() {
             }
 
             dispatch(setTutorialAnchor({
-                step: 2,
+                step: 3,
                 anchor: { x, y, width, height },
             }));
         });
@@ -449,14 +449,14 @@ export default function Bases() {
 
         // Offline mode — apply locally
         if (!connected) {
-            dispatch(markTutorialAction({ type: 'enter_soldier' }));
+            dispatch(markTutorialAction({ type: 'enter_soldier', color }));
             handleEnterNewSoldier(color);
             return;
         }
 
         if (!canEnterPiece(activePlayerRef.current, color, currentPlayerColorRef.current)) return;
 
-        dispatch(markTutorialAction({ type: 'enter_soldier' }));
+        dispatch(markTutorialAction({ type: 'enter_soldier', color }));
 
         if (movePendingRef.current) {
             console.warn('Move already pending, ignoring duplicate');

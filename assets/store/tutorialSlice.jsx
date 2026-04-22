@@ -7,6 +7,7 @@ const initialState = {
   dismissed: false,
   reopenRequested: false,
   anchorByStep: {},
+  waitForBlueTurnReturn: false,
 };
 
 const reduceTutorialAction = (state, action) => {
@@ -14,7 +15,7 @@ const reduceTutorialAction = (state, action) => {
     return;
   }
 
-  const { type, value } = action.payload;
+  const { type, value, activePlayer, color } = action.payload;
 
   if (state.currentStep === 0 && type === 'soldier_selected') {
     state.currentStep = 1;
@@ -23,24 +24,29 @@ const reduceTutorialAction = (state, action) => {
 
   if (state.currentStep === 1 && type === 'card_played' && Number(value) === 6) {
     state.currentStep = 2;
+    state.waitForBlueTurnReturn = false;
     return;
   }
 
-  if (state.currentStep === 2 && type === 'enter_soldier') {
-    state.currentStep = 3;
+  if (state.currentStep === 2 && type === 'turn_changed') {
+    if (activePlayer !== 'blue') {
+      state.waitForBlueTurnReturn = true;
+      return;
+    }
+
+    if (state.waitForBlueTurnReturn) {
+      state.currentStep = 3;
+      state.waitForBlueTurnReturn = false;
+    }
     return;
   }
 
-  if (state.currentStep === 3 && type === 'stack_selector_used') {
-    state.currentStep = 4;
-    return;
-  }
-
-  if (state.currentStep === 4 && type === 'turn_changed') {
+  if (state.currentStep === 3 && type === 'enter_soldier' && color === 'blue') {
     state.active = false;
     state.completedOnce = true;
     state.dismissed = false;
     state.reopenRequested = false;
+    state.waitForBlueTurnReturn = false;
   }
 };
 
@@ -53,18 +59,21 @@ const tutorialSlice = createSlice({
       state.currentStep = 0;
       state.dismissed = false;
       state.reopenRequested = false;
+      state.waitForBlueTurnReturn = false;
     },
     skipTutorial: (state) => {
       state.active = false;
       state.completedOnce = true;
       state.dismissed = true;
       state.reopenRequested = false;
+      state.waitForBlueTurnReturn = false;
     },
     completeTutorial: (state) => {
       state.active = false;
       state.completedOnce = true;
       state.dismissed = false;
       state.reopenRequested = false;
+      state.waitForBlueTurnReturn = false;
     },
     setCompletedOnce: (state, action) => {
       state.completedOnce = Boolean(action.payload);

@@ -185,19 +185,14 @@ export default function TutorialGuide({ visible, step, onSkip }) {
             hint: texts.tutorialStep2Hint || 'Try pressing a card with value 6 now.',
         },
         {
-            title: texts.tutorialStep5Title || 'Turn flow',
-            body: texts.tutorialStep5Body || 'After your action, the turn moves to the next player.',
-            hint: texts.tutorialStep5Hint || 'Wait for the other player to complete their turn.',
+            title: texts.tutorialStep5Title || 'Wait for your turn',
+            body: texts.tutorialStep5Body || 'Wait until blue turn comes back to you before continuing.',
+            hint: texts.tutorialStep5Hint || 'When blue is active again, the next step will appear.',
         },
         {
             title: texts.tutorialStep3Title || 'Enter a new soldier',
             body: texts.tutorialStep3Body || 'Use this control to enter a new soldier from your base.',
             hint: texts.tutorialStep3Hint || 'This is useful when you want more pieces active.',
-        },
-        {
-            title: texts.tutorialStep4Title || 'Handle stacked soldiers',
-            body: texts.tutorialStep4Body || 'When multiple soldiers share one box, use this selector to cycle and choose the correct one.',
-            hint: texts.tutorialStep4Hint || 'Tap the selector until your wanted soldier is active.',
         },
     ];
 
@@ -205,13 +200,14 @@ export default function TutorialGuide({ visible, step, onSkip }) {
     const layout = getStepLayout(safeStep, isSmallScreen);
     const current = steps[safeStep];
     const dynamicAnchor = tutorialAnchorByStep[safeStep];
+    const showTargetRing = safeStep !== 2;
 
     const targetStyle = useMemo(() => {
-        if ((safeStep !== 0 && safeStep !== 1 && safeStep !== 2) || !dynamicAnchor) {
+        if ((safeStep !== 0 && safeStep !== 1 && safeStep !== 3) || !dynamicAnchor) {
             return layout.target;
         }
 
-        const highlightPadding = safeStep === 1 ? 6 : safeStep === 2 ? 6 : 8;
+        const highlightPadding = safeStep === 1 || safeStep === 3 ? 6 : 8;
         return {
             left: dynamicAnchor.x - highlightPadding,
             top: dynamicAnchor.y - highlightPadding,
@@ -241,11 +237,11 @@ export default function TutorialGuide({ visible, step, onSkip }) {
 
     return (
         <View style={styles.overlay} pointerEvents="box-none">
-            <View style={[styles.targetRing, targetStyle]} pointerEvents="none" />
+            {showTargetRing ? <View style={[styles.targetRing, targetStyle]} pointerEvents="none" /> : null}
             <View style={[styles.popup, popupStyle]} testID={`tutorial-step-${safeStep + 1}`}>
                 <View style={styles.header}>
                     <Text style={styles.title}>{current.title}</Text>
-                    <Text style={styles.stepBadge}>{safeStep + 1}/5</Text>
+                    <Text style={styles.stepBadge}>{safeStep + 1}/4</Text>
                 </View>
                 <Text style={styles.body}>{current.body}</Text>
                 <Text style={styles.hint}>{current.hint}</Text>
