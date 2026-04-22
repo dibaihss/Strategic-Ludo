@@ -60,6 +60,7 @@ export default function Bases() {
     const movePendingRef = useRef(false);
     const disconnectedPlayerRef = useRef(disconnectedPlayer);
     const blueCardSixRef = useRef(null);
+    const blueEnterSoldierRef = useRef(null);
 
     const getUserOwnedColors = useCallback((targetUserId) => {
         if (!playerColors || !targetUserId) return [];
@@ -117,6 +118,23 @@ export default function Bases() {
 
             dispatch(setTutorialAnchor({
                 step: 1,
+                anchor: { x, y, width, height },
+            }));
+        });
+    }, [dispatch]);
+
+    const reportBlueEnterSoldierAnchor = useCallback(() => {
+        if (!blueEnterSoldierRef.current?.measureInWindow) {
+            return;
+        }
+
+        blueEnterSoldierRef.current.measureInWindow((x, y, width, height) => {
+            if (![x, y, width, height].every(Number.isFinite)) {
+                return;
+            }
+
+            dispatch(setTutorialAnchor({
+                step: 2,
                 anchor: { x, y, width, height },
             }));
         });
@@ -283,6 +301,11 @@ export default function Bases() {
         const frame = requestAnimationFrame(() => reportBlueCardSixAnchor());
         return () => cancelAnimationFrame(frame);
     }, [reportBlueCardSixAnchor, windowWidth, windowHeight, blueCards]);
+
+    useEffect(() => {
+        const frame = requestAnimationFrame(() => reportBlueEnterSoldierAnchor());
+        return () => cancelAnimationFrame(frame);
+    }, [reportBlueEnterSoldierAnchor, windowWidth, windowHeight]);
 
 
 
@@ -556,6 +579,8 @@ export default function Bases() {
                     </View>
                     <Pressable
                         testID={`enter-soldier-${color}`}
+                        ref={color === 'blue' ? blueEnterSoldierRef : undefined}
+                        onLayout={color === 'blue' ? reportBlueEnterSoldierAnchor : undefined}
                         style={[styles.button, styles[color + i], { marginVertical: 5 }]}
                         onPress={() => enterNewSoldierHandler(color)}
                     >

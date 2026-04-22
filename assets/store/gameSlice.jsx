@@ -7,8 +7,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { playSound } from '../shared/audioManager';
 
 const initialState = {
-    currentPlayer: "blue",
-    activePlayer: "blue",
+    currentPlayer: "yellow",
+    activePlayer: "yellow",
     stateVersion: 0,
     isOnline: false,
     timeRemaining: 35,
@@ -23,7 +23,7 @@ const initialState = {
         yellow: 1,
         green: 1
     },
-    currentPlayerColor: "blue",
+    currentPlayerColor: "yellow",
     blueSoldiers: [
         { id: 1, position: '1a', color: "blue", initialPosition: '1blue', onBoard: true, isOut: false },
         { id: 2, position: '2blue', color: "blue", initialPosition: '2blue', onBoard: false, isOut: false },
