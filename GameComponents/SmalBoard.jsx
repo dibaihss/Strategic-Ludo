@@ -6,7 +6,7 @@ import {
     Image,
     Pressable
 } from 'react-native';
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import Soldier from './Soldier';
 import PawnGraphic from './PawnGraphic';
 import { boxes, isSafeZone, isArrow, getArrowDirection, getLocalizedColor, uiStrings } from "../assets/shared/hardCodedData.js"
@@ -17,6 +17,7 @@ import {
 import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
 import { playSound } from '../assets/shared/audioManager';
 import Toast from 'react-native-toast-message';
+import { markTutorialAction, setTutorialAnchor } from '../assets/store/tutorialSlice.jsx';
 import { getSoldiersForBox, getStackedSoldierSlots, getVisibleSoldiersForBox, getColorCountsForSoldiers, getVisibleColorChips, getOrderedSoldiersForStack, getStackSelectorSoldier, getNextStackSelectorSoldier } from './SmalBoard.helpers';
 
 const arrowGifSource = {
@@ -63,6 +64,7 @@ export default function SmalBoard() {
     const currentPlayerColor = useSelector(state => state.game.currentPlayerColor);
     const systemLang = useSelector(state => state.language.systemLang);
     const activePlayer = useSelector(state => state.game.activePlayer);
+    const tutorial = useSelector(state => state.tutorial || {});
 
     const { connected, subscribe, sendMessage } = useWebSocket();
 
@@ -70,16 +72,36 @@ export default function SmalBoard() {
     const windowHeight = Dimensions.get('window').height;
     const isSmallScreen = windowWidth < 375 || windowHeight < 667;
 
+    const tutorialTargetSoldierId = useMemo(() => {
+        const blueSoldierOnStartCell = blueSoldiers.find((soldier) => soldier.position === '1a');
+        if (blueSoldierOnStartCell) {
+            return blueSoldierOnStartCell.id;
+        }
+
+        return blueSoldiers[0]?.id || null;
+    }, [blueSoldiers]);
+
+    const handleTutorialTargetLayout = useCallback((anchor) => {
+        dispatch(setTutorialAnchor({ step: 0, anchor }));
+    }, [dispatch]);
+
     const currentSelectedPlayer = (selectedPlayer) => {
         playSound('click').catch(() => {});
         if (!connected) {
-            if (canControlColor(currentPlayerColor, selectedPlayer.color, systemLang, activePlayer))
+            if (canControlColor(currentPlayerColor, selectedPlayer.color, systemLang, activePlayer)) {
             dispatch(setCurrentPlayer(selectedPlayer));
+                if (selectedPlayer.id === tutorialTargetSoldierId) {
+                    dispatch(markTutorialAction({ type: 'soldier_selected' }));
+                }
+            }
             return;
         }
 
         if (canControlColor(currentPlayerColor, selectedPlayer.color, systemLang, activePlayer)) {
             handlePlayerMove(selectedPlayer);
+            if (selectedPlayer.id === tutorialTargetSoldierId) {
+                dispatch(markTutorialAction({ type: 'soldier_selected' }));
+            }
         }
     };
     useEffect(() => {
@@ -331,14 +353,27 @@ export default function SmalBoard() {
                     </View>
                 )}
                 {visibleSoldiers.map((soldier, index) => (
+                    (() => {
+                        const isSelectedForTips = Boolean(
+                            tutorial?.active
+                            && tutorial?.currentStep === 0
+                            && tutorialTargetSoldierId
+                            && soldier.id === tutorialTargetSoldierId
+                        );
+
+                        return (
                     <Soldier
                         key={`${number}-${soldier.id}`}
                         containerStyle={[styles.soldierSlot, stackSlots[index]]}
                         isSelected={currentPlayer?.id === soldier.id}
+                        isSelectedForTips={isSelectedForTips}
+                        onTipLayout={isSelectedForTips ? handleTutorialTargetLayout : undefined}
                         onPress={() => currentSelectedPlayer(soldier)}
                         color={soldier.color}
                         sizeVariant={visibleSoldiers.length > 1 ? 'stacked' : 'default'}
                     />
+                        );
+                    })()
                 ))}
             </View>
         </View>

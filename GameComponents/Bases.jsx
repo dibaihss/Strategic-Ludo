@@ -23,9 +23,9 @@ import {
     canEnterPiece,
     handleEnterNewSoldierCore,
     movePlayerCore,
-    sendMoveUpdateCore,
 } from './Bases.logic';
 import { playSound } from '../assets/shared/audioManager';
+import { markTutorialAction, setTutorialAnchor } from '../assets/store/tutorialSlice.jsx';
 
 
 export default function Bases() {
@@ -51,7 +51,7 @@ export default function Bases() {
     const disconnectedPlayer = useSelector(state => state.game.disconnectedPlayer);
 
 
-    const { connected, subscribe, sendMessage, sendMatchCommand, emitWithAck, requestFullSync, socketClient } = useWebSocket();
+    const { connected, subscribe, sendMatchCommand, emitWithAck, requestFullSync, socketClient } = useWebSocket();
 
     const windowWidth = Dimensions.get('window').width;
     const windowHeight = Dimensions.get('window').height;
@@ -59,6 +59,7 @@ export default function Bases() {
 
     const movePendingRef = useRef(false);
     const disconnectedPlayerRef = useRef(disconnectedPlayer);
+    const blueCardSixRef = useRef(null);
 
     const getUserOwnedColors = useCallback((targetUserId) => {
         if (!playerColors || !targetUserId) return [];
@@ -103,6 +104,23 @@ export default function Bases() {
         dispatch(setDisconnectedPlayer(null));
         dispatch(setPausedGame(false));
     }, [dispatch, user?.id]);
+
+    const reportBlueCardSixAnchor = useCallback(() => {
+        if (!blueCardSixRef.current?.measureInWindow) {
+            return;
+        }
+
+        blueCardSixRef.current.measureInWindow((x, y, width, height) => {
+            if (![x, y, width, height].every(Number.isFinite)) {
+                return;
+            }
+
+            dispatch(setTutorialAnchor({
+                step: 1,
+                anchor: { x, y, width, height },
+            }));
+        });
+    }, [dispatch]);
 
     // ─── Styles ───────────────────────────────────────────────────────────
     const styles = StyleSheet.create({
@@ -261,6 +279,11 @@ export default function Bases() {
 
     }, [connected, socketClient, currentMatch, user, currentPlayer, handleRemotePause, handleUserBack, dispatch, playerColors]);
 
+    useEffect(() => {
+        const frame = requestAnimationFrame(() => reportBlueCardSixAnchor());
+        return () => cancelAnimationFrame(frame);
+    }, [reportBlueCardSixAnchor, windowWidth, windowHeight, blueCards]);
+
 
 
     const handleUserDisconnected = (data) => {
@@ -317,6 +340,9 @@ export default function Bases() {
     // ─── Multiplayer move with acknowledgement ────────────────────────────
     const movePlayerHanlder = useCallback(async (color, steps) => {
         if (!connected) {
+            if (Number(steps) === 6) {
+                dispatch(markTutorialAction({ type: 'card_played', value: steps }));
+            }
             movePlayer(color, steps);
             return;
         }
@@ -325,6 +351,10 @@ export default function Bases() {
 
 
         if (!canControlColor(currentPlayerColorRef.current, color, activePlayerRef.current)) return;
+
+        if (Number(steps) === 6) {
+            dispatch(markTutorialAction({ type: 'card_played', value: steps }));
+        }
 
         // ✅ Prevent double-tap / double submit
         if (movePendingRef.current) {
@@ -389,18 +419,21 @@ export default function Bases() {
             // ✅ Always release the lock
             movePendingRef.current = false;
         }
-    }, [connected, user?.id, sendMatchCommand, requestFullSync]);
+    }, [connected, user?.id, sendMatchCommand, requestFullSync, dispatch]);
 
     // ─── Multiplayer enter soldier with acknowledgement ───────────────────
     const enterNewSoldierHandler = useCallback(async (color) => {
 
         // Offline mode — apply locally
         if (!connected) {
+            dispatch(markTutorialAction({ type: 'enter_soldier' }));
             handleEnterNewSoldier(color);
             return;
         }
 
         if (!canEnterPiece(activePlayerRef.current, color, currentPlayerColorRef.current)) return;
+
+        dispatch(markTutorialAction({ type: 'enter_soldier' }));
 
         if (movePendingRef.current) {
             console.warn('Move already pending, ignoring duplicate');
@@ -451,7 +484,7 @@ export default function Bases() {
         } finally {
             movePendingRef.current = false;
         }
-    }, [connected, user?.id, emitWithAck, requestFullSync]);
+    }, [connected, user?.id, emitWithAck, requestFullSync, dispatch]);
 
     const cardsByColor = {
         blue: blueCards,
@@ -503,6 +536,8 @@ export default function Bases() {
                                 <Pressable
                                     key={card.id}
                                     testID={`move-card-${color}-${card.value}`}
+                                    ref={color === 'blue' && Number(card.value) === 6 ? blueCardSixRef : undefined}
+                                    onLayout={color === 'blue' && Number(card.value) === 6 ? reportBlueCardSixAnchor : undefined}
                                     disabled={card.used}
                                     style={getCardButtonStyle(color, i, card.used)}
                                     onPress={() => movePlayerHanlder(color, card.value)}
@@ -513,8 +548,8 @@ export default function Bases() {
                         </View>
                     </View>
                     <View style={[styles.corner, styles[color]]}>
-                        {[...Array(4)].map((_, j) => (
-                            <View key={j} style={styles.circle}>
+                        {Array.from({ length: 4 }).map((_, j) => (
+                            <View key={`${color}-${j + 1}`} style={styles.circle}>
                                 {renderInCirclePlayers(j, playerType, i)}
                             </View>
                         ))}

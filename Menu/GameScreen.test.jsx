@@ -20,6 +20,7 @@ jest.mock('../GameComponents/SmalBoard.jsx', () => () => null);
 jest.mock('../GameComponents/Goals.jsx', () => () => null);
 jest.mock('../GameComponents/Bases.jsx', () => () => null);
 jest.mock('../GameComponents/Timer.jsx', () => () => null);
+jest.mock('../GameComponents/TutorialGuide.jsx', () => () => null);
 jest.mock('./Instructions.jsx', () => () => null);
 
 jest.mock('react-redux', () => ({

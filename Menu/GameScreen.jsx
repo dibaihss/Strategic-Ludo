@@ -4,6 +4,7 @@ import Goals from '../GameComponents/Goals.jsx';
 import Bases from '../GameComponents/Bases.jsx';
 import Timer from '../GameComponents/Timer.jsx';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useDispatch, useSelector } from 'react-redux';
 import { View, Text, Pressable, ActivityIndicator, Modal, Animated, AppState } from 'react-native';
 import { setActivePlayer, resetTimer, setIsOnline, resetGameState, setCurrentPlayerColor, setPlayerColors, setPausedGame } from '../assets/store/gameSlice.jsx';
@@ -16,9 +17,18 @@ import { fetchCurrentMatch, leaveMatch, updateMatch } from '../assets/store/sess
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { createGameScreenStyles } from './GameScreen.styles.js';
 import Instructions from './Instructions.jsx';
+import TutorialGuide from '../GameComponents/TutorialGuide.jsx';
 import { cancelPendingBotTurn, emitMultiplayerBotTurn, getBotDifficultyForTurn, isBotControlledPlayer, runBotTurn } from './botLogic.js';
 import { playSound } from '../assets/shared/audioManager';
 import DisconnectionOverlay from '../GameComponents/DisconnectionOverlay.jsx';
+import {
+  clearTutorialReopen,
+  markTutorialAction,
+  requestTutorialReopen,
+  setCompletedOnce,
+  skipTutorial,
+  startTutorial,
+} from '../assets/store/tutorialSlice.jsx';
 import {
   buildPlayerColorsFromPlayers,
   getUserColorFromPlayerColors,
@@ -48,6 +58,16 @@ export default function GameScreen({ route, navigation }) {
   const yellowCards = useSelector(state => state.game.yellowCards);
   const greenCards = useSelector(state => state.game.greenCards);
   const showClone = useSelector(state => state.animation?.showClone || false);
+  const tutorialState = useSelector((state) => state.tutorial || {
+    active: false,
+    currentStep: 0,
+    completedOnce: false,
+    reopenRequested: false,
+  });
+  const tutorialActive = tutorialState.active;
+  const tutorialStep = tutorialState.currentStep;
+  const tutorialCompletedOnce = tutorialState.completedOnce;
+  const tutorialReopenRequested = tutorialState.reopenRequested;
 
   const [gameIsStarted, setGameIsStarted] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -64,12 +84,14 @@ export default function GameScreen({ route, navigation }) {
   const presencePauseRef = useRef(false);
   const presenceStateRef = useRef(isAppStateActive(AppState.currentState) ? 'active' : 'inactive');
   const disconnectedPlayerRef = useRef(disconnectedPlayer);
+  const lastActivePlayerRef = useRef(activePlayer);
 
   // Memoize styles to avoid recreating on every render
   const styles = useMemo(() => createGameScreenStyles(theme), [theme]);
 
    useEffect(() => {
     setTimeout(() => {
+      if(!currentMatch?.id && !connected) return;
      requestFullSync(currentMatch?.id);
     }, 1000);
 
@@ -252,9 +274,84 @@ export default function GameScreen({ route, navigation }) {
   }, [gamePaused, isAppActive]);
 
   useEffect(() => {
+    const currentActivePlayer = activePlayer;
+    if (lastActivePlayerRef.current !== currentActivePlayer) {
+      dispatch(markTutorialAction({ type: 'turn_changed' }));
+      lastActivePlayerRef.current = currentActivePlayer;
+    }
+  }, [activePlayer, dispatch]);
+
+  useEffect(() => {
     setGameIsStarted(true);
     setLoading(false);
   }, []);
+
+  useEffect(() => {
+    if (!gameIsStarted || tutorialActive) {
+      return undefined;
+    }
+
+    const tutorialStorageKey = user?.id
+      ? `ludo_tutorial_completed_${user.id}`
+      : 'ludo_tutorial_completed_guest';
+
+    if (tutorialReopenRequested) {
+      dispatch(startTutorial());
+      dispatch(clearTutorialReopen());
+      return undefined;
+    }
+
+    if (tutorialCompletedOnce) {
+      return undefined;
+    }
+
+    let isCancelled = false;
+    const loadTutorialState = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(tutorialStorageKey);
+        if (isCancelled) return;
+
+        if (stored === 'true') {
+          dispatch(setCompletedOnce(true));
+          return;
+        }
+
+        dispatch(startTutorial());
+      } catch (error) {
+        if (!isCancelled) {
+          console.warn('Failed to load tutorial completion state:', error);
+          dispatch(startTutorial());
+        }
+      }
+    };
+
+    loadTutorialState();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [
+    dispatch,
+    gameIsStarted,
+    tutorialActive,
+    tutorialCompletedOnce,
+    tutorialReopenRequested,
+    user?.id,
+  ]);
+
+  useEffect(() => {
+    if (!tutorialCompletedOnce) {
+      return;
+    }
+
+    const tutorialStorageKey = user?.id
+      ? `ludo_tutorial_completed_${user.id}`
+      : 'ludo_tutorial_completed_guest';
+
+    AsyncStorage.setItem(tutorialStorageKey, 'true').catch(() => {
+      // Ignore persistence failure and keep gameplay responsive.
+    });
+  }, [tutorialCompletedOnce, user?.id]);
 
   useEffect(() => {
     if (mode === 'multiplayer' && multiplayerPlayerColors) {
@@ -473,7 +570,7 @@ export default function GameScreen({ route, navigation }) {
 
   return (
     <View testID="game-screen" style={styles.container}>
-      <Instructions mode={mode} />
+      {!tutorialActive && <Instructions mode={mode} />}
       {gameIsStarted ? (
         <>
           <Timer />
@@ -502,6 +599,17 @@ export default function GameScreen({ route, navigation }) {
               <MaterialIcons name="exit-to-app" size={24} color={theme.colors.buttonText} />
               <Text style={styles.buttonText}>
                 {uiStrings[systemLang].exitGame || 'Exit'}
+              </Text>
+            </Pressable>
+
+            <Pressable
+              testID="game-tutorial-button"
+              style={styles.button}
+              onPress={() => dispatch(requestTutorialReopen())}
+            >
+              <MaterialIcons name="tips-and-updates" size={24} color={theme.colors.buttonText} />
+              <Text style={styles.buttonText}>
+                {uiStrings[systemLang].tutorialButton || 'Tutorial'}
               </Text>
             </Pressable>
           </View>
@@ -595,6 +703,11 @@ export default function GameScreen({ route, navigation }) {
         </View>
       </Modal>
       {/* End Exit Confirmation Modal */}
+      <TutorialGuide
+        visible={tutorialActive}
+        step={tutorialStep}
+        onSkip={() => dispatch(skipTutorial())}
+      />
       <DisconnectionOverlay navigation={navigation} />
     </View>
   );
