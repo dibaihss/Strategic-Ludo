@@ -8,6 +8,8 @@ import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
 import { cancelPendingBotTurn, emitMultiplayerBotTurn, runBotTurn } from './botLogic.js';
 import GameScreen from './GameScreen';
 import { setCurrentPlayer, setCurrentPlayerColor } from '../assets/store/gameSlice.jsx';
+import { startTutorial } from '../assets/store/tutorialSlice.jsx';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   setItem: jest.fn(),
@@ -180,6 +182,7 @@ describe('GameScreen', () => {
       sendMatchCommand: sendMatchCommandMock,
       requestFullSync: requestFullSyncMock,
     });
+    AsyncStorage.getItem.mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -317,6 +320,61 @@ describe('GameScreen', () => {
     );
 
     expect(queryByTestId('game-sync-state-button')).toBeNull();
+  });
+
+  test('starts tutorial automatically in bot mode', async () => {
+    configureSelectors(createState({
+      tutorial: {
+        active: false,
+        currentStep: 0,
+        completedOnce: false,
+        reopenRequested: false,
+      },
+    }));
+
+    render(<GameScreen route={{ params: { mode: 'bot', matchId: 1 } }} navigation={{ navigate: jest.fn() }} />);
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(dispatchMock).toHaveBeenCalledWith(startTutorial());
+  });
+
+  test('does not auto-start tutorial in local mode', async () => {
+    configureSelectors(createState({
+      tutorial: {
+        active: false,
+        currentStep: 0,
+        completedOnce: false,
+        reopenRequested: false,
+      },
+    }));
+
+    render(<GameScreen route={{ params: { mode: 'local', matchId: 1 } }} navigation={{ navigate: jest.fn() }} />);
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(dispatchMock).not.toHaveBeenCalledWith(startTutorial());
+  });
+
+  test('hides tutorial button in multiplayer mode', () => {
+    configureSelectors(createState({
+      tutorial: {
+        active: false,
+        currentStep: 0,
+        completedOnce: false,
+        reopenRequested: false,
+      },
+    }));
+
+    const { queryByTestId } = render(
+      <GameScreen route={{ params: { mode: 'multiplayer', matchId: 'match-1' } }} navigation={{ navigate: jest.fn() }} />
+    );
+
+    expect(queryByTestId('game-tutorial-button')).toBeNull();
   });
 
   test('host emits multiplayer bot moves through the websocket flow instead of local bot execution', async () => {

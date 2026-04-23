@@ -86,6 +86,7 @@ export default function GameScreen({ route, navigation }) {
   const disconnectedPlayerRef = useRef(disconnectedPlayer);
   const lastActivePlayerRef = useRef(activePlayer);
   const tutorialCaptureSetupDoneRef = useRef(false);
+  const tutorialWasActiveRef = useRef(false);
 
   // Memoize styles to avoid recreating on every render
   const styles = useMemo(() => createGameScreenStyles(theme), [theme]);
@@ -104,6 +105,8 @@ export default function GameScreen({ route, navigation }) {
     playerColors: routePlayerColors,
     botDifficulty: routeBotDifficulty,
   } = route.params || { mode: 'local', matchId: 1 };
+  const isTutorialEligibleMode = mode === 'bot' || mode === 'local';
+  const shouldAutoStartTutorial = mode === 'bot';
   const { connected, sendMessage, sendMatchCommand, requestFullSync } = useWebSocket();
   const multiplayerPlayerColors = useMemo(
     () => routePlayerColors || buildPlayerColorsFromPlayers(currentMatch?.users),
@@ -309,12 +312,25 @@ export default function GameScreen({ route, navigation }) {
   }, [blueSoldiers, dispatch, tutorialActive, tutorialStep]);
 
   useEffect(() => {
+    if (tutorialActive) {
+      tutorialWasActiveRef.current = true;
+    }
+  }, [tutorialActive]);
+
+  useEffect(() => {
     setGameIsStarted(true);
     setLoading(false);
   }, []);
 
   useEffect(() => {
     if (!gameIsStarted || tutorialActive) {
+      return undefined;
+    }
+
+    if (!isTutorialEligibleMode) {
+      if (tutorialReopenRequested) {
+        dispatch(clearTutorialReopen());
+      }
       return undefined;
     }
 
@@ -329,6 +345,10 @@ export default function GameScreen({ route, navigation }) {
     }
 
     if (tutorialCompletedOnce) {
+      return undefined;
+    }
+
+    if (!shouldAutoStartTutorial) {
       return undefined;
     }
 
@@ -363,10 +383,16 @@ export default function GameScreen({ route, navigation }) {
     tutorialActive,
     tutorialCompletedOnce,
     tutorialReopenRequested,
+    isTutorialEligibleMode,
+    shouldAutoStartTutorial,
     user?.id,
   ]);
 
   useEffect(() => {
+    if (!isTutorialEligibleMode) {
+      return;
+    }
+
     if (!tutorialCompletedOnce) {
       return;
     }
@@ -378,7 +404,23 @@ export default function GameScreen({ route, navigation }) {
     AsyncStorage.setItem(tutorialStorageKey, 'true').catch(() => {
       // Ignore persistence failure and keep gameplay responsive.
     });
-  }, [tutorialCompletedOnce, user?.id]);
+  }, [isTutorialEligibleMode, tutorialCompletedOnce, user?.id]);
+
+  useEffect(() => {
+    if (!isTutorialEligibleMode || tutorialActive || !tutorialCompletedOnce || !tutorialWasActiveRef.current) {
+      return;
+    }
+
+    tutorialWasActiveRef.current = false;
+    tutorialCaptureSetupDoneRef.current = false;
+    dispatch(resetGameState());
+    dispatch(resetAnimationState());
+    dispatch(setActivePlayerDirect('blue'));
+    dispatch(setCurrentPlayerColor('blue'));
+    dispatch(setPausedGame(false));
+    setWinnerDetected(false);
+    setShowWinnerModal(false);
+  }, [dispatch, isTutorialEligibleMode, tutorialActive, tutorialCompletedOnce]);
 
   useEffect(() => {
     if (mode === 'multiplayer' && multiplayerPlayerColors) {
@@ -629,16 +671,18 @@ export default function GameScreen({ route, navigation }) {
               </Text>
             </Pressable>
 
-            <Pressable
-              testID="game-tutorial-button"
-              style={styles.button}
-              onPress={() => dispatch(requestTutorialReopen())}
-            >
-              <MaterialIcons name="tips-and-updates" size={24} color={theme.colors.buttonText} />
-              <Text style={styles.buttonText}>
-                {uiStrings[systemLang].tutorialButton || 'Tutorial'}
-              </Text>
-            </Pressable>
+            {isTutorialEligibleMode ? (
+              <Pressable
+                testID="game-tutorial-button"
+                style={styles.button}
+                onPress={() => dispatch(requestTutorialReopen())}
+              >
+                <MaterialIcons name="tips-and-updates" size={24} color={theme.colors.buttonText} />
+                <Text style={styles.buttonText}>
+                  {uiStrings[systemLang].tutorialButton || 'Tutorial'}
+                </Text>
+              </Pressable>
+            ) : null}
           </View>
         </>
       ) : (
@@ -731,7 +775,7 @@ export default function GameScreen({ route, navigation }) {
       </Modal>
       {/* End Exit Confirmation Modal */}
       <TutorialGuide
-        visible={tutorialActive}
+        visible={isTutorialEligibleMode && tutorialActive}
         step={tutorialStep}
         onSkip={() => dispatch(skipTutorial())}
       />
