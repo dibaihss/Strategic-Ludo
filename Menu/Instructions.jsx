@@ -1,16 +1,15 @@
 import React, { useState, useMemo } from 'react'
-import { View, Text, Pressable, Modal, Image } from 'react-native';
+import { View, Text, Pressable, Modal, ScrollView } from 'react-native';
 import { useSelector } from 'react-redux';
-import { uiStrings } from '../assets/shared/hardCodedData.js';
+import { uiStrings, gameInstructions } from '../assets/shared/hardCodedData.js';
 import { createInstructionsStyles } from './Instructions.styles.js';
-
-const instructionsGif = require('../assets/gifs/win workflow.gif');
 
 export default function Instructions({ mode }) {
     const [showModal, setShowModal] = useState(process.env.EXPO_PUBLIC_E2E !== 'true');
     const systemLang = useSelector(state => state.language.systemLang);
     const theme = useSelector(state => state.theme.current);
     const styles = useMemo(() => createInstructionsStyles(theme), [theme]);
+    const localizedInstructions = gameInstructions[systemLang] || gameInstructions.en;
 
   return (
     <View>
@@ -22,14 +21,17 @@ export default function Instructions({ mode }) {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{uiStrings[systemLang].instructionsTitle || 'How To Play'}</Text>
+            <Text style={styles.modalTitle}>{localizedInstructions.title || uiStrings[systemLang].instructionsTitle || 'How To Play'}</Text>
             <View style={styles.mediaFrame}>
-              <Image
-                source={instructionsGif}
-                style={styles.instructionsGif}
-                resizeMode="contain"
-                accessibilityLabel="Game instructions animation"
-              />
+              <ScrollView
+                style={styles.instructionsScroll}
+                contentContainerStyle={styles.instructionsScrollContent}
+                showsVerticalScrollIndicator={true}
+              >
+                <Text style={styles.instructionsText}>
+                  {localizedInstructions.content}
+                </Text>
+              </ScrollView>
             </View>
             <Pressable
               style={styles.closeButton}
