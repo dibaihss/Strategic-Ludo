@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { Animated, Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSelector } from 'react-redux';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
 
@@ -104,9 +104,30 @@ export default function TutorialGuide({ visible, step, onSkip }) {
     const theme = useSelector((state) => state.theme.current);
     const systemLang = useSelector((state) => state.language.systemLang);
     const tutorialAnchorByStep = useSelector((state) => state.tutorial?.anchorByStep || {});
+    const targetPulse = useRef(new Animated.Value(1)).current;
     const { width, height } = Dimensions.get('window');
     const isSmallScreen = width < 375 || height < 667;
     const popupWidth = isSmallScreen ? width - 60 : Math.min(360, width - 60);
+
+    useEffect(() => {
+        const pulseLoop = Animated.loop(
+            Animated.sequence([
+                Animated.timing(targetPulse, {
+                    toValue: 0.06,
+                    duration: 800,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(targetPulse, {
+                    toValue: 1.5,
+                    duration: 1000,
+                    useNativeDriver: true,
+                }),
+            ])
+        );
+
+        pulseLoop.start();
+        return () => pulseLoop.stop();
+    }, [targetPulse]);
 
     const styles = useMemo(() => StyleSheet.create({
         overlay: {
@@ -254,7 +275,16 @@ export default function TutorialGuide({ visible, step, onSkip }) {
 
     return (
         <View style={styles.overlay} pointerEvents="box-none">
-            {showTargetRing ? <View style={[styles.targetRing, targetStyle]} pointerEvents="none" /> : null}
+            {showTargetRing ? (
+                <Animated.View
+                    style={[
+                        styles.targetRing,
+                        targetStyle,
+                        { transform: [{ scale: targetPulse }], opacity: targetPulse },
+                    ]}
+                    pointerEvents="none"
+                />
+            ) : null}
             <View style={[styles.popup, popupStyle]} testID={`tutorial-step-${safeStep + 1}`}>
                 <View style={styles.header}>
                     <Text style={styles.title}>{current.title}</Text>
