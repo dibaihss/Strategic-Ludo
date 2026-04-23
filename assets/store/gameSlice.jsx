@@ -170,7 +170,9 @@ const assignIfArray = (state, source, key, targetKey) => {
 
 export const checkIfGotEnemy = ({ color, position }) => (dispatch, getState) => {
 
-    const state = getState().game;
+    const rootState = getState();
+    const state = rootState.game;
+    const tutorialState = rootState.tutorial || {};
     let enemyInPosition;
 
     switch (color) {
@@ -194,12 +196,26 @@ export const checkIfGotEnemy = ({ color, position }) => (dispatch, getState) => 
 
     if (enemyInPosition && position && !isSafeZone(position)) {
         playSound('capture').catch(() => {});
-        dispatch(markTutorialAction({
+        const captureTutorialPayload = {
             type: 'capture',
             color: enemyInPosition.color,
             actorColor: color,
             position,
-        }));
+        };
+        const shouldDelayTutorialCompletion =
+            tutorialState.active
+            && tutorialState.currentStep === 4
+            && tutorialState.pendingCaptureWithThree
+            && color === 'blue'
+            && enemyInPosition.color === 'red';
+
+        if (shouldDelayTutorialCompletion) {
+            setTimeout(() => {
+                dispatch(markTutorialAction(captureTutorialPayload));
+            }, 1000);
+        } else {
+            dispatch(markTutorialAction(captureTutorialPayload));
+        }
         dispatch(setCurrentPlayer(enemyInPosition));
         dispatch(setBoxesPosition({ ySteps: 3, xSteps: 3, returenToBase: true, kickedPlayer: enemyInPosition }))
     } else {

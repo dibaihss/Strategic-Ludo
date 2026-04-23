@@ -10,6 +10,7 @@ export default function Timer() {
     const dispatch = useDispatch();
     const timeRemaining = useSelector(state => state.game.timeRemaining);
     const isTimerRunning = useSelector(state => state.game.isTimerRunning);
+    const tutorialActive = useSelector(state => state.tutorial?.active || false);
     const theme = useSelector(state => state.theme.current);
     const systemLang = useSelector(state => state.language.systemLang);
     const windowWidth = Dimensions.get('window').width;
@@ -48,9 +49,9 @@ export default function Timer() {
     });
 
     useEffect(() => {
-        dispatch(setTimerRunning(true));
+        dispatch(setTimerRunning(!tutorialActive));
         return () => dispatch(setTimerRunning(false));
-    }, []);
+    }, [dispatch, tutorialActive]);
 
     useEffect(() => {
         let timer;
