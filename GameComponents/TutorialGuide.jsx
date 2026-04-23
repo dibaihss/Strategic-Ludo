@@ -77,7 +77,7 @@ export default function TutorialGuide({ visible, step, onSkip }) {
     const targetPulse = useRef(new Animated.Value(1)).current;
     const { width, height } = Dimensions.get('window');
     const isSmallScreen = width < 375 || height < 667;
-    const popupWidth = isSmallScreen ? width - 60 : Math.min(360, width - 60);
+    const popupWidth = isSmallScreen ? width - 150 : Math.min(360, width - 60);
 
     useEffect(() => {
         const pulseLoop = Animated.loop(
@@ -171,7 +171,7 @@ export default function TutorialGuide({ visible, step, onSkip }) {
         },
         targetRing: {
             position: 'absolute',
-            borderWidth: 2,
+            borderWidth: 4,
             borderColor: theme.colors.accent || theme.colors.selected || '#ffd54f',
             borderRadius: 14,
             backgroundColor: 'transparent',

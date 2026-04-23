@@ -421,15 +421,8 @@ export default function GameScreen({ route, navigation }) {
     }
 
     tutorialWasActiveRef.current = false;
-    tutorialCaptureSetupDoneRef.current = false;
-    dispatch(resetGameState());
-    dispatch(resetAnimationState());
-    dispatch(setActivePlayerDirect('blue'));
-    dispatch(setCurrentPlayerColor('blue'));
-    dispatch(setPausedGame(false));
-    setWinnerDetected(false);
-    setShowWinnerModal(false);
-  }, [dispatch, isTutorialEligibleMode, tutorialActive, tutorialCompletedOnce]);
+    navigation.replace('Game', { mode, botDifficulty: routeBotDifficulty });
+  }, [isTutorialEligibleMode, tutorialActive, tutorialCompletedOnce, mode, routeBotDifficulty, navigation]);
 
   useEffect(() => {
     if (mode === 'multiplayer' && multiplayerPlayerColors) {
@@ -591,12 +584,18 @@ export default function GameScreen({ route, navigation }) {
         sendMoveUpdate({
           type: 'skipTurn'
         });
-      }
-    } else {
-      dispatch(setActivePlayer());
-      dispatch(resetTimer());
+      }}
+      
+      if(mode === 'local') {
+        dispatch(setActivePlayer());
+        dispatch(resetTimer());
+      } 
+       if(mode === 'bot' && activePlayer === 'blue') {
+        dispatch(setActivePlayer());
+        dispatch(resetTimer());
     }
-  }
+    
+    }
 
   const handleExitGame = () => {
     setShowExitModal(true);

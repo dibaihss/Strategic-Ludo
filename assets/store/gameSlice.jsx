@@ -212,7 +212,7 @@ export const checkIfGotEnemy = ({ color, position }) => (dispatch, getState) => 
         if (shouldDelayTutorialCompletion) {
             setTimeout(() => {
                 dispatch(markTutorialAction(captureTutorialPayload));
-            }, 1000);
+            }, 1500);
         } else {
             dispatch(markTutorialAction(captureTutorialPayload));
         }
