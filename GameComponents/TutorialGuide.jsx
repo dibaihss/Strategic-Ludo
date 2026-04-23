@@ -6,11 +6,6 @@ import { uiStrings } from '../assets/shared/hardCodedData.js';
 const getStepLayout = (step, isSmallScreen) => {
     if (step === 0) {
         return {
-            popup: {
-                top: isSmallScreen ? '36%' : '50%',
-                left: isSmallScreen ? 12 : 24,
-                right: isSmallScreen ? 12 : undefined,
-            },
             target: {
                 left: isSmallScreen ? 44 : 86,
                 top: isSmallScreen ? '58%' : '56%',
@@ -22,11 +17,6 @@ const getStepLayout = (step, isSmallScreen) => {
 
     if (step === 1) {
         return {
-            popup: {
-                top: isSmallScreen ? 177 : 501,
-                left: isSmallScreen ? 14 : undefined,
-                right: isSmallScreen ? 14 : 800,
-            },
             target: {
                 right: isSmallScreen ? 18 : 44,
                 top: isSmallScreen ? 38 : 72,
@@ -38,11 +28,6 @@ const getStepLayout = (step, isSmallScreen) => {
 
     if (step === 2) {
         return {
-            popup: {
-                top: isSmallScreen ? '36%' : 501,
-                left: isSmallScreen ? 14 : undefined,
-                right: isSmallScreen ? 14 : 800,
-            },
             target: {
                 right: isSmallScreen ? 104 : 140,
                 top: isSmallScreen ? '38%' : '33%',
@@ -54,11 +39,6 @@ const getStepLayout = (step, isSmallScreen) => {
 
     if (step === 3) {
         return {
-            popup: {
-               top: isSmallScreen ? '54%' : '50%',
-                left: isSmallScreen ? 14 : undefined,
-                right: isSmallScreen ? 14 : 28,
-            },
             target: {
                 right: isSmallScreen ? 16 : 40,
                 top: isSmallScreen ? 124 : 166,
@@ -70,11 +50,6 @@ const getStepLayout = (step, isSmallScreen) => {
 
     if (step === 4) {
         return {
-            popup: {
-                top: isSmallScreen ? '48%' : '50%',
-                left: isSmallScreen ? 14 : undefined,
-                right: isSmallScreen ? 14 : 28,
-            },
             target: {
                 right: isSmallScreen ? 18 : 44,
                 top: isSmallScreen ? 38 : 72,
@@ -85,11 +60,6 @@ const getStepLayout = (step, isSmallScreen) => {
     }
 
     return {
-        popup: {
-            bottom: isSmallScreen ? 84 : 104,
-            left: isSmallScreen ? 14 : undefined,
-            right: isSmallScreen ? 14 : 40,
-        },
         target: {
             bottom: isSmallScreen ? 34 : 44,
             left: isSmallScreen ? 22 : undefined,
@@ -113,13 +83,13 @@ export default function TutorialGuide({ visible, step, onSkip }) {
         const pulseLoop = Animated.loop(
             Animated.sequence([
                 Animated.timing(targetPulse, {
-                    toValue: 0.06,
-                    duration: 800,
+                    toValue: 1.06,
+                    duration: 900,
                     useNativeDriver: true,
                 }),
                 Animated.timing(targetPulse, {
-                    toValue: 1.5,
-                    duration: 1000,
+                    toValue: 1,
+                    duration: 900,
                     useNativeDriver: true,
                 }),
             ])

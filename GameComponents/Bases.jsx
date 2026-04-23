@@ -1,5 +1,5 @@
 import { View, Pressable, Text, StyleSheet, Dimensions } from "react-native";
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import Soldier from './Soldier';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -58,6 +58,7 @@ export default function Bases() {
     const isSmallScreen = windowWidth < 375 || windowHeight < 667;
 
     const movePendingRef = useRef(false);
+    const [isCardActionPending, setIsCardActionPending] = useState(false);
     const disconnectedPlayerRef = useRef(disconnectedPlayer);
     const blueCardSixRef = useRef(null);
     const blueCardThreeRef = useRef(null);
@@ -330,6 +331,12 @@ export default function Bases() {
         return () => cancelAnimationFrame(frame);
     }, [reportBlueEnterSoldierAnchor, windowWidth, windowHeight]);
 
+    useEffect(() => {
+        if (!showClone) {
+            setIsCardActionPending(false);
+        }
+    }, [showClone]);
+
 
 
     const handleUserDisconnected = (data) => {
@@ -381,15 +388,26 @@ export default function Bases() {
                 visibilityTime: 2000,
             });
         }
+        return result;
     };
 
     // ─── Multiplayer move with acknowledgement ────────────────────────────
     const movePlayerHanlder = useCallback(async (color, steps) => {
+        if (isCardActionPending) {
+            return;
+        }
+
         if (!connected) {
+            setIsCardActionPending(true);
+
             if (Number(steps) === 6 || Number(steps) === 3) {
                 dispatch(markTutorialAction({ type: 'card_played', value: steps, color }));
             }
-            movePlayer(color, steps);
+
+            const result = movePlayer(color, steps);
+            if (result?.error) {
+                setIsCardActionPending(false);
+            }
             return;
         }
 
@@ -409,6 +427,7 @@ export default function Bases() {
         }
 
         movePendingRef.current = true;
+        setIsCardActionPending(true);
 
         try {
             const response = await sendMatchCommand({
@@ -464,8 +483,9 @@ export default function Bases() {
         } finally {
             // ✅ Always release the lock
             movePendingRef.current = false;
+            setIsCardActionPending(false);
         }
-    }, [connected, user?.id, sendMatchCommand, requestFullSync, dispatch]);
+    }, [connected, isCardActionPending, user?.id, sendMatchCommand, requestFullSync, dispatch]);
 
     // ─── Multiplayer enter soldier with acknowledgement ───────────────────
     const enterNewSoldierHandler = useCallback(async (color) => {
@@ -598,7 +618,7 @@ export default function Bases() {
                                     testID={`move-card-${color}-${card.value}`}
                                     onLayout={getTutorialCardLayoutHandler(color, Number(card.value))}
                                     ref={getTutorialCardRef(color, Number(card.value))}
-                                    disabled={card.used}
+                                    disabled={card.used || isCardActionPending}
                                     style={getCardButtonStyle(color, i, card.used)}
                                     onPress={() => movePlayerHanlder(color, card.value)}
                                 >
