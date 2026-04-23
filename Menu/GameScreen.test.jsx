@@ -12,7 +12,7 @@ import { startTutorial } from '../assets/store/tutorialSlice.jsx';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
-  setItem: jest.fn(),
+  setItem: jest.fn(() => Promise.resolve()),
   getItem: jest.fn(),
   removeItem: jest.fn(),
   clear: jest.fn(),
@@ -341,6 +341,76 @@ describe('GameScreen', () => {
     expect(dispatchMock).toHaveBeenCalledWith(startTutorial());
   });
 
+  test('forceTutorial route param starts tutorial even when completion is already true', async () => {
+    AsyncStorage.getItem.mockResolvedValue('true');
+
+    configureSelectors(createState({
+      tutorial: {
+        active: false,
+        currentStep: 0,
+        completedOnce: true,
+        reopenRequested: false,
+      },
+    }));
+
+    render(
+      <GameScreen
+        route={{ params: { mode: 'bot', matchId: 1, botDifficulty: 'normal', forceTutorial: true } }}
+        navigation={{ navigate: jest.fn() }}
+      />
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(dispatchMock).toHaveBeenCalledWith(startTutorial());
+  });
+
+  test('forceTutorial route param is consumed so tutorial does not restart on rerender', async () => {
+    configureSelectors(createState({
+      tutorial: {
+        active: false,
+        currentStep: 0,
+        completedOnce: false,
+        reopenRequested: false,
+      },
+    }));
+
+    const { rerender } = render(
+      <GameScreen
+        route={{ params: { mode: 'bot', matchId: 1, botDifficulty: 'normal', forceTutorial: true } }}
+        navigation={{ navigate: jest.fn() }}
+      />
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const tutorialDispatchCountAfterFirstRender = dispatchMock.mock.calls.filter(
+      ([action]) => action?.type === startTutorial().type
+    ).length;
+
+    rerender(
+      <GameScreen
+        route={{ params: { mode: 'bot', matchId: 1, botDifficulty: 'normal', forceTutorial: true } }}
+        navigation={{ navigate: jest.fn() }}
+      />
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const tutorialDispatchCountAfterRerender = dispatchMock.mock.calls.filter(
+      ([action]) => action?.type === startTutorial().type
+    ).length;
+
+    expect(tutorialDispatchCountAfterFirstRender).toBe(1);
+    expect(tutorialDispatchCountAfterRerender).toBe(1);
+  });
+
   test('does not auto-start tutorial in local mode', async () => {
     configureSelectors(createState({
       tutorial: {
@@ -360,7 +430,7 @@ describe('GameScreen', () => {
     expect(dispatchMock).not.toHaveBeenCalledWith(startTutorial());
   });
 
-  test('hides tutorial button in multiplayer mode', () => {
+  test('does not render tutorial button on game screen', () => {
     configureSelectors(createState({
       tutorial: {
         active: false,
@@ -371,7 +441,7 @@ describe('GameScreen', () => {
     }));
 
     const { queryByTestId } = render(
-      <GameScreen route={{ params: { mode: 'multiplayer', matchId: 'match-1' } }} navigation={{ navigate: jest.fn() }} />
+      <GameScreen route={{ params: { mode: 'bot', matchId: 'match-1' } }} navigation={{ navigate: jest.fn() }} />
     );
 
     expect(queryByTestId('game-tutorial-button')).toBeNull();

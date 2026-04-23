@@ -61,6 +61,20 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
+  const handleStartTutorial = async () => {
+    await AsyncStorage.setItem('REDIRECT_TO_GAME', 'true');
+    await AsyncStorage.setItem('REDIRECT_GAME_MODE', 'bot');
+    await AsyncStorage.setItem('REDIRECT_BOT_DIFFICULTY', 'normal');
+    await AsyncStorage.setItem('REDIRECT_FORCE_TUTORIAL', 'true');
+    await AsyncStorage.setItem('REDIRECT_ISLOGGED_IN', isLoggedIn.toString());
+
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    } else {
+      navigation.navigate('Game', { mode: 'bot', botDifficulty: 'normal', forceTutorial: true });
+    }
+  };
+
   const handleStartMultiplayerGame = () => {
     if (!isLoggedIn) {
       setShowLoginPrompt(true);
@@ -95,6 +109,7 @@ export default function HomeScreen({ navigation }) {
     <HomePage
       onStartMultiplayerGame={handleStartMultiplayerGame}
       onStartOffline={handleStartOffline}
+      onStartTutorial={handleStartTutorial}
       showOfflineOptions={showOfflineOptions}
       onChooseOfflineMode={handleChooseOfflineMode}
       onCancelOfflineChoice={handleCancelOfflineChoice}

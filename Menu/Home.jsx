@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import PropTypes from 'prop-types';
 import {
+  Animated,
   View,
   Text,
   Pressable,
@@ -18,6 +19,7 @@ import { createHomeStyles } from './Home.styles.js';
 const HomePage = ({
   onStartMultiplayerGame,
   onStartOffline,
+  onStartTutorial,
   showOfflineOptions,
   onChooseOfflineMode,
   onCancelOfflineChoice,
@@ -132,6 +134,27 @@ const HomePage = ({
   }, [height, width]);
 
   const styles = useMemo(() => createHomeStyles(theme, layout), [theme, layout]);
+  const tutorialPulse = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const pulseLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(tutorialPulse, {
+          toValue: 1.06,
+          duration: 900,
+          useNativeDriver: true,
+        }),
+        Animated.timing(tutorialPulse, {
+          toValue: 1,
+          duration: 900,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    pulseLoop.start();
+    return () => pulseLoop.stop();
+  }, [tutorialPulse]);
 
   const handleLogout = () => {
     onLogout();
@@ -222,6 +245,19 @@ const HomePage = ({
 
       {/* Game Mode Buttons */}
       <View style={styles.buttonsContainer}>
+        <Animated.View style={{ transform: [{ scale: tutorialPulse }], opacity: tutorialPulse }}>
+          <Pressable
+            testID="home-play-tutorial-button"
+            style={[styles.button, styles.buttonTutorial]}
+            onPress={onStartTutorial}
+          >
+            <MaterialIcons name="tips-and-updates" size={28} color={theme.colors.buttonText} />
+            <Text style={[styles.buttonText, styles.buttonTextPrimary]}>
+              {uiStrings[systemLang].playTutorial || 'Play Tutorial'}
+            </Text>
+          </Pressable>
+        </Animated.View>
+
         <Pressable
           testID="home-play-offline-button"
           style={[styles.button, styles.buttonPrimary]}
@@ -378,6 +414,7 @@ const HomePage = ({
 HomePage.propTypes = {
   onStartMultiplayerGame: PropTypes.func.isRequired,
   onStartOffline: PropTypes.func.isRequired,
+  onStartTutorial: PropTypes.func.isRequired,
   showOfflineOptions: PropTypes.bool.isRequired,
   onChooseOfflineMode: PropTypes.func.isRequired,
   onCancelOfflineChoice: PropTypes.func.isRequired,

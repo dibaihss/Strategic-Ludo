@@ -30,6 +30,7 @@ function RootNavigation() {
         if (redirectFlag === 'true') {
           const mode = await AsyncStorage.getItem('REDIRECT_GAME_MODE');
           const botDifficulty = await AsyncStorage.getItem('REDIRECT_BOT_DIFFICULTY');
+          const forceTutorial = await AsyncStorage.getItem('REDIRECT_FORCE_TUTORIAL');
           const isLoggedINLocalStorage = await AsyncStorage.getItem('REDIRECT_ISLOGGED_IN');
     
           if(isLoggedINLocalStorage === "true") await dispatch(loadStoredUser()).unwrap();
@@ -45,10 +46,12 @@ function RootNavigation() {
 
           const params = { mode };
           if (botDifficulty) params.botDifficulty = botDifficulty;
+          if (forceTutorial === 'true') params.forceTutorial = true;
 
           await AsyncStorage.removeItem('REDIRECT_TO_GAME');
           await AsyncStorage.removeItem('REDIRECT_GAME_MODE');
           await AsyncStorage.removeItem('REDIRECT_BOT_DIFFICULTY');
+          await AsyncStorage.removeItem('REDIRECT_FORCE_TUTORIAL');
           await AsyncStorage.removeItem('REDIRECT_MATCH_DATA');
 
           // Game is a root-level screen in both AppNavigator and OfflineNavigator

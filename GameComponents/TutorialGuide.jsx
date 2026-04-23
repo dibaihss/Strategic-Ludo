@@ -115,7 +115,7 @@ export default function TutorialGuide({ visible, step, onSkip }) {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.38)',
+            backgroundColor: "transparent",
             justifyContent: 'flex-start',
             alignItems: 'flex-start',
         },
@@ -239,12 +239,8 @@ export default function TutorialGuide({ visible, step, onSkip }) {
     }, [dynamicAnchor, layout.target, safeStep]);
 
     const popupStyle = useMemo(() => {
-        if (safeStep !== 0 || !dynamicAnchor) {
-            return layout.popup;
-        }
-
-        const top = Math.min(height - (isSmallScreen ? 166 : 300), dynamicAnchor.y + dynamicAnchor.height + 12);
-        const left = Math.max(12, Math.min(width - popupWidth - 12, dynamicAnchor.x - (popupWidth * 0.25)));
+        const top = isSmallScreen ? 200 : 170;
+        const left = Math.max(12, Math.floor((width - popupWidth) / 2));
 
         return {
             top,
@@ -252,7 +248,7 @@ export default function TutorialGuide({ visible, step, onSkip }) {
             right: undefined,
             bottom: undefined,
         };
-    }, [dynamicAnchor, height, isSmallScreen, layout.popup, popupWidth, safeStep, width]);
+    }, [isSmallScreen, popupWidth, width]);
 
     if (!visible) return null;
 
