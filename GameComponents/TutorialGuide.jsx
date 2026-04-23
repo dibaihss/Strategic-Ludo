@@ -77,7 +77,7 @@ export default function TutorialGuide({ visible, step, onSkip }) {
     const targetPulse = useRef(new Animated.Value(1)).current;
     const { width, height } = Dimensions.get('window');
     const isSmallScreen = width < 375 || height < 667;
-    const popupWidth = isSmallScreen ? width - 150 : Math.min(360, width - 60);
+    const popupWidth = isSmallScreen ? width - 220 : Math.min(360, width - 60) - 20;
 
     useEffect(() => {
         const pulseLoop = Animated.loop(
@@ -140,20 +140,20 @@ export default function TutorialGuide({ visible, step, onSkip }) {
             paddingRight: 8,
         },
         stepBadge: {
-            fontSize: 11,
+            fontSize: 9,
             fontWeight: '700',
             color: theme.colors.textSecondary,
         },
         body: {
             color: theme.colors.text,
-            fontSize: isSmallScreen ? 13 : 14,
-            lineHeight: isSmallScreen ? 18 : 20,
+            fontSize: isSmallScreen ? 9 : 14,
+            lineHeight: isSmallScreen ? 12 : 20,
             marginBottom: 12,
         },
         hint: {
             color: theme.colors.textSecondary,
-            fontSize: 12,
-            marginBottom: 12,
+            fontSize: 9,
+            marginBottom: 9,
         },
         skipButton: {
             alignSelf: 'flex-end',
@@ -188,8 +188,7 @@ export default function TutorialGuide({ visible, step, onSkip }) {
         },
         {
             title: texts.tutorialStep2Title || 'Play card value 6',
-            body: texts.tutorialStep2Body || 'When you click card 6, the selected piece moves 6 steps forward on the board.',
-            hint: texts.tutorialStep2Hint || 'Try pressing a card with value 6 now.',
+            body: texts.tutorialStep2Body || 'When you click card 6, the selected piece moves 6 steps forward on the board.'
         },
         {
             title: texts.tutorialStep5Title || 'Wait for your turn',
@@ -204,7 +203,6 @@ export default function TutorialGuide({ visible, step, onSkip }) {
         {
             title: texts.tutorialStep6Title || 'Capture the red soldier',
             body: texts.tutorialStep6Body || 'Click on 3 to capture the red soldier.',
-            hint: texts.tutorialStep6Hint || 'Use card 3 to land on the red soldier and capture it.',
         },
     ];
 
@@ -230,8 +228,8 @@ export default function TutorialGuide({ visible, step, onSkip }) {
     }, [dynamicAnchor, layout.target, safeStep]);
 
     const popupStyle = useMemo(() => {
-        const top = isSmallScreen ? 200 : 170;
-        const left = Math.max(12, Math.floor((width - popupWidth) / 2));
+        const top = isSmallScreen ? 400 : 532;
+        const left = isSmallScreen ? Math.max(12, Math.floor((width - popupWidth) / 16)) : Math.max(12, Math.floor((width - popupWidth) / 8));
 
         return {
             top,
