@@ -68,6 +68,22 @@ const getStepLayout = (step, isSmallScreen) => {
         };
     }
 
+    if (step === 4) {
+        return {
+            popup: {
+                top: isSmallScreen ? '48%' : '50%',
+                left: isSmallScreen ? 14 : undefined,
+                right: isSmallScreen ? 14 : 28,
+            },
+            target: {
+                right: isSmallScreen ? 18 : 44,
+                top: isSmallScreen ? 38 : 72,
+                width: isSmallScreen ? 48 : 62,
+                height: isSmallScreen ? 64 : 78,
+            },
+        };
+    }
+
     return {
         popup: {
             bottom: isSmallScreen ? 84 : 104,
@@ -192,6 +208,12 @@ export default function TutorialGuide({ visible, step, onSkip }) {
         {
             title: texts.tutorialStep3Title || 'Enter a new soldier',
             body: texts.tutorialStep3Body || 'Use this control to enter a new soldier from your base.',
+            hint: texts.tutorialStep3Hint || 'This helps you put more pieces into play.',
+        },
+        {
+            title: texts.tutorialStep6Title || 'Capture the red soldier',
+            body: texts.tutorialStep6Body || 'Click on 3 to capture the red soldier.',
+            hint: texts.tutorialStep6Hint || 'Use card 3 to land on the red soldier and capture it.',
         },
     ];
 
@@ -202,11 +224,11 @@ export default function TutorialGuide({ visible, step, onSkip }) {
     const showTargetRing = safeStep !== 2;
 
     const targetStyle = useMemo(() => {
-        if ((safeStep !== 0 && safeStep !== 1 && safeStep !== 3) || !dynamicAnchor) {
+        if ((safeStep !== 0 && safeStep !== 1 && safeStep !== 3 && safeStep !== 4) || !dynamicAnchor) {
             return layout.target;
         }
 
-        const highlightPadding = safeStep === 1 || safeStep === 3 ? 6 : 8;
+        const highlightPadding = safeStep === 1 || safeStep === 3 || safeStep === 4 ? 6 : 8;
         return {
             left: dynamicAnchor.x - highlightPadding,
             top: dynamicAnchor.y - highlightPadding,
@@ -240,7 +262,7 @@ export default function TutorialGuide({ visible, step, onSkip }) {
             <View style={[styles.popup, popupStyle]} testID={`tutorial-step-${safeStep + 1}`}>
                 <View style={styles.header}>
                     <Text style={styles.title}>{current.title}</Text>
-                    <Text style={styles.stepBadge}>{safeStep + 1}/4</Text>
+                    <Text style={styles.stepBadge}>{safeStep + 1}/5</Text>
                 </View>
                 <Text style={styles.body}>{current.body}</Text>
                 <Text style={styles.hint}>{current.hint}</Text>

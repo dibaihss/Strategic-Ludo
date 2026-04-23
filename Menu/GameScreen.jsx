@@ -7,7 +7,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useDispatch, useSelector } from 'react-redux';
 import { View, Text, Pressable, ActivityIndicator, Modal, Animated, AppState } from 'react-native';
-import { setActivePlayer, resetTimer, setIsOnline, resetGameState, setCurrentPlayerColor, setPlayerColors, setPausedGame } from '../assets/store/gameSlice.jsx';
+import { setActivePlayer, setActivePlayerDirect, setCurrentPlayer, moveSoldier, resetTimer, setIsOnline, resetGameState, setCurrentPlayerColor, setPlayerColors, setPausedGame } from '../assets/store/gameSlice.jsx';
 import { resetAnimationState } from '../assets/store/animationSlice.jsx';
 import { uiStrings, getLocalizedColor } from '../assets/shared/hardCodedData.js';
 
@@ -85,6 +85,7 @@ export default function GameScreen({ route, navigation }) {
   const presenceStateRef = useRef(isAppStateActive(AppState.currentState) ? 'active' : 'inactive');
   const disconnectedPlayerRef = useRef(disconnectedPlayer);
   const lastActivePlayerRef = useRef(activePlayer);
+  const tutorialCaptureSetupDoneRef = useRef(false);
 
   // Memoize styles to avoid recreating on every render
   const styles = useMemo(() => createGameScreenStyles(theme), [theme]);
@@ -280,6 +281,32 @@ export default function GameScreen({ route, navigation }) {
       lastActivePlayerRef.current = currentActivePlayer;
     }
   }, [activePlayer, dispatch]);
+
+  useEffect(() => {
+    if (!tutorialActive || tutorialStep !== 4) {
+      tutorialCaptureSetupDoneRef.current = false;
+      return;
+    }
+
+    if (tutorialCaptureSetupDoneRef.current) {
+      return;
+    }
+
+    tutorialCaptureSetupDoneRef.current = true;
+    dispatch(moveSoldier({ color: 'red', soldierID: 5, position: '4a', onBoard: true }));
+    dispatch(setActivePlayerDirect('blue'));
+
+    const selectedBlueSoldier =
+      blueSoldiers.find((soldier) => soldier.onBoard && !soldier.isOut && soldier.position === '1a')
+      || blueSoldiers.find((soldier) => soldier.onBoard && !soldier.isOut)
+      || null;
+
+    if (selectedBlueSoldier) {
+      dispatch(setCurrentPlayer(selectedBlueSoldier));
+    }
+
+    dispatch(resetTimer());
+  }, [blueSoldiers, dispatch, tutorialActive, tutorialStep]);
 
   useEffect(() => {
     setGameIsStarted(true);

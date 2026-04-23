@@ -192,6 +192,9 @@ const uiStrings = {
         tutorialStep5Title: 'Wait for your turn',
         tutorialStep5Body: 'Wait until your turn comes back to blue.',
         tutorialStep5Hint: 'When blue is active again, continue to step 4.',
+        tutorialStep6Title: 'Capture the red soldier',
+        tutorialStep6Body: 'Click on 3 to capture the red soldier.',
+        tutorialStep6Hint: 'Use card 3 to land on the red soldier and capture it.',
         // --- New Exit Modal Strings ---
         exitGameTitle: 'Exit Game?',
         exitGameConfirm: 'Are you sure you want to leave the current game?',
@@ -296,6 +299,9 @@ const uiStrings = {
         tutorialStep5Title: 'تغيير الدور',
         tutorialStep5Body: 'بعد حركتك، ينتقل الدور إلى اللاعب التالي.',
         tutorialStep5Hint: 'أنهِ دورًا واحدًا لإكمال هذا الدليل.',
+        tutorialStep6Title: 'أمسك الجندي الأحمر',
+        tutorialStep6Body: 'اضغط على 3 لأسر الجندي الأحمر.',
+        tutorialStep6Hint: 'استخدم بطاقة 3 للوقوف على الجندي الأحمر وأسره.',
         // --- New Exit Modal Strings ---
         exitGameTitle: 'الخروج من اللعبة؟',
         exitGameConfirm: 'هل أنت متأكد أنك تريد مغادرة اللعبة الحالية؟',
@@ -400,6 +406,9 @@ const uiStrings = {
         tutorialStep5Title: 'Zugwechsel',
         tutorialStep5Body: 'Nach Ihrem Zug ist der nachste Spieler an der Reihe.',
         tutorialStep5Hint: 'Beenden Sie einen Zug, um das Tutorial abzuschließen.',
+        tutorialStep6Title: 'Rote Figur schlagen',
+        tutorialStep6Body: 'Klicken Sie auf 3, um die rote Figur zu schlagen.',
+        tutorialStep6Hint: 'Nutzen Sie Karte 3, um auf der roten Figur zu landen und sie zu schlagen.',
         // --- New Exit Modal Strings ---
         exitGameTitle: 'Spiel verlassen?',
         exitGameConfirm: 'Sind Sie sicher, dass Sie das aktuelle Spiel verlassen möchten?',

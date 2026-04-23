@@ -8,6 +8,7 @@ const initialState = {
   reopenRequested: false,
   anchorByStep: {},
   waitForBlueTurnReturn: false,
+  pendingCaptureWithThree: false,
 };
 
 const reduceTutorialAction = (state, action) => {
@@ -42,11 +43,29 @@ const reduceTutorialAction = (state, action) => {
   }
 
   if (state.currentStep === 3 && type === 'enter_soldier' && color === 'blue') {
+    state.currentStep = 4;
+    state.pendingCaptureWithThree = false;
+    return;
+  }
+
+  if (state.currentStep === 4 && type === 'card_played' && Number(value) === 3 && color === 'blue') {
+    state.pendingCaptureWithThree = true;
+    return;
+  }
+
+  if (
+    state.currentStep === 4
+    && type === 'capture'
+    && state.pendingCaptureWithThree
+    && color === 'red'
+    && action.payload?.actorColor === 'blue'
+  ) {
     state.active = false;
     state.completedOnce = true;
     state.dismissed = false;
     state.reopenRequested = false;
     state.waitForBlueTurnReturn = false;
+    state.pendingCaptureWithThree = false;
   }
 };
 
@@ -60,6 +79,7 @@ const tutorialSlice = createSlice({
       state.dismissed = false;
       state.reopenRequested = false;
       state.waitForBlueTurnReturn = false;
+      state.pendingCaptureWithThree = false;
     },
     skipTutorial: (state) => {
       state.active = false;
@@ -67,6 +87,7 @@ const tutorialSlice = createSlice({
       state.dismissed = true;
       state.reopenRequested = false;
       state.waitForBlueTurnReturn = false;
+      state.pendingCaptureWithThree = false;
     },
     completeTutorial: (state) => {
       state.active = false;
@@ -74,6 +95,7 @@ const tutorialSlice = createSlice({
       state.dismissed = false;
       state.reopenRequested = false;
       state.waitForBlueTurnReturn = false;
+      state.pendingCaptureWithThree = false;
     },
     setCompletedOnce: (state, action) => {
       state.completedOnce = Boolean(action.payload);

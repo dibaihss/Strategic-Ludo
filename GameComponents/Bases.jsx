@@ -60,6 +60,7 @@ export default function Bases() {
     const movePendingRef = useRef(false);
     const disconnectedPlayerRef = useRef(disconnectedPlayer);
     const blueCardSixRef = useRef(null);
+    const blueCardThreeRef = useRef(null);
     const blueEnterSoldierRef = useRef(null);
 
     const getUserOwnedColors = useCallback((targetUserId) => {
@@ -118,6 +119,23 @@ export default function Bases() {
 
             dispatch(setTutorialAnchor({
                 step: 1,
+                anchor: { x, y, width, height },
+            }));
+        });
+    }, [dispatch]);
+
+    const reportBlueCardThreeAnchor = useCallback(() => {
+        if (!blueCardThreeRef.current?.measureInWindow) {
+            return;
+        }
+
+        blueCardThreeRef.current.measureInWindow((x, y, width, height) => {
+            if (![x, y, width, height].every(Number.isFinite)) {
+                return;
+            }
+
+            dispatch(setTutorialAnchor({
+                step: 4,
                 anchor: { x, y, width, height },
             }));
         });
@@ -303,6 +321,11 @@ export default function Bases() {
     }, [reportBlueCardSixAnchor, windowWidth, windowHeight, blueCards]);
 
     useEffect(() => {
+        const frame = requestAnimationFrame(() => reportBlueCardThreeAnchor());
+        return () => cancelAnimationFrame(frame);
+    }, [reportBlueCardThreeAnchor, windowWidth, windowHeight, blueCards]);
+
+    useEffect(() => {
         const frame = requestAnimationFrame(() => reportBlueEnterSoldierAnchor());
         return () => cancelAnimationFrame(frame);
     }, [reportBlueEnterSoldierAnchor, windowWidth, windowHeight]);
@@ -363,8 +386,8 @@ export default function Bases() {
     // ─── Multiplayer move with acknowledgement ────────────────────────────
     const movePlayerHanlder = useCallback(async (color, steps) => {
         if (!connected) {
-            if (Number(steps) === 6) {
-                dispatch(markTutorialAction({ type: 'card_played', value: steps }));
+            if (Number(steps) === 6 || Number(steps) === 3) {
+                dispatch(markTutorialAction({ type: 'card_played', value: steps, color }));
             }
             movePlayer(color, steps);
             return;
@@ -375,8 +398,8 @@ export default function Bases() {
 
         if (!canControlColor(currentPlayerColorRef.current, color, activePlayerRef.current)) return;
 
-        if (Number(steps) === 6) {
-            dispatch(markTutorialAction({ type: 'card_played', value: steps }));
+        if (Number(steps) === 6 || Number(steps) === 3) {
+            dispatch(markTutorialAction({ type: 'card_played', value: steps, color }));
         }
 
         // ✅ Prevent double-tap / double submit
@@ -530,6 +553,20 @@ export default function Bases() {
         color === "green" && { transform: [{ rotate: '180deg' }] },
     ]);
 
+    const getTutorialCardRef = (color, cardValue) => {
+        if (color !== 'blue') return undefined;
+        if (cardValue === 6) return blueCardSixRef;
+        if (cardValue === 3) return blueCardThreeRef;
+        return undefined;
+    };
+
+    const getTutorialCardLayoutHandler = (color, cardValue) => {
+        if (color !== 'blue') return undefined;
+        if (cardValue === 6) return reportBlueCardSixAnchor;
+        if (cardValue === 3) return reportBlueCardThreeAnchor;
+        return undefined;
+    };
+
     const renderInCirclePlayers = (j, playerType, i) => (
         <>
             {[
@@ -559,8 +596,8 @@ export default function Bases() {
                                 <Pressable
                                     key={card.id}
                                     testID={`move-card-${color}-${card.value}`}
-                                    ref={color === 'blue' && Number(card.value) === 6 ? blueCardSixRef : undefined}
-                                    onLayout={color === 'blue' && Number(card.value) === 6 ? reportBlueCardSixAnchor : undefined}
+                                    onLayout={getTutorialCardLayoutHandler(color, Number(card.value))}
+                                    ref={getTutorialCardRef(color, Number(card.value))}
                                     disabled={card.used}
                                     style={getCardButtonStyle(color, i, card.used)}
                                     onPress={() => movePlayerHanlder(color, card.value)}
