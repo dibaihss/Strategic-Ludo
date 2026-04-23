@@ -96,11 +96,7 @@ export default function Bases() {
         }
 
         const pausedPlayer = disconnectedPlayerRef.current;
-        if (pausedPlayer?.status !== 'inactive') {
-            return;
-        }
-
-        if (String(pausedPlayer.userId) !== String(data.userId)) {
+        if (!pausedPlayer || String(pausedPlayer.userId) !== String(data.userId)) {
             return;
         }
 
