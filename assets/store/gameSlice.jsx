@@ -5,10 +5,11 @@ import { startingPositions, isSafeZone } from "../shared/hardCodedData.js";
 import { setBoxesPosition } from './animationSlice.jsx'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { playSound } from '../shared/audioManager';
+import { markTutorialAction } from './tutorialSlice.jsx';
 
 const initialState = {
-    currentPlayer: "blue",
-    activePlayer: "blue",
+    currentPlayer: "yellow",
+    activePlayer: "yellow",
     stateVersion: 0,
     isOnline: false,
     timeRemaining: 35,
@@ -23,7 +24,7 @@ const initialState = {
         yellow: 1,
         green: 1
     },
-    currentPlayerColor: "blue",
+    currentPlayerColor: "yellow",
     blueSoldiers: [
         { id: 1, position: '1a', color: "blue", initialPosition: '1blue', onBoard: true, isOut: false },
         { id: 2, position: '2blue', color: "blue", initialPosition: '2blue', onBoard: false, isOut: false },
@@ -169,7 +170,9 @@ const assignIfArray = (state, source, key, targetKey) => {
 
 export const checkIfGotEnemy = ({ color, position }) => (dispatch, getState) => {
 
-    const state = getState().game;
+    const rootState = getState();
+    const state = rootState.game;
+    const tutorialState = rootState.tutorial || {};
     let enemyInPosition;
 
     switch (color) {
@@ -193,6 +196,26 @@ export const checkIfGotEnemy = ({ color, position }) => (dispatch, getState) => 
 
     if (enemyInPosition && position && !isSafeZone(position)) {
         playSound('capture').catch(() => {});
+        const captureTutorialPayload = {
+            type: 'capture',
+            color: enemyInPosition.color,
+            actorColor: color,
+            position,
+        };
+        const shouldDelayTutorialCompletion =
+            tutorialState.active
+            && tutorialState.currentStep === 4
+            && tutorialState.pendingCaptureWithThree
+            && color === 'blue'
+            && enemyInPosition.color === 'red';
+
+        if (shouldDelayTutorialCompletion) {
+            setTimeout(() => {
+                dispatch(markTutorialAction(captureTutorialPayload));
+            }, 1000);
+        } else {
+            dispatch(markTutorialAction(captureTutorialPayload));
+        }
         dispatch(setCurrentPlayer(enemyInPosition));
         dispatch(setBoxesPosition({ ySteps: 3, xSteps: 3, returenToBase: true, kickedPlayer: enemyInPosition }))
     } else {
@@ -322,6 +345,26 @@ export const gameSlice = createSlice({
             }[newActivePlayer];
  
             const firstAvailableSoldier = soldiers.find(soldier => !soldier.isOut && soldier.onBoard);
+            if (firstAvailableSoldier) {
+                state.currentPlayer = firstAvailableSoldier;
+            }
+        },
+        setActivePlayerDirect: (state, action) => {
+            const requestedPlayer = action.payload;
+            if (!COLOR_KEYS.includes(requestedPlayer) || !isSnapshotColorActive(state, requestedPlayer)) {
+                return;
+            }
+
+            state.activePlayer = requestedPlayer;
+
+            const soldiers = {
+                blue: state.blueSoldiers,
+                red: state.redSoldiers,
+                yellow: state.yellowSoldiers,
+                green: state.greenSoldiers,
+            }[requestedPlayer] || [];
+
+            const firstAvailableSoldier = soldiers.find((soldier) => !soldier.isOut && soldier.onBoard);
             if (firstAvailableSoldier) {
                 state.currentPlayer = firstAvailableSoldier;
             }

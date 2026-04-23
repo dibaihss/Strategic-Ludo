@@ -4,9 +4,10 @@ import Goals from '../GameComponents/Goals.jsx';
 import Bases from '../GameComponents/Bases.jsx';
 import Timer from '../GameComponents/Timer.jsx';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useDispatch, useSelector } from 'react-redux';
 import { View, Text, Pressable, ActivityIndicator, Modal, Animated, AppState } from 'react-native';
-import { setActivePlayer, resetTimer, setIsOnline, resetGameState, setCurrentPlayerColor, setPlayerColors, setPausedGame } from '../assets/store/gameSlice.jsx';
+import { setActivePlayer, setActivePlayerDirect, setCurrentPlayer, moveSoldier, resetTimer, setIsOnline, resetGameState, setCurrentPlayerColor, setPlayerColors, setPausedGame } from '../assets/store/gameSlice.jsx';
 import { resetAnimationState } from '../assets/store/animationSlice.jsx';
 import { uiStrings, getLocalizedColor } from '../assets/shared/hardCodedData.js';
 
@@ -16,9 +17,17 @@ import { fetchCurrentMatch, leaveMatch, updateMatch } from '../assets/store/sess
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { createGameScreenStyles } from './GameScreen.styles.js';
 import Instructions from './Instructions.jsx';
+import TutorialGuide from '../GameComponents/TutorialGuide.jsx';
 import { cancelPendingBotTurn, emitMultiplayerBotTurn, getBotDifficultyForTurn, isBotControlledPlayer, runBotTurn } from './botLogic.js';
 import { playSound } from '../assets/shared/audioManager';
 import DisconnectionOverlay from '../GameComponents/DisconnectionOverlay.jsx';
+import {
+  clearTutorialReopen,
+  markTutorialAction,
+  setCompletedOnce,
+  skipTutorial,
+  startTutorial,
+} from '../assets/store/tutorialSlice.jsx';
 import {
   buildPlayerColorsFromPlayers,
   getUserColorFromPlayerColors,
@@ -48,6 +57,16 @@ export default function GameScreen({ route, navigation }) {
   const yellowCards = useSelector(state => state.game.yellowCards);
   const greenCards = useSelector(state => state.game.greenCards);
   const showClone = useSelector(state => state.animation?.showClone || false);
+  const tutorialState = useSelector((state) => state.tutorial || {
+    active: false,
+    currentStep: 0,
+    completedOnce: false,
+    reopenRequested: false,
+  });
+  const tutorialActive = tutorialState.active;
+  const tutorialStep = tutorialState.currentStep;
+  const tutorialCompletedOnce = tutorialState.completedOnce;
+  const tutorialReopenRequested = tutorialState.reopenRequested;
 
   const [gameIsStarted, setGameIsStarted] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -64,12 +83,17 @@ export default function GameScreen({ route, navigation }) {
   const presencePauseRef = useRef(false);
   const presenceStateRef = useRef(isAppStateActive(AppState.currentState) ? 'active' : 'inactive');
   const disconnectedPlayerRef = useRef(disconnectedPlayer);
+  const lastActivePlayerRef = useRef(activePlayer);
+  const tutorialCaptureSetupDoneRef = useRef(false);
+  const tutorialWasActiveRef = useRef(false);
+  const forceTutorialStartConsumedRef = useRef(false);
 
   // Memoize styles to avoid recreating on every render
   const styles = useMemo(() => createGameScreenStyles(theme), [theme]);
 
    useEffect(() => {
     setTimeout(() => {
+      if(!currentMatch?.id && !connected) return;
      requestFullSync(currentMatch?.id);
     }, 1000);
 
@@ -80,7 +104,11 @@ export default function GameScreen({ route, navigation }) {
     mode,
     playerColors: routePlayerColors,
     botDifficulty: routeBotDifficulty,
+    forceTutorial: routeForceTutorial,
   } = route.params || { mode: 'local', matchId: 1 };
+  const isTutorialEligibleMode = mode === 'bot' || mode === 'local';
+  const shouldAutoStartTutorial = mode === 'bot';
+  const shouldForceTutorialStart = Boolean(routeForceTutorial);
   const { connected, sendMessage, sendMatchCommand, requestFullSync } = useWebSocket();
   const multiplayerPlayerColors = useMemo(
     () => routePlayerColors || buildPlayerColorsFromPlayers(currentMatch?.users),
@@ -252,9 +280,156 @@ export default function GameScreen({ route, navigation }) {
   }, [gamePaused, isAppActive]);
 
   useEffect(() => {
+    const currentActivePlayer = activePlayer;
+    if (lastActivePlayerRef.current !== currentActivePlayer) {
+      dispatch(markTutorialAction({ type: 'turn_changed', activePlayer: currentActivePlayer }));
+      lastActivePlayerRef.current = currentActivePlayer;
+    }
+  }, [activePlayer, dispatch]);
+
+  useEffect(() => {
+    if (!tutorialActive || tutorialStep !== 4) {
+      tutorialCaptureSetupDoneRef.current = false;
+      return;
+    }
+
+    if (tutorialCaptureSetupDoneRef.current) {
+      return;
+    }
+
+    tutorialCaptureSetupDoneRef.current = true;
+    dispatch(moveSoldier({ color: 'red', soldierID: 5, position: '4a', onBoard: true }));
+    dispatch(setActivePlayerDirect('blue'));
+
+    const selectedBlueSoldier =
+      blueSoldiers.find((soldier) => soldier.onBoard && !soldier.isOut && soldier.position === '1a')
+      || blueSoldiers.find((soldier) => soldier.onBoard && !soldier.isOut)
+      || null;
+
+    if (selectedBlueSoldier) {
+      dispatch(setCurrentPlayer(selectedBlueSoldier));
+    }
+
+    dispatch(resetTimer());
+  }, [blueSoldiers, dispatch, tutorialActive, tutorialStep]);
+
+  useEffect(() => {
+    if (tutorialActive) {
+      tutorialWasActiveRef.current = true;
+    }
+  }, [tutorialActive]);
+
+  useEffect(() => {
     setGameIsStarted(true);
     setLoading(false);
   }, []);
+
+  useEffect(() => {
+    if (!gameIsStarted || tutorialActive) {
+      return undefined;
+    }
+
+    if (!isTutorialEligibleMode) {
+      if (tutorialReopenRequested) {
+        dispatch(clearTutorialReopen());
+      }
+      return undefined;
+    }
+
+    const tutorialStorageKey = user?.id
+      ? `ludo_tutorial_completed_${user.id}`
+      : 'ludo_tutorial_completed_guest';
+
+    if (tutorialReopenRequested) {
+      dispatch(startTutorial());
+      dispatch(clearTutorialReopen());
+      return undefined;
+    }
+
+    if (shouldForceTutorialStart && !forceTutorialStartConsumedRef.current) {
+      forceTutorialStartConsumedRef.current = true;
+      dispatch(startTutorial());
+      return undefined;
+    }
+
+    if (tutorialCompletedOnce) {
+      return undefined;
+    }
+
+    if (!shouldAutoStartTutorial) {
+      return undefined;
+    }
+
+    let isCancelled = false;
+    const loadTutorialState = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(tutorialStorageKey);
+        if (isCancelled) return;
+
+        if (stored === 'true') {
+          dispatch(setCompletedOnce(true));
+          return;
+        }
+
+        dispatch(startTutorial());
+      } catch (error) {
+        if (!isCancelled) {
+          console.warn('Failed to load tutorial completion state:', error);
+          dispatch(startTutorial());
+        }
+      }
+    };
+
+    loadTutorialState();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [
+    dispatch,
+    gameIsStarted,
+    tutorialActive,
+    tutorialCompletedOnce,
+    tutorialReopenRequested,
+    isTutorialEligibleMode,
+    shouldForceTutorialStart,
+    shouldAutoStartTutorial,
+    user?.id,
+  ]);
+
+  useEffect(() => {
+    if (!isTutorialEligibleMode) {
+      return;
+    }
+
+    if (!tutorialCompletedOnce) {
+      return;
+    }
+
+    const tutorialStorageKey = user?.id
+      ? `ludo_tutorial_completed_${user.id}`
+      : 'ludo_tutorial_completed_guest';
+
+    AsyncStorage.setItem(tutorialStorageKey, 'true').catch(() => {
+      // Ignore persistence failure and keep gameplay responsive.
+    });
+  }, [isTutorialEligibleMode, tutorialCompletedOnce, user?.id]);
+
+  useEffect(() => {
+    if (!isTutorialEligibleMode || tutorialActive || !tutorialCompletedOnce || !tutorialWasActiveRef.current) {
+      return;
+    }
+
+    tutorialWasActiveRef.current = false;
+    tutorialCaptureSetupDoneRef.current = false;
+    dispatch(resetGameState());
+    dispatch(resetAnimationState());
+    dispatch(setActivePlayerDirect('blue'));
+    dispatch(setCurrentPlayerColor('blue'));
+    dispatch(setPausedGame(false));
+    setWinnerDetected(false);
+    setShowWinnerModal(false);
+  }, [dispatch, isTutorialEligibleMode, tutorialActive, tutorialCompletedOnce]);
 
   useEffect(() => {
     if (mode === 'multiplayer' && multiplayerPlayerColors) {
@@ -473,7 +648,7 @@ export default function GameScreen({ route, navigation }) {
 
   return (
     <View testID="game-screen" style={styles.container}>
-      <Instructions mode={mode} />
+      {!tutorialActive && <Instructions mode={mode} />}
       {gameIsStarted ? (
         <>
           <Timer />
@@ -595,6 +770,11 @@ export default function GameScreen({ route, navigation }) {
         </View>
       </Modal>
       {/* End Exit Confirmation Modal */}
+      <TutorialGuide
+        visible={isTutorialEligibleMode && tutorialActive}
+        step={tutorialStep}
+        onSkip={() => dispatch(skipTutorial())}
+      />
       <DisconnectionOverlay navigation={navigation} />
     </View>
   );

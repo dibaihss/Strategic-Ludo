@@ -29,6 +29,7 @@ describe('applyServerStateSnapshot after player removal', () => {
     }));
 
     const cleanedRedPositions = state.redSoldiers.map((soldier) => soldier.position);
+    const activePlayerBeforeSnapshot = state.activePlayer;
 
     state = reducer(state, applyServerStateSnapshot({
       activePlayer: 'red',
@@ -55,7 +56,7 @@ describe('applyServerStateSnapshot after player removal', () => {
       },
     }));
 
-    expect(state.activePlayer).toBe('blue');
+    expect(state.activePlayer).toBe(activePlayerBeforeSnapshot);
     expect(state.currentPlayer?.color).not.toBe('red');
     expect(state.redSoldiers.map((soldier) => soldier.position)).toEqual(cleanedRedPositions);
     expect(state.availableTypes).not.toContain('red');

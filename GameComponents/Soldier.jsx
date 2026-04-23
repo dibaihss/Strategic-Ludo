@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useCallback, useRef } from 'react';
 import PropTypes from 'prop-types';
 import {
     StyleSheet,
@@ -387,9 +387,10 @@ const runAnimationSequence = ({ animatedValue, sequence, dispatch, onComplete, i
     });
 };
 
-export default function Player({ color, isSelected, onPress, containerStyle, sizeVariant }) {
+export default function Player({ color, isSelected, isSelectedForTips, onTipLayout, onPress, containerStyle, sizeVariant }) {
     const animatedValue = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
     const pointerBounce = useRef(new Animated.Value(0)).current;
+    const pressableRef = useRef(null);
     const currentPlayer = useSelector(state => state.game.currentPlayer);
     const boxesPosition = useSelector(state => state.animation.boxesPosition);
     const showClone = useSelector(state => state.animation.showClone);
@@ -399,6 +400,25 @@ export default function Player({ color, isSelected, onPress, containerStyle, siz
     const windowHeight = Dimensions.get('window').height;
     const isSmallScreen = windowWidth < 375 || windowHeight < 667;
     const dispatch = useDispatch();
+    const effectiveSelected = isSelected || isSelectedForTips;
+
+    const reportTipLayout = useCallback(() => {
+        if (!isSelectedForTips || typeof onTipLayout !== 'function') {
+            return;
+        }
+
+        if (!pressableRef.current?.measureInWindow) {
+            return;
+        }
+
+        pressableRef.current.measureInWindow((x, y, width, height) => {
+            if (![x, y, width, height].every(Number.isFinite)) {
+                return;
+            }
+
+            onTipLayout({ x, y, width, height });
+        });
+    }, [isSelectedForTips, onTipLayout]);
 
     const styles = StyleSheet.create({
         clone: {
@@ -429,7 +449,7 @@ export default function Player({ color, isSelected, onPress, containerStyle, siz
     }, [boxesPosition]);
 
     React.useEffect(() => {
-        if (isSelected) {
+        if (effectiveSelected) {
             const bounce = Animated.loop(
                 Animated.sequence([
                     Animated.timing(pointerBounce, {
@@ -449,11 +469,20 @@ export default function Player({ color, isSelected, onPress, containerStyle, siz
         } else {
             pointerBounce.setValue(0);
         }
-    }, [isSelected, pointerBounce]);
+    }, [effectiveSelected, pointerBounce]);
+
+    React.useEffect(() => {
+        if (!isSelectedForTips) {
+            return;
+        }
+
+        const frame = requestAnimationFrame(() => reportTipLayout());
+        return () => cancelAnimationFrame(frame);
+    }, [isSelectedForTips, reportTipLayout, windowWidth, windowHeight]);
 
     const pointerStyle = React.useMemo(
-        () => createPointerStyle({ isSelected, isSmallScreen, theme, sizeVariant }),
-        [isSelected, isSmallScreen, sizeVariant, theme]
+        () => createPointerStyle({ isSelected: effectiveSelected, isSmallScreen, theme, sizeVariant }),
+        [effectiveSelected, isSmallScreen, sizeVariant, theme]
     );
 
     return (
@@ -462,17 +491,19 @@ export default function Player({ color, isSelected, onPress, containerStyle, siz
             top: animatedValue.y,
             left: animatedValue.x,
         }]} >
-            {isSelected && (
+            {effectiveSelected && (
                 <Animated.View style={[pointerStyle, { transform: [{ translateY: pointerBounce }] }]} />
             )}
             <Pressable
+                ref={pressableRef}
+                onLayout={reportTipLayout}
                 onPress={onPress}
                 android_ripple={isSmallScreen ? { color: 'rgba(255,255,255,0.3)', borderless: true } : null}
-                style={createPieceContainerStyle({ isSelected, isSmallScreen, theme, color, sizeVariant })}
+                style={createPieceContainerStyle({ isSelected: effectiveSelected, isSmallScreen, theme, color, sizeVariant })}
             >
                 <PawnGraphic
                     fillColor={theme.colors[color]}
-                    style={createPieceImageStyle({ isSelected, isSmallScreen, sizeVariant })}
+                    style={createPieceImageStyle({ isSelected: effectiveSelected, isSmallScreen, sizeVariant })}
                 />
             </Pressable>
         </Animated.View>
@@ -483,6 +514,8 @@ Player.propTypes = {
     color: PropTypes.string.isRequired,
     containerStyle: PropTypes.oneOfType([PropTypes.array, PropTypes.object]),
     isSelected: PropTypes.bool,
+    isSelectedForTips: PropTypes.bool,
+    onTipLayout: PropTypes.func,
     onPress: PropTypes.func.isRequired,
     sizeVariant: PropTypes.oneOf(['default', 'stacked']),
 };
@@ -490,5 +523,7 @@ Player.propTypes = {
 Player.defaultProps = {
     containerStyle: undefined,
     isSelected: false,
+    isSelectedForTips: false,
+    onTipLayout: undefined,
     sizeVariant: 'default',
 };

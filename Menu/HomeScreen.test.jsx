@@ -14,6 +14,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import * as RN from 'react-native';
 import HomeScreen from './HomeScreen';
 import { act } from '@testing-library/react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 RN.Modal = ({ visible, children }) => (visible ? children : null);
 
@@ -24,6 +25,11 @@ jest.mock('react-redux', () => ({
 
 jest.mock('@expo/vector-icons', () => ({
   MaterialIcons: 'MaterialIcons',
+}));
+
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  setItem: jest.fn(() => Promise.resolve()),
+  getItem: jest.fn(() => Promise.resolve(null)),
 }));
 
 const createState = (overrides = {}) => ({
@@ -77,5 +83,46 @@ describe('HomeScreen', () => {
     // Now offline options should be visible
     expect(getByTestId('offline-choice-local-button')).toBeTruthy();
     expect(getByTestId('offline-choice-bot-button')).toBeTruthy();
+  });
+
+  test('renders play tutorial button', () => {
+    const navigation = { navigate: jest.fn() };
+    const state = createState();
+
+    useSelector.mockImplementation((selector) => selector(state));
+
+    const { getByTestId } = render(<HomeScreen navigation={navigation} />);
+
+    expect(getByTestId('home-play-tutorial-button')).toBeTruthy();
+  });
+
+  test('play tutorial button sets bot-normal redirect keys', async () => {
+    const navigation = { navigate: jest.fn() };
+    const state = createState({ auth: { isLoggedIn: true, user: { id: 'user-1', name: 'Player' } } });
+
+    useSelector.mockImplementation((selector) => selector(state));
+
+    const reloadMock = jest.fn();
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { reload: reloadMock },
+    });
+
+    const { getByTestId } = render(<HomeScreen navigation={navigation} />);
+
+    await act(async () => {
+      fireEvent.press(getByTestId('home-play-tutorial-button'));
+    });
+
+    await waitFor(() => {
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith('REDIRECT_TO_GAME', 'true');
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith('REDIRECT_GAME_MODE', 'bot');
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith('REDIRECT_BOT_DIFFICULTY', 'normal');
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith('REDIRECT_FORCE_TUTORIAL', 'true');
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith('REDIRECT_ISLOGGED_IN', 'true');
+    });
+
+    expect(reloadMock).toHaveBeenCalled();
+    expect(navigation.navigate).not.toHaveBeenCalled();
   });
 });

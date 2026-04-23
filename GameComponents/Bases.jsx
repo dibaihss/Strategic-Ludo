@@ -1,5 +1,5 @@
 import { View, Pressable, Text, StyleSheet, Dimensions } from "react-native";
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import Soldier from './Soldier';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -23,9 +23,9 @@ import {
     canEnterPiece,
     handleEnterNewSoldierCore,
     movePlayerCore,
-    sendMoveUpdateCore,
 } from './Bases.logic';
 import { playSound } from '../assets/shared/audioManager';
+import { markTutorialAction, setTutorialAnchor } from '../assets/store/tutorialSlice.jsx';
 
 
 export default function Bases() {
@@ -51,14 +51,18 @@ export default function Bases() {
     const disconnectedPlayer = useSelector(state => state.game.disconnectedPlayer);
 
 
-    const { connected, subscribe, sendMessage, sendMatchCommand, emitWithAck, requestFullSync, socketClient } = useWebSocket();
+    const { connected, subscribe, sendMatchCommand, emitWithAck, requestFullSync, socketClient } = useWebSocket();
 
     const windowWidth = Dimensions.get('window').width;
     const windowHeight = Dimensions.get('window').height;
     const isSmallScreen = windowWidth < 375 || windowHeight < 667;
 
     const movePendingRef = useRef(false);
+    const [isCardActionPending, setIsCardActionPending] = useState(false);
     const disconnectedPlayerRef = useRef(disconnectedPlayer);
+    const blueCardSixRef = useRef(null);
+    const blueCardThreeRef = useRef(null);
+    const blueEnterSoldierRef = useRef(null);
 
     const getUserOwnedColors = useCallback((targetUserId) => {
         if (!playerColors || !targetUserId) return [];
@@ -103,6 +107,57 @@ export default function Bases() {
         dispatch(setDisconnectedPlayer(null));
         dispatch(setPausedGame(false));
     }, [dispatch, user?.id]);
+
+    const reportBlueCardSixAnchor = useCallback(() => {
+        if (!blueCardSixRef.current?.measureInWindow) {
+            return;
+        }
+
+        blueCardSixRef.current.measureInWindow((x, y, width, height) => {
+            if (![x, y, width, height].every(Number.isFinite)) {
+                return;
+            }
+
+            dispatch(setTutorialAnchor({
+                step: 1,
+                anchor: { x, y, width, height },
+            }));
+        });
+    }, [dispatch]);
+
+    const reportBlueCardThreeAnchor = useCallback(() => {
+        if (!blueCardThreeRef.current?.measureInWindow) {
+            return;
+        }
+
+        blueCardThreeRef.current.measureInWindow((x, y, width, height) => {
+            if (![x, y, width, height].every(Number.isFinite)) {
+                return;
+            }
+
+            dispatch(setTutorialAnchor({
+                step: 4,
+                anchor: { x, y, width, height },
+            }));
+        });
+    }, [dispatch]);
+
+    const reportBlueEnterSoldierAnchor = useCallback(() => {
+        if (!blueEnterSoldierRef.current?.measureInWindow) {
+            return;
+        }
+
+        blueEnterSoldierRef.current.measureInWindow((x, y, width, height) => {
+            if (![x, y, width, height].every(Number.isFinite)) {
+                return;
+            }
+
+            dispatch(setTutorialAnchor({
+                step: 3,
+                anchor: { x, y, width, height },
+            }));
+        });
+    }, [dispatch]);
 
     // ─── Styles ───────────────────────────────────────────────────────────
     const styles = StyleSheet.create({
@@ -261,6 +316,27 @@ export default function Bases() {
 
     }, [connected, socketClient, currentMatch, user, currentPlayer, handleRemotePause, handleUserBack, dispatch, playerColors]);
 
+    useEffect(() => {
+        const frame = requestAnimationFrame(() => reportBlueCardSixAnchor());
+        return () => cancelAnimationFrame(frame);
+    }, [reportBlueCardSixAnchor, windowWidth, windowHeight, blueCards]);
+
+    useEffect(() => {
+        const frame = requestAnimationFrame(() => reportBlueCardThreeAnchor());
+        return () => cancelAnimationFrame(frame);
+    }, [reportBlueCardThreeAnchor, windowWidth, windowHeight, blueCards]);
+
+    useEffect(() => {
+        const frame = requestAnimationFrame(() => reportBlueEnterSoldierAnchor());
+        return () => cancelAnimationFrame(frame);
+    }, [reportBlueEnterSoldierAnchor, windowWidth, windowHeight]);
+
+    useEffect(() => {
+        if (!showClone) {
+            setIsCardActionPending(false);
+        }
+    }, [showClone]);
+
 
 
     const handleUserDisconnected = (data) => {
@@ -312,12 +388,26 @@ export default function Bases() {
                 visibilityTime: 2000,
             });
         }
+        return result;
     };
 
     // ─── Multiplayer move with acknowledgement ────────────────────────────
     const movePlayerHanlder = useCallback(async (color, steps) => {
+        if (isCardActionPending) {
+            return;
+        }
+
         if (!connected) {
-            movePlayer(color, steps);
+            setIsCardActionPending(true);
+
+            if (Number(steps) === 6 || Number(steps) === 3) {
+                dispatch(markTutorialAction({ type: 'card_played', value: steps, color }));
+            }
+
+            const result = movePlayer(color, steps);
+            if (result?.error) {
+                setIsCardActionPending(false);
+            }
             return;
         }
 
@@ -326,6 +416,10 @@ export default function Bases() {
 
         if (!canControlColor(currentPlayerColorRef.current, color, activePlayerRef.current)) return;
 
+        if (Number(steps) === 6 || Number(steps) === 3) {
+            dispatch(markTutorialAction({ type: 'card_played', value: steps, color }));
+        }
+
         // ✅ Prevent double-tap / double submit
         if (movePendingRef.current) {
             console.warn('Move already pending, ignoring duplicate');
@@ -333,6 +427,7 @@ export default function Bases() {
         }
 
         movePendingRef.current = true;
+        setIsCardActionPending(true);
 
         try {
             const response = await sendMatchCommand({
@@ -388,19 +483,23 @@ export default function Bases() {
         } finally {
             // ✅ Always release the lock
             movePendingRef.current = false;
+            setIsCardActionPending(false);
         }
-    }, [connected, user?.id, sendMatchCommand, requestFullSync]);
+    }, [connected, isCardActionPending, user?.id, sendMatchCommand, requestFullSync, dispatch]);
 
     // ─── Multiplayer enter soldier with acknowledgement ───────────────────
     const enterNewSoldierHandler = useCallback(async (color) => {
 
         // Offline mode — apply locally
         if (!connected) {
+            dispatch(markTutorialAction({ type: 'enter_soldier', color }));
             handleEnterNewSoldier(color);
             return;
         }
 
         if (!canEnterPiece(activePlayerRef.current, color, currentPlayerColorRef.current)) return;
+
+        dispatch(markTutorialAction({ type: 'enter_soldier', color }));
 
         if (movePendingRef.current) {
             console.warn('Move already pending, ignoring duplicate');
@@ -451,7 +550,7 @@ export default function Bases() {
         } finally {
             movePendingRef.current = false;
         }
-    }, [connected, user?.id, emitWithAck, requestFullSync]);
+    }, [connected, user?.id, emitWithAck, requestFullSync, dispatch]);
 
     const cardsByColor = {
         blue: blueCards,
@@ -473,6 +572,20 @@ export default function Bases() {
         styles[color + i],
         color === "green" && { transform: [{ rotate: '180deg' }] },
     ]);
+
+    const getTutorialCardRef = (color, cardValue) => {
+        if (color !== 'blue') return undefined;
+        if (cardValue === 6) return blueCardSixRef;
+        if (cardValue === 3) return blueCardThreeRef;
+        return undefined;
+    };
+
+    const getTutorialCardLayoutHandler = (color, cardValue) => {
+        if (color !== 'blue') return undefined;
+        if (cardValue === 6) return reportBlueCardSixAnchor;
+        if (cardValue === 3) return reportBlueCardThreeAnchor;
+        return undefined;
+    };
 
     const renderInCirclePlayers = (j, playerType, i) => (
         <>
@@ -503,7 +616,9 @@ export default function Bases() {
                                 <Pressable
                                     key={card.id}
                                     testID={`move-card-${color}-${card.value}`}
-                                    disabled={card.used}
+                                    onLayout={getTutorialCardLayoutHandler(color, Number(card.value))}
+                                    ref={getTutorialCardRef(color, Number(card.value))}
+                                    disabled={card.used || isCardActionPending}
                                     style={getCardButtonStyle(color, i, card.used)}
                                     onPress={() => movePlayerHanlder(color, card.value)}
                                 >
@@ -513,14 +628,16 @@ export default function Bases() {
                         </View>
                     </View>
                     <View style={[styles.corner, styles[color]]}>
-                        {[...Array(4)].map((_, j) => (
-                            <View key={j} style={styles.circle}>
+                        {Array.from({ length: 4 }).map((_, j) => (
+                            <View key={`${color}-${j + 1}`} style={styles.circle}>
                                 {renderInCirclePlayers(j, playerType, i)}
                             </View>
                         ))}
                     </View>
                     <Pressable
                         testID={`enter-soldier-${color}`}
+                        ref={color === 'blue' ? blueEnterSoldierRef : undefined}
+                        onLayout={color === 'blue' ? reportBlueEnterSoldierAnchor : undefined}
                         style={[styles.button, styles[color + i], { marginVertical: 5 }]}
                         onPress={() => enterNewSoldierHandler(color)}
                     >

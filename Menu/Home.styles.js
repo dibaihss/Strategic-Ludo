@@ -146,6 +146,15 @@ export const createHomeStyles = (theme, layout) =>
       borderColor: theme.colors.border,
       borderWidth: 1,
     },
+    buttonTutorial: {
+      backgroundColor: theme.colors.success || theme.colors.accent,
+      borderColor: theme.colors.accent,
+      borderWidth: 2,
+      shadowColor: theme.colors.accent,
+      shadowOpacity: 0.35,
+      shadowRadius: 10,
+      elevation: 7,
+    },
     buttonText: {
       fontSize: layout.buttonTextFontSize,
       fontWeight: '600',

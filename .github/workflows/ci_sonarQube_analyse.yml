@@ -2,7 +2,9 @@ name: Test + E2E + Sonar
 
 on:
   push:
-  pull_request: {}
+  pull_request:
+    branches:
+      - main
   workflow_call:  # 👈 allows release.yml to call it directly
      
 

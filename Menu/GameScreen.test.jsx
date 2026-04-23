@@ -8,9 +8,11 @@ import { useWebSocket } from '../assets/shared/webSocketConnection.jsx';
 import { cancelPendingBotTurn, emitMultiplayerBotTurn, runBotTurn } from './botLogic.js';
 import GameScreen from './GameScreen';
 import { setCurrentPlayer, setCurrentPlayerColor } from '../assets/store/gameSlice.jsx';
+import { startTutorial } from '../assets/store/tutorialSlice.jsx';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
-  setItem: jest.fn(),
+  setItem: jest.fn(() => Promise.resolve()),
   getItem: jest.fn(),
   removeItem: jest.fn(),
   clear: jest.fn(),
@@ -20,6 +22,7 @@ jest.mock('../GameComponents/SmalBoard.jsx', () => () => null);
 jest.mock('../GameComponents/Goals.jsx', () => () => null);
 jest.mock('../GameComponents/Bases.jsx', () => () => null);
 jest.mock('../GameComponents/Timer.jsx', () => () => null);
+jest.mock('../GameComponents/TutorialGuide.jsx', () => () => null);
 jest.mock('./Instructions.jsx', () => () => null);
 
 jest.mock('react-redux', () => ({
@@ -179,6 +182,7 @@ describe('GameScreen', () => {
       sendMatchCommand: sendMatchCommandMock,
       requestFullSync: requestFullSyncMock,
     });
+    AsyncStorage.getItem.mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -316,6 +320,131 @@ describe('GameScreen', () => {
     );
 
     expect(queryByTestId('game-sync-state-button')).toBeNull();
+  });
+
+  test('starts tutorial automatically in bot mode', async () => {
+    configureSelectors(createState({
+      tutorial: {
+        active: false,
+        currentStep: 0,
+        completedOnce: false,
+        reopenRequested: false,
+      },
+    }));
+
+    render(<GameScreen route={{ params: { mode: 'bot', matchId: 1 } }} navigation={{ navigate: jest.fn() }} />);
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(dispatchMock).toHaveBeenCalledWith(startTutorial());
+  });
+
+  test('forceTutorial route param starts tutorial even when completion is already true', async () => {
+    AsyncStorage.getItem.mockResolvedValue('true');
+
+    configureSelectors(createState({
+      tutorial: {
+        active: false,
+        currentStep: 0,
+        completedOnce: true,
+        reopenRequested: false,
+      },
+    }));
+
+    render(
+      <GameScreen
+        route={{ params: { mode: 'bot', matchId: 1, botDifficulty: 'normal', forceTutorial: true } }}
+        navigation={{ navigate: jest.fn() }}
+      />
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(dispatchMock).toHaveBeenCalledWith(startTutorial());
+  });
+
+  test('forceTutorial route param is consumed so tutorial does not restart on rerender', async () => {
+    configureSelectors(createState({
+      tutorial: {
+        active: false,
+        currentStep: 0,
+        completedOnce: false,
+        reopenRequested: false,
+      },
+    }));
+
+    const { rerender } = render(
+      <GameScreen
+        route={{ params: { mode: 'bot', matchId: 1, botDifficulty: 'normal', forceTutorial: true } }}
+        navigation={{ navigate: jest.fn() }}
+      />
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const tutorialDispatchCountAfterFirstRender = dispatchMock.mock.calls.filter(
+      ([action]) => action?.type === startTutorial().type
+    ).length;
+
+    rerender(
+      <GameScreen
+        route={{ params: { mode: 'bot', matchId: 1, botDifficulty: 'normal', forceTutorial: true } }}
+        navigation={{ navigate: jest.fn() }}
+      />
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const tutorialDispatchCountAfterRerender = dispatchMock.mock.calls.filter(
+      ([action]) => action?.type === startTutorial().type
+    ).length;
+
+    expect(tutorialDispatchCountAfterFirstRender).toBe(1);
+    expect(tutorialDispatchCountAfterRerender).toBe(1);
+  });
+
+  test('does not auto-start tutorial in local mode', async () => {
+    configureSelectors(createState({
+      tutorial: {
+        active: false,
+        currentStep: 0,
+        completedOnce: false,
+        reopenRequested: false,
+      },
+    }));
+
+    render(<GameScreen route={{ params: { mode: 'local', matchId: 1 } }} navigation={{ navigate: jest.fn() }} />);
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(dispatchMock).not.toHaveBeenCalledWith(startTutorial());
+  });
+
+  test('does not render tutorial button on game screen', () => {
+    configureSelectors(createState({
+      tutorial: {
+        active: false,
+        currentStep: 0,
+        completedOnce: false,
+        reopenRequested: false,
+      },
+    }));
+
+    const { queryByTestId } = render(
+      <GameScreen route={{ params: { mode: 'bot', matchId: 'match-1' } }} navigation={{ navigate: jest.fn() }} />
+    );
+
+    expect(queryByTestId('game-tutorial-button')).toBeNull();
   });
 
   test('host emits multiplayer bot moves through the websocket flow instead of local bot execution', async () => {
