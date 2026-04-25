@@ -362,28 +362,28 @@ export default function Bases() {
     const movePlayer = (color, steps) => {
         const activePlayer = activePlayerRef.current;
         const currentPlayer = currentPlayerRef.current;
-        const result = movePlayerCore({ color, steps, currentPlayer, activePlayer, showClone, dispatch });
-        if (result?.error) {
-            const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
-            let text1, text2;
-            if (result.error === 'wrongColor') {
-                text1 = uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer);
-                text2 = result.error === 'wrongColor'
-                    ? uiStrings[systemLang].wrongColor
-                    : uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer);
+        const result = movePlayerCore({ color, steps, currentPlayer, activePlayer, dispatch });
+        // if (result?.error) {
+        //     const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
+        //     let text1, text2;
+        //     if (result.error === 'wrongColor') {
+        //         text1 = uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer);
+        //         text2 = result.error === 'wrongColor'
+        //             ? uiStrings[systemLang].wrongColor
+        //             : uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer);
 
-            } else {
-                text1 = uiStrings[systemLang].selectPlayer.replace('{color}', localizedActivePlayer);
-                text2 = uiStrings[systemLang].playerNotSelected;
-            }
-            Toast.show({
-                type: 'error',
-                text1,
-                text2,
-                position: 'bottom',
-                visibilityTime: 2000,
-            });
-        }
+        //     } else {
+        //         text1 = uiStrings[systemLang].selectPlayer.replace('{color}', localizedActivePlayer);
+        //         text2 = uiStrings[systemLang].playerNotSelected;
+        //     }
+        //     Toast.show({
+        //         type: 'error',
+        //         text1,
+        //         text2,
+        //         position: 'bottom',
+        //         visibilityTime: 2000,
+        //     });
+        // }
         return result;
     };
 
@@ -401,6 +401,7 @@ export default function Bases() {
             }
 
             const result = movePlayer(color, steps);
+            console.log("movePlayerHanlder offline result", { result })
             if (result?.error) {
                 setIsCardActionPending(false);
             }
@@ -409,6 +410,7 @@ export default function Bases() {
 
         if (activePlayerRef.current !== color) return;
 
+        console.log("movePlayerHanlder after checks", { color, steps, activePlayerRef: activePlayerRef.current, currentPlayerColorRef: currentPlayerColorRef.current })
 
         if (!canControlColor(currentPlayerColorRef.current, color, activePlayerRef.current)) return;
 

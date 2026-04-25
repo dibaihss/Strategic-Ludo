@@ -178,11 +178,10 @@ export const handleEnterNewSoldierCore = ({ activePlayer, color, dispatch }) => 
     return { error: null };
 };
 
-export const movePlayerCore = ({ color, steps, currentPlayer, activePlayer, showClone, dispatch }) => {
+export const movePlayerCore = ({ color, steps, currentPlayer, activePlayer, dispatch }) => {
     if (!currentPlayer || currentPlayer.isOut) {
         return { error: 'selectPlayer' };
     }
-     if (showClone) return { error: 'clone' };
 
     if (currentPlayer.color !== color) {
         return { error: 'wrongColor' };
