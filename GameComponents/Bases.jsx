@@ -232,11 +232,13 @@ export default function Bases() {
     const currentPlayerRef = useRef(currentPlayer);
     const currentMatchRef = useRef(currentMatch);
     const currentPlayerColorRef = useRef(currentPlayerColor);
+    const showCloneRef = useRef(showClone);
     useEffect(() => { activePlayerRef.current = activePlayer; }, [activePlayer]);
     useEffect(() => { currentPlayerRef.current = currentPlayer; }, [currentPlayer]);
     useEffect(() => { currentMatchRef.current = currentMatch; }, [currentMatch]);
     useEffect(() => { currentPlayerColorRef.current = currentPlayerColor; }, [currentPlayerColor]);
     useEffect(() => { disconnectedPlayerRef.current = disconnectedPlayer; }, [disconnectedPlayer]);
+    useEffect(() => { showCloneRef.current = showClone; }, [showClone]);
 
     useEffect(() => {
         if (!connected || !currentMatch?.id) return; // single combined guard
@@ -362,28 +364,29 @@ export default function Bases() {
     const movePlayer = (color, steps) => {
         const activePlayer = activePlayerRef.current;
         const currentPlayer = currentPlayerRef.current;
-        const result = movePlayerCore({ color, steps, currentPlayer, activePlayer, dispatch });
-        // if (result?.error) {
-        //     const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
-        //     let text1, text2;
-        //     if (result.error === 'wrongColor') {
-        //         text1 = uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer);
-        //         text2 = result.error === 'wrongColor'
-        //             ? uiStrings[systemLang].wrongColor
-        //             : uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer);
+         const showClone = showCloneRef.current;
+        const result = movePlayerCore({ color, steps, currentPlayer, activePlayer, showClone, dispatch });
+        if (result?.error) {
+            const localizedActivePlayer = getLocalizedColor(activePlayer, systemLang);
+            let text1, text2;
+            if (result.error === 'wrongColor') {
+                text1 = uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer);
+                text2 = result.error === 'wrongColor'
+                    ? uiStrings[systemLang].wrongColor
+                    : uiStrings[systemLang].wrongTurn.replace('{color}', localizedActivePlayer);
 
-        //     } else {
-        //         text1 = uiStrings[systemLang].selectPlayer.replace('{color}', localizedActivePlayer);
-        //         text2 = uiStrings[systemLang].playerNotSelected;
-        //     }
-        //     Toast.show({
-        //         type: 'error',
-        //         text1,
-        //         text2,
-        //         position: 'bottom',
-        //         visibilityTime: 2000,
-        //     });
-        // }
+            } else {
+                text1 = uiStrings[systemLang].selectPlayer.replace('{color}', localizedActivePlayer);
+                text2 = uiStrings[systemLang].playerNotSelected;
+            }
+            Toast.show({
+                type: 'error',
+                text1,
+                text2,
+                position: 'bottom',
+                visibilityTime: 2000,
+            });
+        }
         return result;
     };
 
