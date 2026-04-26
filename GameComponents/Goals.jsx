@@ -20,20 +20,19 @@ export default function Goals() {
     const styles = StyleSheet.create({
         centerCircle: {
             position: 'absolute',
-            width: isSmallScreen ? 50 : 120,
-            height: isSmallScreen ? 50 : 120,
-            borderRadius: 15,
+            width: isSmallScreen ? 60 : 120,
+            height: isSmallScreen ? 60 : 120,
+            borderRadius: 10,
             backgroundColor: theme.colors.background,
-            borderWidth: isSmallScreen ? 1 : 2,
+            borderWidth:  2,
             borderColor: theme.colors.border,
             overflow: 'hidden',
             zIndex: 1,
-            elevation: isSmallScreen ? 4 : 0,
             top: '50%',
             left: '50%',
             transform: [
-                { translateX: isSmallScreen ? -25 : -60 },
-                { translateY: isSmallScreen ? -25 : -60 }
+                { translateX: isSmallScreen ? -30 : -60 },
+                { translateY: isSmallScreen ? -30 : -60 }
             ],
         },
         yellow: {
@@ -58,9 +57,9 @@ export default function Goals() {
             height: '50%',
             justifyContent: 'center',
             alignItems: 'center',
-            borderWidth: isSmallScreen ? 0.5 : 1,
-            borderColor: isSmallScreen ? 'rgba(0,0,0,0.2)' : '#000',
-            elevation: isSmallScreen ? 2 : 0,
+            borderWidth: 1,
+            borderColor:  '#000',
+            elevation:  0,
         },
         button: {
             flexDirection: 'row',

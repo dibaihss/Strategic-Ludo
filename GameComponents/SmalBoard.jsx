@@ -9,7 +9,7 @@ import {
 import React, { useCallback, useEffect, useMemo } from 'react';
 import Soldier from './Soldier';
 import PawnGraphic from './PawnGraphic';
-import { boxes, isSafeZone, isArrow, getArrowDirection, getLocalizedColor, uiStrings } from "../assets/shared/hardCodedData.js"
+import { boxes, isSafeZone, isArrow, isHomeGate, getArrowDirection, getLocalizedColor, uiStrings } from "../assets/shared/hardCodedData.js"
 import { useDispatch, useSelector } from 'react-redux';
 import {
     setCurrentPlayer
@@ -35,14 +35,14 @@ const showErrorToast = (text1, text2) => {
 };
 
 const canControlColor = (currentPlayerColor, selectedColor, systemLang, color) => {
-    if (currentPlayerColor === selectedColor){
-       return true;
+    if (currentPlayerColor === selectedColor) {
+        return true;
     } else {
-       const localizedActivePlayer = getLocalizedColor(color, systemLang);
-              showErrorToast(
-                      uiStrings[systemLang].selectPlayer.replace('{color}', localizedActivePlayer),
-                      uiStrings[systemLang].playerNotSelected
-              );
+        const localizedActivePlayer = getLocalizedColor(color, systemLang);
+        showErrorToast(
+            uiStrings[systemLang].selectPlayer.replace('{color}', localizedActivePlayer),
+            uiStrings[systemLang].playerNotSelected
+        );
     }
     if (Array.isArray(currentPlayerColor)) {
         return currentPlayerColor[0] === selectedColor || currentPlayerColor[1] === selectedColor;
@@ -86,10 +86,10 @@ export default function SmalBoard() {
     }, [dispatch]);
 
     const currentSelectedPlayer = (selectedPlayer) => {
-        playSound('click').catch(() => {});
+        playSound('click').catch(() => { });
         if (!connected) {
             if (canControlColor(currentPlayerColor, selectedPlayer.color, systemLang, activePlayer)) {
-            dispatch(setCurrentPlayer(selectedPlayer));
+                dispatch(setCurrentPlayer(selectedPlayer));
                 if (selectedPlayer.id === tutorialTargetSoldierId) {
                     dispatch(markTutorialAction({ type: 'soldier_selected' }));
                 }
@@ -166,9 +166,40 @@ export default function SmalBoard() {
             marginVertical: isSmallScreen ? 2 : 5,
             flexDirection: "row",
         },
-        getNumber: number => ({
-            visibility: number === "home1" || number === "hom2" || number === "home3" ? "hidden" : ""
-        }),
+        getNumber: number => {
+            const isGateCell = isHomeGate(number);
+            let backgroundColor = "";
+            let borderRight = "";
+            let borderLeft = "";
+            let borderBottom = "";
+            let borderTop = "";
+            let width = 20
+            if (number === "homeGreen") {
+                backgroundColor = theme.colors.green;
+                borderTop = "none";
+            } else if (number === "homeRed") {
+                backgroundColor = theme.colors.red;
+                borderBottom = "none";
+            } else if (number === "homeYellow") {
+                backgroundColor = theme.colors.yellow;
+                borderLeft = "none";
+            } else if (number === "homeBlue") {
+                backgroundColor = theme.colors.blue;
+                borderRight = "none";
+                width = 30
+            }
+            return {
+                visibility: number === "home1" || number === "hom2" || number === "home3" ? "hidden" : "",
+                backgroundColor: backgroundColor,
+                width: isGateCell ? width : undefined,
+                height: isGateCell ? 20 : undefined,
+                // marginTop: isGateCell ? 3 : undefined,
+                borderRight: isGateCell ? borderRight : undefined,
+                borderLeft: isGateCell ? borderLeft : undefined,
+                borderBottom: isGateCell ? borderBottom : undefined,
+                borderTop: isGateCell ? borderTop : undefined,
+            };
+        },
 
         verbBox: {
             backgroundColor: "rgba(240, 244, 248, 0.5)",
@@ -177,7 +208,7 @@ export default function SmalBoard() {
             padding: isSmallScreen ? 9 : 20,
             margin: 1,
             width: isSmallScreen ? 21 : boxSize,
-            height: isSmallScreen ? 21 : boxSize,
+            height: isSmallScreen ? 22 : boxSize,
             justifyContent: 'center',
             alignItems: 'center',
             position: 'relative',
@@ -294,90 +325,94 @@ export default function SmalBoard() {
         const isSelectorActive = Boolean(selectorSoldier && currentPlayer?.id === selectorSoldier.id);
 
         return (
-        <View
-            key={`box-${i}-${number}`}
-            style={[styles.verbBox, styles.getNumber(number),
-            ]}
-        >
-    
-            {isSafeZone(number) && (
-                <Text style={styles.safeZoneIcon}>🛡️</Text>
-            )}
+            <View
+                key={`box-${i}-${number}`}
+                style={[styles.verbBox, styles.getNumber(number),
+                ]}
+            >
 
-            {isArrow(number) && (() => {
-                // Map emoji to rotation degrees
-                const direction = getArrowDirection(number);
-                let rotateDeg = '0deg';
-                if (direction === '⬆️') rotateDeg = '-90deg';
-                else if (direction === '⬇️') rotateDeg = '90deg';
-                else if (direction === '⬅️') rotateDeg = '180deg';
-                return (
-                    <Image
-                        source={arrowGifSource}
-                        style={[styles.arrowIcon, { transform: [{ rotate: rotateDeg }] }]}
-                        resizeMode="contain"
-                    />
-                );
-            })()}
+                {isSafeZone(number) && (
+                    <Text style={styles.safeZoneIcon}>🛡️</Text>
+                )}
 
-            <View pointerEvents="box-none" style={styles.soldierLayer}>
-                {soldiersInBox.length > 1 && selectorSoldier && nextSelectorSoldier && (
-                    <Pressable
-                        onPress={() => currentSelectedPlayer(nextSelectorSoldier)}
-                        style={[
-                            styles.stackSelectorButton,
-                            isSelectorActive ? styles.stackSelectorActive : null,
-                        ]}
-                    >
-                        <PawnGraphic
-                            fillColor={theme.colors[selectorSoldier.color]}
-                            style={styles.stackSelectorPawn}
+                {isHomeGate(number) && (
+                    <Text style={styles.gateIcon}></Text>
+                )}
+
+                {isArrow(number) && (() => {
+                    // Map emoji to rotation degrees
+                    const direction = getArrowDirection(number);
+                    let rotateDeg = '0deg';
+                    if (direction === '⬆️') rotateDeg = '-90deg';
+                    else if (direction === '⬇️') rotateDeg = '90deg';
+                    else if (direction === '⬅️') rotateDeg = '180deg';
+                    return (
+                        <Image
+                            source={arrowGifSource}
+                            style={[styles.arrowIcon, { transform: [{ rotate: rotateDeg }] }]}
+                            resizeMode="contain"
                         />
-                    </Pressable>
-                )}
-                {visibleColorChips.length > 0 && soldiersInBox.length > 1 && (
-                    <View style={styles.colorChipRow} pointerEvents="none">
-                        {visibleColorChips.map((chip) => (
-                            <View
-                                key={`${number}-${chip.color}`}
-                                style={[
-                                    styles.colorChip,
-                                    chip.color === 'overflow'
-                                        ? styles.colorChipOverflow
-                                        : { backgroundColor: theme.colors[chip.color] },
-                                ]}
-                            >
-                                <Text style={styles.colorChipText}>{chip.count}</Text>
-                            </View>
-                        ))}
-                    </View>
-                )}
-                {visibleSoldiers.map((soldier, index) => (
-                    (() => {
-                        const isSelectedForTips = Boolean(
-                            tutorial?.active
-                            && tutorial?.currentStep === 0
-                            && tutorialTargetSoldierId
-                            && soldier.id === tutorialTargetSoldierId
-                        );
+                    );
+                })()}
 
-                        return (
-                    <Soldier
-                        key={`${number}-${soldier.id}`}
-                        containerStyle={[styles.soldierSlot, stackSlots[index]]}
-                        isSelected={currentPlayer?.id === soldier.id}
-                        isSelectedForTips={isSelectedForTips}
-                        onTipLayout={isSelectedForTips ? handleTutorialTargetLayout : undefined}
-                        onPress={() => currentSelectedPlayer(soldier)}
-                        color={soldier.color}
-                        sizeVariant={visibleSoldiers.length > 1 ? 'stacked' : 'default'}
-                    />
-                        );
-                    })()
-                ))}
+                <View pointerEvents="box-none" style={styles.soldierLayer}>
+                    {soldiersInBox.length > 1 && selectorSoldier && nextSelectorSoldier && (
+                        <Pressable
+                            onPress={() => currentSelectedPlayer(nextSelectorSoldier)}
+                            style={[
+                                styles.stackSelectorButton,
+                                isSelectorActive ? styles.stackSelectorActive : null,
+                            ]}
+                        >
+                            <PawnGraphic
+                                fillColor={theme.colors[selectorSoldier.color]}
+                                style={styles.stackSelectorPawn}
+                            />
+                        </Pressable>
+                    )}
+                    {visibleColorChips.length > 0 && soldiersInBox.length > 1 && (
+                        <View style={styles.colorChipRow} pointerEvents="none">
+                            {visibleColorChips.map((chip) => (
+                                <View
+                                    key={`${number}-${chip.color}`}
+                                    style={[
+                                        styles.colorChip,
+                                        chip.color === 'overflow'
+                                            ? styles.colorChipOverflow
+                                            : { backgroundColor: theme.colors[chip.color] },
+                                    ]}
+                                >
+                                    <Text style={styles.colorChipText}>{chip.count}</Text>
+                                </View>
+                            ))}
+                        </View>
+                    )}
+                    {visibleSoldiers.map((soldier, index) => (
+                        (() => {
+                            const isSelectedForTips = Boolean(
+                                tutorial?.active
+                                && tutorial?.currentStep === 0
+                                && tutorialTargetSoldierId
+                                && soldier.id === tutorialTargetSoldierId
+                            );
+
+                            return (
+                                <Soldier
+                                    key={`${number}-${soldier.id}`}
+                                    containerStyle={[styles.soldierSlot, stackSlots[index]]}
+                                    isSelected={currentPlayer?.id === soldier.id}
+                                    isSelectedForTips={isSelectedForTips}
+                                    onTipLayout={isSelectedForTips ? handleTutorialTargetLayout : undefined}
+                                    onPress={() => currentSelectedPlayer(soldier)}
+                                    color={soldier.color}
+                                    sizeVariant={visibleSoldiers.length > 1 ? 'stacked' : 'default'}
+                                />
+                            );
+                        })()
+                    ))}
+                </View>
             </View>
-        </View>
-    );
+        );
     };
 
     return (

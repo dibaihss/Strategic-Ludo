@@ -26,7 +26,7 @@ const initialState = {
     },
     currentPlayerColor: "yellow",
     blueSoldiers: [
-        { id: 1, position: '2a', color: "blue", initialPosition: '1blue', onBoard: true, isOut: false },
+        { id: 1, position: '4d', color: "blue", initialPosition: '1blue', onBoard: true, isOut: false },
         { id: 2, position: '2blue', color: "blue", initialPosition: '2blue', onBoard: false, isOut: false },
         { id: 3, position: '3blue', color: "blue", initialPosition: '3blue', onBoard: false, isOut: false },
         { id: 4, position: '4blue', color: "blue", initialPosition: '4blue', onBoard: false, isOut: false }
