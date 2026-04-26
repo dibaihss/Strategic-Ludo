@@ -16,24 +16,45 @@ export default function Goals() {
     const windowHeight = Dimensions.get('window').height;
     const isSmallScreen = windowWidth < 375 || windowHeight < 667;
 
+    const renderGoalQuadrant = (soldiers, colorStyle, iconColor) => {
+        const soldiersAtHome = soldiers.filter((soldier) => soldier.isOut === true).slice(0, 4);
+
+        return (
+            <View style={[styles.quadrant, colorStyle]}>
+                <MaterialIcons
+                    name="home"
+                    size={isSmallScreen ? 16 : 24}
+                    color={iconColor}
+                    style={styles.homeIcon}
+                />
+                <View style={styles.soldierGrid}>
+                    {soldiersAtHome.map((soldier) => (
+                        <View key={soldier.id} style={styles.soldierSlot}>
+                            <Soldier color={soldier.color} sizeVariant="stacked" />
+                        </View>
+                    ))}
+                </View>
+            </View>
+        );
+    };
+
 
     const styles = StyleSheet.create({
         centerCircle: {
             position: 'absolute',
-            width: isSmallScreen ? 50 : 120,
-            height: isSmallScreen ? 50 : 120,
-            borderRadius: 15,
+            width: isSmallScreen ? 60 : 120,
+            height: isSmallScreen ? 60 : 120,
+            borderRadius: 10,
             backgroundColor: theme.colors.background,
-            borderWidth: isSmallScreen ? 1 : 2,
+            borderWidth:  2,
             borderColor: theme.colors.border,
             overflow: 'hidden',
             zIndex: 1,
-            elevation: isSmallScreen ? 4 : 0,
             top: '50%',
             left: '50%',
             transform: [
-                { translateX: isSmallScreen ? -25 : -60 },
-                { translateY: isSmallScreen ? -25 : -60 }
+                { translateX: isSmallScreen ? -30 : -60 },
+                { translateY: isSmallScreen ? -30 : -60 }
             ],
         },
         yellow: {
@@ -58,9 +79,34 @@ export default function Goals() {
             height: '50%',
             justifyContent: 'center',
             alignItems: 'center',
-            borderWidth: isSmallScreen ? 0.5 : 1,
-            borderColor: isSmallScreen ? 'rgba(0,0,0,0.2)' : '#000',
-            elevation: isSmallScreen ? 2 : 0,
+            borderWidth: 1,
+            borderColor:  '#000',
+            elevation:  0,
+            position: 'relative',
+        },
+        homeIcon: {
+            position: 'absolute',
+            opacity: 0.45,
+            zIndex: 0,
+        },
+        soldierGrid: {
+            width: '100%',
+            height: '100%',
+            padding: isSmallScreen ? 2 : 6,
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+            alignContent: 'center',
+            zIndex: 1,
+        },
+        soldierSlot: {
+            width: '50%',
+            height: '50%',
+            justifyContent: 'center',
+            alignItems: 'center',
+            borderWidth: 1,
+            borderColor: theme.colors.background,
+            backgroundColor: 'rgba(255, 255, 255, 0.18)',
         },
         button: {
             flexDirection: 'row',
@@ -82,29 +128,10 @@ export default function Goals() {
     return (
         <View style={styles.centerCircle}>
             <View style={styles.centerQuadrants}>
-                <View style={[styles.quadrant, styles.yellow]}>
-                    <MaterialIcons name="home" size={24} color="goldenrod" />
-                    {yellowSoldiers.find(obj => obj.isOut === true) &&
-                        <Soldier color={yellowSoldiers[0].color} />}
-                </View>
-
-                <View style={[styles.quadrant, styles.green]}>
-                    <MaterialIcons name="home" size={24} color="darkgreen" />
-                    {greenSoldiers.find(obj => obj.isOut === true) &&
-                        <Soldier color={greenSoldiers[0].color} />}
-                </View>
-
-                <View style={[styles.quadrant, styles.red]}>
-                    <MaterialIcons name="home" size={24} color="darkred" />
-                    {redSoldiers.find(obj => obj.isOut === true) &&
-                        <Soldier color={redSoldiers[0].color} />}
-                </View>
-
-                <View style={[styles.quadrant, styles.blue]}>
-                    <MaterialIcons name="home" size={24} color="darkblue" />
-                    {blueSoldiers.find(obj => obj.isOut === true) &&
-                        <Soldier color={blueSoldiers[0].color} />}
-                </View>
+                {renderGoalQuadrant(yellowSoldiers, styles.yellow, 'goldenrod')}
+                {renderGoalQuadrant(greenSoldiers, styles.green, 'darkgreen')}
+                {renderGoalQuadrant(redSoldiers, styles.red, 'darkred')}
+                {renderGoalQuadrant(blueSoldiers, styles.blue, 'darkblue')}
             </View>
         </View>
     );

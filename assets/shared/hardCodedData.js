@@ -1,8 +1,8 @@
 const boxes = {
-    column1: ["12b", "11b", "10b", "9b", "8b", "7b", "home1", "hom2", "home3", "6a", "5a", "4a", "3a", "2a", "1a"],
-    column2: ["1c", "2c", "3c", "4c", "5c", "6c", "home1", "hom2", "home3", "7d", "8d", "9d", "10d", "11d", "12d"],
-    row1: ["1b", "2b", "3b", "4b", "5b", "6b", "home1", "hom2", "home3", "7c", "8c", "9c", "10c", "11c", "12c"],
-    row2: ["12a", "11a", "10a", "9a", "8a", "7a", "home1", "hom2", "home3", "6d", "5d", "4d", "3d", "2d", "1d"],
+    column1: ["12b", "11b", "10b", "9b", "8b", "7b", "home1", "hom2", "homeRed", "6a", "5a", "4a", "3a", "2a", "1a"],
+    column2: ["1c", "2c", "3c", "4c", "5c", "6c", "homeGreen", "hom2", "home3", "7d", "8d", "9d", "10d", "11d", "12d"],
+    row1: ["1b", "2b", "3b", "4b", "5b", "6b", "homeYellow", "hom2", "home3", "7c", "8c", "9c", "10c", "11c", "12c"],
+    row2: ["12a", "11a", "10a", "9a", "8a", "7a", "home1", "hom2", "homeBlue", "6d", "5d", "4d", "3d", "2d", "1d"],
 
 };
 
@@ -25,6 +25,18 @@ const SAFE_ZONE_CELL_IDS = Object.freeze([
 const safeZoneCellSet = new Set(SAFE_ZONE_CELL_IDS);
 
 const isSafeZone = (cellId) => Boolean(cellId && safeZoneCellSet.has(cellId));
+
+/** Colored home entry cells that should show a gate icon. */
+const HOME_GATE_CELL_IDS = Object.freeze([
+    'homeGreen',
+    'homeRed',
+    'homeYellow',
+    'homeBlue',
+]);
+
+const homeGateCellSet = new Set(HOME_GATE_CELL_IDS);
+
+const isHomeGate = (cellId) => Boolean(cellId && homeGateCellSet.has(cellId));
 
 /** Board cell IDs with arrow icons. */
 const ARROW_CELL_IDS = Object.freeze([
@@ -501,6 +513,8 @@ export {
     getLocalizedColor,
     SAFE_ZONE_CELL_IDS,
     isSafeZone,
+    HOME_GATE_CELL_IDS,
+    isHomeGate,
     ARROW_CELL_IDS,
     isArrow,
     getArrowDirection,
