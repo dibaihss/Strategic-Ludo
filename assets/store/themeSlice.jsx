@@ -42,7 +42,7 @@ const themes = {
             green: '#44cc44',
             background: '#2d2d2d',
             border: '#ffffff',
-            selected: 'black',
+            selected: 'rgb(255, 215, 0)',
             button: '#3d3d3d',
             buttonText: '#ffffff',
             buttonBorder: '#555555',
@@ -70,7 +70,8 @@ const themes = {
             accent: '#8b5cf6',
             error: '#f87171',
             success: '#34d399',
-            disabled: 'rgba(255, 255, 255, 0.3)'
+            disabled: 'rgba(255, 255, 255, 0.3)',
+            selected: 'rgb(255, 215, 0)',
         }
     },
     // pastel: {

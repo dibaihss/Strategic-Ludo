@@ -4,7 +4,12 @@ import { boxes, categories } from '../assets/shared/hardCodedData.js';
 
 export const getCategoryFromPosition = (position) => position.match(/[a-zA-Z]+/)[0];
 
-export const getNumberFromPosition = (position) => parseInt(position.match(/\d+/)[0], 10);
+export const getNumberFromPosition = (position) => {
+    if (position == null) return null;
+
+    const match = position.match(/\d+/);
+    return match ? Number.parseInt(match[0], 10) : null;
+};
 
 export const canControlColor = (currentPlayerColor, color) => {
     if (!currentPlayerColor || !color) return false;
