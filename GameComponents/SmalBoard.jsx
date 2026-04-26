@@ -186,7 +186,6 @@ export default function SmalBoard() {
             } else if (number === "homeBlue") {
                 backgroundColor = theme.colors.blue;
                 borderRight = "none";
-                width = 30
             }
             return {
                 visibility: number === "home1" || number === "hom2" || number === "home3" ? "hidden" : "",
