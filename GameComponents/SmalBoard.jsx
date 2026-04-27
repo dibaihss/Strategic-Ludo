@@ -163,7 +163,7 @@ export default function SmalBoard() {
         horizontalRow: {
             width: "auto",
             padding: isSmallScreen ? 1 : 3,
-            marginVertical: isSmallScreen ? 2 : 5,
+            marginVertical: isSmallScreen ? 1 : 2,
             flexDirection: "row",
         },
         getNumber: number => {
@@ -197,6 +197,7 @@ export default function SmalBoard() {
                 borderLeft: isGateCell ? borderLeft : undefined,
                 borderBottom: isGateCell ? borderBottom : undefined,
                 borderTop: isGateCell ? borderTop : undefined,
+                margin: isGateCell ? 1 : 0,
             };
         },
 
@@ -205,13 +206,13 @@ export default function SmalBoard() {
             borderWidth: isSmallScreen ? 1 : 2,
             borderColor: theme.colors.border.transparent ? theme.colors.border.transparent : theme.colors.border,
             padding: isSmallScreen ? 9 : 20,
-            margin: 1,
-            width: isSmallScreen ? 21 : boxSize,
-            height: isSmallScreen ? 22 : boxSize,
+            margin: 0,
+            width: isSmallScreen ? 23 : boxSize,
+            height: isSmallScreen ? 23 : boxSize,
             justifyContent: 'center',
             alignItems: 'center',
             position: 'relative',
-            borderRadius: isSmallScreen ? 5 : 10,
+            borderRadius: isSmallScreen ? 4 : 8,
             zIndex: 1,
             elevation: 1,
         },
