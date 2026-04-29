@@ -399,6 +399,7 @@ export default function SmalBoard() {
                             return (
                                 <Soldier
                                     key={`${number}-${soldier.id}`}
+                                    testID={`soldier-${soldier.id}`}
                                     containerStyle={[styles.soldierSlot, stackSlots[index]]}
                                     isSelected={currentPlayer?.id === soldier.id}
                                     isSelectedForTips={isSelectedForTips}

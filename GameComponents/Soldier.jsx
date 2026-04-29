@@ -387,7 +387,18 @@ const runAnimationSequence = ({ animatedValue, sequence, dispatch, onComplete, i
     });
 };
 
-export default function Player({ color, isSelected, isSelectedForTips, onTipLayout, onPress, containerStyle, sizeVariant }) {
+export default function Player({
+    accessibilityLabel,
+    color,
+    isSelected,
+    isSelectedForTips,
+    nativeID,
+    onTipLayout,
+    onPress,
+    containerStyle,
+    sizeVariant,
+    testID,
+}) {
     const animatedValue = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
     const pointerBounce = useRef(new Animated.Value(0)).current;
     const pressableRef = useRef(null);
@@ -496,14 +507,20 @@ export default function Player({ color, isSelected, isSelectedForTips, onTipLayo
             )}
             <Pressable
                 ref={pressableRef}
+                accessibilityLabel={accessibilityLabel}
+                nativeID={nativeID}
                 onLayout={reportTipLayout}
                 onPress={onPress}
                 android_ripple={isSmallScreen ? { color: 'rgba(255,255,255,0.3)', borderless: true } : null}
                 style={createPieceContainerStyle({ isSelected: effectiveSelected, isSmallScreen, theme, color, sizeVariant })}
+                testID={testID}
             >
                 <PawnGraphic
                     fillColor={theme.colors[color]}
+                    accessibilityLabel={accessibilityLabel ? `${accessibilityLabel}-graphic` : undefined}
+                    nativeID={nativeID ? `${nativeID}-graphic` : undefined}
                     style={createPieceImageStyle({ isSelected: effectiveSelected, isSmallScreen, sizeVariant })}
+                    testID={testID ? `${testID}-graphic` : undefined}
                 />
             </Pressable>
         </Animated.View>
@@ -511,19 +528,25 @@ export default function Player({ color, isSelected, isSelectedForTips, onTipLayo
 }
 
 Player.propTypes = {
+    accessibilityLabel: PropTypes.string,
     color: PropTypes.string.isRequired,
     containerStyle: PropTypes.oneOfType([PropTypes.array, PropTypes.object]),
     isSelected: PropTypes.bool,
     isSelectedForTips: PropTypes.bool,
+    nativeID: PropTypes.string,
     onTipLayout: PropTypes.func,
     onPress: PropTypes.func.isRequired,
     sizeVariant: PropTypes.oneOf(['default', 'stacked']),
+    testID: PropTypes.string,
 };
 
 Player.defaultProps = {
+    accessibilityLabel: undefined,
     containerStyle: undefined,
     isSelected: false,
     isSelectedForTips: false,
+    nativeID: undefined,
     onTipLayout: undefined,
     sizeVariant: 'default',
+    testID: undefined,
 };

@@ -94,16 +94,30 @@ const createPawnSvgXml = (fillColor) => {
     `;
 };
 
-export default function PawnGraphic({ fillColor, style }) {
-    return <SvgXml xml={createPawnSvgXml(fillColor)} style={style} />;
+export default function PawnGraphic({ accessibilityLabel, fillColor, nativeID, style, testID }) {
+    return (
+        <SvgXml
+            accessibilityLabel={accessibilityLabel}
+            nativeID={nativeID}
+            testID={testID}
+            xml={createPawnSvgXml(fillColor)}
+            style={style}
+        />
+    );
 }
 
 PawnGraphic.propTypes = {
+    accessibilityLabel: PropTypes.string,
     fillColor: PropTypes.string,
+    nativeID: PropTypes.string,
     style: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
+    testID: PropTypes.string,
 };
 
 PawnGraphic.defaultProps = {
+    accessibilityLabel: undefined,
     fillColor: '#31373D',
+    nativeID: undefined,
     style: undefined,
+    testID: undefined,
 };
