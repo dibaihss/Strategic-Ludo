@@ -1,5 +1,40 @@
 const { test, expect } = require('@playwright/test');
 
+const trackBotMoveLogs = (page) => {
+  const moveLogs = [];
+
+  page.on('console', (message) => {
+    if (message.type() !== 'log') return;
+
+    const text = message.text();
+    if (text.includes('movePlayerCore called with:')) {
+      moveLogs.push(text);
+    }
+  });
+
+  return moveLogs;
+};
+
+const activeTurnLabel = (page, color) => page.getByText(new RegExp(`^${color}$`, 'i')).first();
+
+const expectActiveTurn = async (page, color) => {
+  await expect(activeTurnLabel(page, color)).toBeVisible();
+};
+
+const skipTurn = async (page, expectedNextColor) => {
+  await page.getByTestId('game-skip-turn-button').click();
+
+  if (expectedNextColor) {
+    await expectActiveTurn(page, expectedNextColor);
+  }
+};
+
+const advanceToBotControlledTurn = async (page) => {
+  await expectActiveTurn(page, 'blue');
+  await skipTurn(page, 'red');
+  await skipTurn(page, 'yellow');
+};
+
 // Utility: open app in E2E mode
 const openAppInE2EMode = async (page) => {
   await page.goto('/?e2e=1');
@@ -37,28 +72,36 @@ const createBotMatch = async (page) => {
 // This test intercepts websocket or fetch requests to /player.Move and asserts none are sent after exit
 
 test('leaving GameScreen during bot delay prevents bot move emit', async ({ page }) => {
+  const botMoveLogs = trackBotMoveLogs(page);
+
   await openAppInE2EMode(page);
   await guestLogin(page, 'BotE2E');
   await createBotMatch(page);
 
-  // Intercept websocket/fetch requests to /player.Move
-  let moveEmitted = false;
-  await page.route('**/player.Move/**', (route) => {
-    moveEmitted = true;
-    route.continue();
-  });
+  await advanceToBotControlledTurn(page);
 
-  // Wait for bot turn to be scheduled (simulate bot delay, e.g. 500ms)
-  await page.waitForTimeout(400); // Less than bot delay
+  // Exit before the delayed bot move is executed.
+  await page.waitForTimeout(400);
 
-  // Exit game before bot acts
   await page.getByTestId('game-exit-button').click();
   await page.getByTestId('game-exit-confirm-button').click();
   await expect(page.getByTestId('game-screen')).not.toBeVisible({ timeout: 5000 });
 
-  // Wait enough time for bot to have acted if not cancelled
-  await page.waitForTimeout(1200);
+  // The mocked multiplayer e2e bot path waits about 1.5s after the turn changes.
+  await page.waitForTimeout(2600);
 
-  // Assert no move was emitted after exit
-  expect(moveEmitted).toBeFalsy();
+  expect(botMoveLogs).toHaveLength(0);
+});
+
+test('bots emit follow-up actions after the human turn ends', async ({ page }) => {
+  await openAppInE2EMode(page);
+  await guestLogin(page, 'BotE2E');
+  await createBotMatch(page);
+
+  await advanceToBotControlledTurn(page);
+
+  await expect.poll(async () => {
+    const yellowTurnVisible = await activeTurnLabel(page, 'yellow').isVisible().catch(() => false);
+    return yellowTurnVisible === false;
+  }, { timeout: 5000 }).toBeTruthy();
 });

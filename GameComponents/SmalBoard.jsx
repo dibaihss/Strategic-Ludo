@@ -19,6 +19,7 @@ import { playSound } from '../assets/shared/audioManager';
 import Toast from 'react-native-toast-message';
 import { markTutorialAction, setTutorialAnchor } from '../assets/store/tutorialSlice.jsx';
 import { getSoldiersForBox, getStackedSoldierSlots, getVisibleSoldiersForBox, getColorCountsForSoldiers, getVisibleColorChips, getOrderedSoldiersForStack, getStackSelectorSoldier, getNextStackSelectorSoldier } from './SmalBoard.helpers';
+import { getIsSmallScreen } from '../assets/shared/screen.js';
 
 const arrowGifSource = {
     uri: 'https://media1.tenor.com/m/ST02u_i1Z2oAAAAd/banner-gif-arrows.gif'
@@ -70,7 +71,7 @@ export default function SmalBoard() {
 
     const windowWidth = Dimensions.get('window').width;
     const windowHeight = Dimensions.get('window').height;
-    const isSmallScreen = windowWidth < 375 || windowHeight < 667;
+    const isSmallScreen = getIsSmallScreen({ width: windowWidth, height: windowHeight });
 
     const tutorialTargetSoldierId = useMemo(() => {
         const blueSoldierOnStartCell = blueSoldiers.find((soldier) => soldier.position === '1a');

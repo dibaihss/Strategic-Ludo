@@ -1,10 +1,11 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Platform, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateTimer, setTimerRunning, resetTimer, setActivePlayer } from '../assets/store/gameSlice';
 import { uiStrings } from "../assets/shared/hardCodedData.js";
 import TurnIndicator from './TurnIndicator.jsx';
 import SoundToggle from './SoundToggle.jsx';
+import { getIsSmallScreen } from '../assets/shared/screen.js';
 
 export default function Timer() {
     const dispatch = useDispatch();
@@ -15,7 +16,7 @@ export default function Timer() {
     const systemLang = useSelector(state => state.language.systemLang);
     const windowWidth = Dimensions.get('window').width;
     const windowHeight = Dimensions.get('window').height;
-    const isSmallScreen = windowWidth < 375 || windowHeight < 667;
+    const isSmallScreen = getIsSmallScreen({ width: windowWidth, height: windowHeight });
 
     const styles = StyleSheet.create({
         container: {

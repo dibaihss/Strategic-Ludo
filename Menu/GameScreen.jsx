@@ -21,6 +21,7 @@ import TutorialGuide from '../GameComponents/TutorialGuide.jsx';
 import { cancelPendingBotTurn, emitMultiplayerBotTurn, getBotDifficultyForTurn, isBotControlledPlayer, runBotTurn } from './botLogic.js';
 import { playSound } from '../assets/shared/audioManager';
 import DisconnectionOverlay from '../GameComponents/DisconnectionOverlay.jsx';
+import { isE2EMode } from '../assets/store/sessionApiShared.jsx';
 import {
   clearTutorialReopen,
   markTutorialAction,
@@ -470,6 +471,10 @@ export default function GameScreen({ route, navigation }) {
     () => mode === 'multiplayer' && connected && isHost && isMultiplayerBotTurn,
     [connected, isHost, isMultiplayerBotTurn, mode]
   );
+  const shouldRunLocalE2EMultiplayerBotTurn = useMemo(
+    () => mode === 'multiplayer' && isE2EMode && !connected && isHost && isMultiplayerBotTurn,
+    [connected, isHost, isMultiplayerBotTurn, mode]
+  );
   const botDifficulty = useMemo(
     () => getBotDifficultyForTurn({
       mode,
@@ -483,12 +488,12 @@ export default function GameScreen({ route, navigation }) {
 
   useEffect(() => {
     if (winnerDetected || loading || shouldPauseBotActions()) return;
-    if (!isOfflineBotTurn && !shouldEmitMultiplayerBotTurn) return;
+    if (!isOfflineBotTurn && !shouldEmitMultiplayerBotTurn && !shouldRunLocalE2EMultiplayerBotTurn) return;
 
     const botTimer = setTimeout(() => {
       if (shouldPauseBotActions()) return;
 
-      if (isOfflineBotTurn) {
+      if (isOfflineBotTurn || shouldRunLocalE2EMultiplayerBotTurn) {
         runBotTurn({
           color: activePlayer,
           difficulty: botDifficulty,
@@ -532,6 +537,7 @@ export default function GameScreen({ route, navigation }) {
     sendMatchCommand,
     sendMessage,
     shouldEmitMultiplayerBotTurn,
+    shouldRunLocalE2EMultiplayerBotTurn,
     showClone,
     soldiersByColor,
     systemLang,
@@ -585,15 +591,15 @@ export default function GameScreen({ route, navigation }) {
           type: 'skipTurn'
         });
       }}
-      
-      if(mode === 'local') {
+
+      const shouldHandleSkipLocally = mode === 'local'
+        || (mode === 'multiplayer' && isE2EMode && !connected)
+        || (mode === 'bot' && activePlayer === 'blue');
+
+      if(shouldHandleSkipLocally) {
         dispatch(setActivePlayer());
         dispatch(resetTimer());
-      } 
-       if(mode === 'bot' && activePlayer === 'blue') {
-        dispatch(setActivePlayer());
-        dispatch(resetTimer());
-    }
+      }
     
     }
 

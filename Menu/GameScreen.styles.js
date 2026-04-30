@@ -1,7 +1,8 @@
 import { StyleSheet, Platform, Dimensions } from 'react-native';
+import { getIsSmallScreen } from '../assets/shared/screen.js';
 
 const { width: windowWidth, height: windowHeight } = Dimensions.get('window');
-const isSmallScreen = windowWidth < 375 || windowHeight < 667;
+const isSmallScreen = getIsSmallScreen({ width: windowWidth, height: windowHeight });
 
 export const createGameScreenStyles = (theme) => {
   return StyleSheet.create({

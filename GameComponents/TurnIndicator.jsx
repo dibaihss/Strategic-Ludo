@@ -3,14 +3,15 @@ import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { useSelector } from 'react-redux';
 import { MaterialIcons } from '@expo/vector-icons';
 import { getLocalizedColor } from "../assets/shared/hardCodedData.js";
+import { getIsSmallScreen } from '../assets/shared/screen.js';
 
 
 const TurnIndicator = () => {
   const activePlayer = useSelector(state => state.game.activePlayer);
   const theme = useSelector(state => state.theme.current);
   const systemLang = useSelector(state => state.language.systemLang);
-  const windowWidth = Dimensions.get('window').width;
-  const isSmallScreen = windowWidth < 375;
+  const { width, height } = Dimensions.get('window');
+  const isSmallScreen = getIsSmallScreen({ width, height });
   
   // Get localized player name
   const localizedPlayerName = getLocalizedColor(activePlayer, systemLang);
@@ -44,9 +45,9 @@ const TurnIndicator = () => {
   });
   
   return (
-    <View style={styles.container}>
+    <View testID="turn-indicator" style={styles.container}>
       <MaterialIcons name="person" size={isSmallScreen ? 18 : 24} color="white" />
-      <Text style={styles.text}>
+      <Text testID="turn-indicator-text" style={styles.text}>
         {localizedPlayerName}
       </Text>
     </View>

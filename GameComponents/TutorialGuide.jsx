@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { Animated, Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSelector } from 'react-redux';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
+import { getIsSmallScreen } from '../assets/shared/screen.js';
 
 const getStepLayout = (step, isSmallScreen) => {
     if (step === 0) {
@@ -76,7 +77,7 @@ export default function TutorialGuide({ visible, step, onSkip }) {
     const tutorialAnchorByStep = useSelector((state) => state.tutorial?.anchorByStep || {});
     const targetPulse = useRef(new Animated.Value(1)).current;
     const { width, height } = Dimensions.get('window');
-    const isSmallScreen = width < 375 || height < 667;
+    const isSmallScreen = getIsSmallScreen({ width, height });
     const popupWidth = isSmallScreen ? width - 220 : Math.min(360, width - 60) - 20;
 
     useEffect(() => {

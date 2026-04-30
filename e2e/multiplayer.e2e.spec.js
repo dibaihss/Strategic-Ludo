@@ -445,9 +445,7 @@ test.describe('Ludo multiplayer flow', () => {
     // Create new browser contexts for each player
     const browser = await chromium.launch();
     const contextA = await browser.newContext();
-    const contextB = await browser.newContext();
     const pageA = await contextA.newPage();
-    const pageB = await contextB.newPage();
 
     try {
       // Player A login and create match
