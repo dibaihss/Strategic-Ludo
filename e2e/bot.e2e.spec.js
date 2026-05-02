@@ -15,10 +15,10 @@ const trackBotMoveLogs = (page) => {
   return moveLogs;
 };
 
-const activeTurnLabel = (page, color) => page.getByText(new RegExp(`^${color}$`, 'i')).first();
+const activeTurnLabel = (page) => page.getByTestId('turn-indicator-text');
 
 const expectActiveTurn = async (page, color) => {
-  await expect(activeTurnLabel(page, color)).toBeVisible();
+  await expect(activeTurnLabel(page)).toHaveText(new RegExp(`^${color}$`, 'i'));
 };
 
 const skipTurn = async (page, expectedNextColor) => {
@@ -31,8 +31,9 @@ const skipTurn = async (page, expectedNextColor) => {
 
 const advanceToBotControlledTurn = async (page) => {
   await expectActiveTurn(page, 'blue');
+  await skipTurn(page, 'green');
   await skipTurn(page, 'red');
-  await skipTurn(page, 'yellow');
+  await skipTurn(page, 'pink');
 };
 
 // Utility: open app in E2E mode
@@ -101,7 +102,7 @@ test('bots emit follow-up actions after the human turn ends', async ({ page }) =
   await advanceToBotControlledTurn(page);
 
   await expect.poll(async () => {
-    const yellowTurnVisible = await activeTurnLabel(page, 'yellow').isVisible().catch(() => false);
-    return yellowTurnVisible === false;
+    return (await activeTurnLabel(page).textContent())?.trim()?.toLowerCase();
   }, { timeout: 5000 }).toBeTruthy();
+  await expect(activeTurnLabel(page)).not.toHaveText(/^pink$/i, { timeout: 5000 });
 });
