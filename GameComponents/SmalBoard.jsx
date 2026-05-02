@@ -40,10 +40,10 @@ const canControlColor = (currentPlayerColor, selectedColor, systemLang, color) =
         return true;
     } else {
         const localizedActivePlayer = getLocalizedColor(color, systemLang);
-        showErrorToast(
-            uiStrings[systemLang].selectPlayer.replace('{color}', localizedActivePlayer),
-            uiStrings[systemLang].playerNotSelected
-        );
+        // showErrorToast(
+        //     uiStrings[systemLang].selectPlayer.replace('{color}', localizedActivePlayer),
+        //     uiStrings[systemLang].playerNotSelected
+        // );
     }
     if (Array.isArray(currentPlayerColor)) {
         return currentPlayerColor[0] === selectedColor || currentPlayerColor[1] === selectedColor;

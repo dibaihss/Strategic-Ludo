@@ -85,6 +85,7 @@ export default function GameScreen({ route, navigation }) {
   const presenceStateRef = useRef(isAppStateActive(AppState.currentState) ? 'active' : 'inactive');
   const disconnectedPlayerRef = useRef(disconnectedPlayer);
   const lastActivePlayerRef = useRef(activePlayer);
+  const botTurnLockRef = useRef(null);
   const tutorialCaptureSetupDoneRef = useRef(false);
   const tutorialWasActiveRef = useRef(false);
   const forceTutorialStartConsumedRef = useRef(false);
@@ -485,16 +486,38 @@ export default function GameScreen({ route, navigation }) {
     }),
     [activePlayer, currentMatch?.users, mode, playerColors, routeBotDifficulty]
   );
+  const currentBotTurnKey = useMemo(() => {
+    if (isOfflineBotTurn || shouldEmitMultiplayerBotTurn || shouldRunLocalE2EMultiplayerBotTurn) {
+      return `${mode}:${activePlayer}`;
+    }
+
+    return null;
+  }, [
+    activePlayer,
+    isOfflineBotTurn,
+    mode,
+    shouldEmitMultiplayerBotTurn,
+    shouldRunLocalE2EMultiplayerBotTurn,
+  ]);
+
+  useEffect(() => {
+    if (!currentBotTurnKey || botTurnLockRef.current !== currentBotTurnKey) {
+      botTurnLockRef.current = null;
+    }
+  }, [currentBotTurnKey]);
 
   useEffect(() => {
     if (winnerDetected || loading || shouldPauseBotActions()) return;
-    if (!isOfflineBotTurn && !shouldEmitMultiplayerBotTurn && !shouldRunLocalE2EMultiplayerBotTurn) return;
+    if (!currentBotTurnKey) return;
+    if (botTurnLockRef.current === currentBotTurnKey) return;
 
     const botTimer = setTimeout(() => {
       if (shouldPauseBotActions()) return;
 
       if (isOfflineBotTurn || shouldRunLocalE2EMultiplayerBotTurn) {
-        runBotTurn({
+        botTurnLockRef.current = currentBotTurnKey;
+
+        Promise.resolve(runBotTurn({
           color: activePlayer,
           difficulty: botDifficulty,
           activePlayer,
@@ -504,9 +527,25 @@ export default function GameScreen({ route, navigation }) {
           cardsByColor,
           soldiersByColor,
           shouldCancel: shouldPauseBotActions,
-        });
+        }))
+          .then((action) => {
+            if (action === null && botTurnLockRef.current === currentBotTurnKey) {
+              botTurnLockRef.current = null;
+            }
+          })
+          .catch(() => {
+            if (botTurnLockRef.current === currentBotTurnKey) {
+              botTurnLockRef.current = null;
+            }
+          });
         return;
       }
+
+      if (!currentMatch?.id || !user?.id) {
+        return;
+      }
+
+      botTurnLockRef.current = currentBotTurnKey;
 
       emitMultiplayerBotTurn({
         color: activePlayer,
@@ -528,6 +567,7 @@ export default function GameScreen({ route, navigation }) {
     botDifficulty,
     cardsByColor,
     connected,
+    currentBotTurnKey,
     currentMatch,
     dispatch,
     gamePaused,
