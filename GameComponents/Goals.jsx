@@ -3,6 +3,7 @@ import React from 'react';
 import Soldier from './Soldier';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
+import { getIsSmallScreen } from '../assets/shared/screen.js';
 
 
 export default function Goals() {
@@ -14,7 +15,7 @@ export default function Goals() {
     const theme = useSelector(state => state.theme.current);
     const windowWidth = Dimensions.get('window').width;
     const windowHeight = Dimensions.get('window').height;
-    const isSmallScreen = windowWidth < 375 || windowHeight < 667;
+    const isSmallScreen = getIsSmallScreen({ width: windowWidth, height: windowHeight });
 
     const renderGoalQuadrant = (soldiers, colorStyle, iconColor) => {
         const soldiersAtHome = soldiers.filter((soldier) => soldier.isOut === true).slice(0, 4);

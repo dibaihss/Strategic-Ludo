@@ -18,6 +18,7 @@ import { setShowClone } from '../assets/store/animationSlice.jsx';
 import { useDispatch, useSelector } from 'react-redux';
 import { playSound } from '../assets/shared/audioManager';
 import PawnGraphic from './PawnGraphic';
+import { getIsSmallScreen } from '../assets/shared/screen.js';
 
 const NAMED_COLOR_MAP = {
     black: '#000000',
@@ -409,7 +410,7 @@ export default function Player({
     const theme = useSelector(state => state.theme.current);
     const windowWidth = Dimensions.get('window').width;
     const windowHeight = Dimensions.get('window').height;
-    const isSmallScreen = windowWidth < 375 || windowHeight < 667;
+    const isSmallScreen = getIsSmallScreen({ width: windowWidth, height: windowHeight });
     const dispatch = useDispatch();
     const effectiveSelected = isSelected || isSelectedForTips;
 

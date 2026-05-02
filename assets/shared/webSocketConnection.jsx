@@ -5,6 +5,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Platform } from 'react-native';
 import { applyServerStateSnapshot } from '../store/gameSlice.jsx';
 import { store } from '../store/store.jsx';
+import { isE2EMode } from '../store/sessionApiShared.jsx';
 
 // ─── WebSocket URL Configuration ──────────────────────────────────────────
 const PRODUCTION_WS_URL = process.env.EXPO_PUBLIC_WS_URL;
@@ -205,6 +206,13 @@ export const WebSocketProvider = ({ children }) => {
 
   // ─── Main socket setup ─────────────────────────────────────────────────
   useEffect(() => {
+    if (isE2EMode) {
+      socketRef.current?.disconnect();
+      socketRef.current = null;
+      setConnected(false);
+      return;
+    }
+
     if (!isOnline) {
       socketRef.current?.disconnect();
       socketRef.current = null;

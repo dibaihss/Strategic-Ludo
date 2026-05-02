@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import { uiStrings } from "../assets/shared/hardCodedData.js";
 import { loginGuest } from "../assets/store/authSlice.jsx";
 import { setIsOnline } from "../assets/store/gameSlice.jsx";
 import Toast from "react-native-toast-message";
+import { getIsSmallScreen } from "../assets/shared/screen.js";
 
 const LoginPage = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -28,7 +29,7 @@ const LoginPage = ({ navigation }) => {
   const authError = useSelector((state) => state.auth.error);
   const loading = useSelector((state) => state.auth.loading);
   const { width, height } = useWindowDimensions();
-  const isSmallScreen = width < 375 || height < 667;
+  const isSmallScreen = getIsSmallScreen({ width, height });
   const [showGuestNameModal, setShowGuestNameModal] = useState(false);
   const [guestName, setGuestName] = useState("");
   const [guestNameError, setGuestNameError] = useState("");

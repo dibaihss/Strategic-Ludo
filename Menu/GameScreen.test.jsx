@@ -11,6 +11,8 @@ import { setCurrentPlayer, setCurrentPlayerColor } from '../assets/store/gameSli
 import { startTutorial } from '../assets/store/tutorialSlice.jsx';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+let mockIsE2EMode = false;
+
 jest.mock('@react-native-async-storage/async-storage', () => ({
   setItem: jest.fn(() => Promise.resolve()),
   getItem: jest.fn(),
@@ -62,7 +64,9 @@ jest.mock('../assets/store/authSlice.jsx', () => {
 });
 
 jest.mock('../assets/store/sessionApiShared.jsx', () => ({
-  isE2EMode: false,
+  get isE2EMode() {
+    return mockIsE2EMode;
+  },
   API_URL: 'http://localhost',
   getE2EMatches: jest.fn(),
   setE2EMatches: jest.fn(),
@@ -170,6 +174,7 @@ describe('GameScreen', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockIsE2EMode = false;
     dispatchMock = jest.fn();
     sendMessageMock = jest.fn();
     sendMatchCommandMock = jest.fn();
@@ -508,6 +513,10 @@ describe('GameScreen', () => {
 
     expect(await findByTestId('game-screen')).toBeTruthy();
 
+    await act(async () => {
+      await Promise.resolve();
+    });
+
     act(() => {
       jest.advanceTimersByTime(1000);
     });
@@ -595,6 +604,210 @@ describe('GameScreen', () => {
 
     expect(emitMultiplayerBotTurn).not.toHaveBeenCalled();
     expect(runBotTurn).not.toHaveBeenCalled();
+  });
+
+  test('mocked e2e multiplayer runs bot turns locally when the socket is unavailable', async () => {
+    jest.useFakeTimers();
+    mockIsE2EMode = true;
+
+    const state = createState({
+      game: {
+        playerColors: {
+          blue: 'user-1',
+          red: 'bot-1',
+          yellow: 'user-2',
+          green: 'user-1',
+        },
+        activePlayer: 'red',
+        currentPlayerColor: ['blue', 'green'],
+        isOnline: true,
+        blueSoldiers: [
+          { id: 1, color: 'blue', isOut: true },
+          { id: 2, color: 'blue', isOut: true },
+          { id: 3, color: 'blue', isOut: true },
+          { id: 4, color: 'blue', isOut: false },
+        ],
+        redSoldiers: [
+          { id: 5, color: 'red', position: '1b', onBoard: true, isOut: false },
+        ],
+        redCards: [
+          { id: 7, value: 2, used: false },
+        ],
+      },
+      auth: { user: { id: 'user-1' } },
+      session: {
+        currentMatch: {
+          id: 'match-1',
+          users: [
+            { id: 'user-1', name: 'Host' },
+            { id: 'bot-1', name: 'Bot 1', isBot: true, botDifficulty: 'hard' },
+            { id: 'user-2', name: 'Guest' },
+          ],
+        },
+      },
+    });
+
+    configureSelectors(state);
+    useWebSocket.mockReturnValue({
+      connected: false,
+      subscribe: jest.fn(),
+      sendMessage: sendMessageMock,
+      sendMatchCommand: sendMatchCommandMock,
+      requestFullSync: requestFullSyncMock,
+    });
+
+    const { findByTestId } = render(
+      <GameScreen
+        route={{ params: { mode: 'multiplayer', matchId: 'match-1', playerColors: state.game.playerColors } }}
+        navigation={{ navigate: jest.fn() }}
+      />
+    );
+
+    expect(await findByTestId('game-screen')).toBeTruthy();
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(1000);
+    });
+
+    expect(runBotTurn).toHaveBeenCalledWith(expect.objectContaining({
+      color: 'red',
+      difficulty: 'hard',
+      activePlayer: 'red',
+      cardsByColor: expect.objectContaining({
+        red: state.game.redCards,
+      }),
+      soldiersByColor: expect.objectContaining({
+        red: state.game.redSoldiers,
+      }),
+      shouldCancel: expect.any(Function),
+    }));
+    expect(emitMultiplayerBotTurn).not.toHaveBeenCalled();
+  });
+
+  test('offline bot turns are not rescheduled after execution starts for the same active player', async () => {
+    jest.useFakeTimers();
+
+    const initialState = createState({
+      game: {
+        activePlayer: 'red',
+        blueSoldiers: [
+          { id: 1, color: 'blue', isOut: true },
+          { id: 2, color: 'blue', isOut: true },
+          { id: 3, color: 'blue', isOut: true },
+          { id: 4, color: 'blue', isOut: false },
+        ],
+        redSoldiers: [
+          { id: 5, color: 'red', position: '1b', onBoard: true, isOut: false },
+        ],
+        redCards: [
+          { id: 7, value: 2, used: false },
+        ],
+      },
+    });
+
+    configureSelectors(initialState);
+
+    const { findByTestId, rerender } = render(
+      <GameScreen route={{ params: { mode: 'bot', matchId: 1 } }} navigation={{ navigate: jest.fn() }} />
+    );
+
+    expect(await findByTestId('game-screen')).toBeTruthy();
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(1000);
+    });
+
+    expect(runBotTurn).toHaveBeenCalledTimes(1);
+
+    const updatedState = createState({
+      game: {
+        activePlayer: 'red',
+        blueSoldiers: [
+          { id: 1, color: 'blue', isOut: true },
+          { id: 2, color: 'blue', isOut: true },
+          { id: 3, color: 'blue', isOut: true },
+          { id: 4, color: 'blue', isOut: false },
+        ],
+        redSoldiers: [
+          { id: 5, color: 'red', position: '3b', onBoard: true, isOut: false },
+        ],
+        redCards: [
+          { id: 7, value: 2, used: true },
+        ],
+      },
+    });
+
+    configureSelectors(updatedState);
+    rerender(
+      <GameScreen route={{ params: { mode: 'bot', matchId: 1 } }} navigation={{ navigate: jest.fn() }} />
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(1000);
+    });
+
+    expect(runBotTurn).toHaveBeenCalledTimes(1);
+  });
+
+  test('mocked e2e multiplayer skip turn advances locally without a socket', async () => {
+    mockIsE2EMode = true;
+
+    const state = createState({
+      game: {
+        playerColors: {
+          blue: 'user-1',
+          red: 'bot-1',
+          yellow: 'bot-1',
+          green: 'user-1',
+        },
+        activePlayer: 'blue',
+        currentPlayerColor: ['blue', 'green'],
+        isOnline: true,
+      },
+      auth: { user: { id: 'user-1' } },
+      session: {
+        currentMatch: {
+          id: 'match-1',
+          users: [
+            { id: 'user-1', name: 'Host' },
+            { id: 'bot-1', name: 'Bot 1', isBot: true, botDifficulty: 'hard' },
+          ],
+        },
+      },
+    });
+
+    configureSelectors(state);
+    useWebSocket.mockReturnValue({
+      connected: false,
+      subscribe: jest.fn(),
+      sendMessage: sendMessageMock,
+      sendMatchCommand: sendMatchCommandMock,
+      requestFullSync: requestFullSyncMock,
+    });
+
+    const { findByTestId } = render(
+      <GameScreen
+        route={{ params: { mode: 'multiplayer', matchId: 'match-1', playerColors: state.game.playerColors } }}
+        navigation={{ navigate: jest.fn() }}
+      />
+    );
+
+    fireEvent.press(await findByTestId('game-skip-turn-button'));
+
+    expect(dispatchMock).toHaveBeenCalledWith({ type: 'game/setActivePlayer' });
+    expect(dispatchMock).toHaveBeenCalledWith({ type: 'game/resetTimer' });
   });
 
   test('gamePaused blocks offline bot turns from being scheduled', async () => {

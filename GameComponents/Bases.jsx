@@ -26,6 +26,7 @@ import {
 } from './Bases.logic';
 import { playSound } from '../assets/shared/audioManager';
 import { markTutorialAction, setTutorialAnchor } from '../assets/store/tutorialSlice.jsx';
+import { getIsSmallScreen } from '../assets/shared/screen.js';
 
 
 export default function Bases() {
@@ -55,7 +56,7 @@ export default function Bases() {
 
     const windowWidth = Dimensions.get('window').width;
     const windowHeight = Dimensions.get('window').height;
-    const isSmallScreen = windowWidth < 375 || windowHeight < 667;
+    const isSmallScreen = getIsSmallScreen({ width: windowWidth, height: windowHeight });
 
     const movePendingRef = useRef(false);
     const [isCardActionPending, setIsCardActionPending] = useState(false);
