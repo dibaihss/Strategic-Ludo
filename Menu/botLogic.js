@@ -114,7 +114,7 @@ export const emitMultiplayerBotTurn = ({
   sendMessage,
   sendMatchCommand,
   shouldCancel = () => false,
-  delayMs = 1000,
+  delayMs = 500,
   randomFn,
   disableNoise = false,
 }) => {
