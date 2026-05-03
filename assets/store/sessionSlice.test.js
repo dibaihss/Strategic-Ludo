@@ -14,9 +14,10 @@ jest.mock('./sessionApiShared.jsx', () => ({
   requireAuthToken: jest.fn(),
 }));
 
-import sessionReducer, { addBotToMatch, updateMatch } from './sessionSlice.jsx';
+import sessionReducer, { addBotToMatch, createMatch, isCreateMatchReauthError, updateMatch } from './sessionSlice.jsx';
+import { requireAuthToken } from './sessionApiShared.jsx';
 
-const createMatch = (overrides = {}) => ({
+const createStoredMatch = (overrides = {}) => ({
   id: 1,
   name: 'Match 1',
   status: 'waiting',
@@ -25,8 +26,13 @@ const createMatch = (overrides = {}) => ({
 });
 
 describe('sessionSlice bot lobby support', () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+    delete global.fetch;
+  });
+
   test('adds bots to the current match up to the maximum limit', () => {
-    const baseMatch = createMatch();
+    const baseMatch = createStoredMatch();
     let state = {
       matches: [baseMatch],
       currentMatch: baseMatch,
@@ -60,7 +66,7 @@ describe('sessionSlice bot lobby support', () => {
   });
 
   test('preserves locally added bots when a refreshed match payload arrives', () => {
-    const existingMatch = createMatch({
+    const existingMatch = createStoredMatch({
       users: [
         { id: 101, name: 'Host' },
         { id: 'bot-1-1', name: 'Bot 1', isBot: true },
@@ -76,7 +82,7 @@ describe('sessionSlice bot lobby support', () => {
       error: null,
     };
 
-    const refreshedState = sessionReducer(state, updateMatch(createMatch({
+    const refreshedState = sessionReducer(state, updateMatch(createStoredMatch({
       users: [{ id: 101, name: 'Host' }, { id: 202, name: 'Guest' }],
     })));
 
@@ -85,5 +91,30 @@ describe('sessionSlice bot lobby support', () => {
       { id: 202, name: 'Guest' },
       { id: 'bot-1-1', name: 'Bot 1', isBot: true },
     ]);
+  });
+
+  test('createMatch returns a structured re-login error when the backend user is missing', async () => {
+    requireAuthToken.mockResolvedValue({ token: 'token-123' });
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      json: jest.fn().mockResolvedValue({ message: 'User not found' }),
+    });
+
+    const action = await createMatch()(jest.fn(), () => ({
+      auth: {
+        user: { id: 101 },
+      },
+    }), undefined);
+
+    expect(action.type).toBe('session/createMatch/rejected');
+    expect(action.payload).toEqual({
+      code: 'USER_NOT_FOUND',
+      message: 'User not found',
+    });
+    expect(isCreateMatchReauthError(action.payload)).toBe(true);
+
+    const nextState = sessionReducer(undefined, action);
+    expect(nextState.error).toBe('User not found');
   });
 });

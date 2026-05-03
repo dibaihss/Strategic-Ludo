@@ -11,8 +11,43 @@ import { clearAuth, logout, updateUserStatus } from "./authSlice.jsx";
 
 const MAX_MATCH_PLAYERS = 4;
 const MAX_MATCH_BOTS = 3;
+const CREATE_MATCH_REAUTH_ERROR_CODE = "USER_NOT_FOUND";
+
+const toDisplayError = (error) => {
+  if (!error) return null;
+  if (typeof error === "string") return error;
+  if (typeof error?.message === "string") return error.message;
+  return "Something went wrong";
+};
 
 const isBotUser = (user) => Boolean(user?.isBot);
+
+const readErrorMessage = async (response) => {
+  try {
+    const payload = await response.json();
+    return typeof payload?.message === "string" ? payload.message : null;
+  } catch {
+    return null;
+  }
+};
+
+const getCreateMatchError = async (response) => {
+  const message = await readErrorMessage(response);
+  if (response.status === 404 && message === "User not found") {
+    return {
+      code: CREATE_MATCH_REAUTH_ERROR_CODE,
+      message,
+    };
+  }
+
+  return message || "Failed to create match";
+};
+
+export const isCreateMatchReauthError = (error) => (
+  Boolean(error)
+  && typeof error === "object"
+  && error.code === CREATE_MATCH_REAUTH_ERROR_CODE
+);
 
 const mergeBotUsersIntoMatch = (incomingMatch, existingMatch) => {
   if (!incomingMatch) return incomingMatch;
@@ -110,7 +145,7 @@ export const createMatch = createAsyncThunk(
         }),
       });
 
-      if (!response.ok) return rejectWithValue("Failed to create match");
+      if (!response.ok) return rejectWithValue(await getCreateMatchError(response));
       const match = await response.json();
 
       if (userId) {
@@ -442,7 +477,7 @@ const sessionSlice = createSlice({
       })
       .addCase(fetchMatches.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload || null;
+        state.error = toDisplayError(action.payload);
       })
       .addCase(createMatch.pending, (state) => {
         state.loading = true;
@@ -458,7 +493,7 @@ const sessionSlice = createSlice({
       })
       .addCase(createMatch.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload || null;
+        state.error = toDisplayError(action.payload);
       })
       .addCase(joinMatch.pending, (state) => {
         state.loading = true;
@@ -474,7 +509,7 @@ const sessionSlice = createSlice({
       })
       .addCase(joinMatch.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload || null;
+        state.error = toDisplayError(action.payload);
       })
       .addCase(fetchMatchState.pending, (state) => {
         state.loading = true;

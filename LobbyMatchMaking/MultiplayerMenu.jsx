@@ -11,8 +11,8 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import { MaterialIcons } from '@expo/vector-icons';
 import { uiStrings } from '../assets/shared/hardCodedData.js';
-import { setCurrentUserPage } from '../assets/store/authSlice.jsx';
-import { fetchMatches, createMatch, joinMatch, fetchCurrentMatch, updateMatch } from '../assets/store/sessionSlice.jsx';
+import { clearAuth, logout, setCurrentUserPage } from '../assets/store/authSlice.jsx';
+import { fetchMatches, createMatch, joinMatch, fetchCurrentMatch, updateMatch, isCreateMatchReauthError } from '../assets/store/sessionSlice.jsx';
 import { setIsOnline } from '../assets/store/gameSlice.jsx';
 import { createMultiplayerMenuStyles } from './MultiplayerMenu.styles.js';
 
@@ -64,6 +64,13 @@ const MatchListPage = ({ navigation }) => {
       });
   }
 
+  const redirectToLoginAfterAccountRemoval = () => {
+    dispatch(clearAuth());
+    dispatch(setIsOnline(false));
+    navigation.navigate('Login');
+    dispatch(logout());
+  };
+
 
   const handleJoinMatch = (matchId) => {
     dispatch(joinMatch(matchId)).unwrap()
@@ -101,9 +108,14 @@ const MatchListPage = ({ navigation }) => {
       })
 
       .catch(err => {
+        if (isCreateMatchReauthError(err)) {
+          redirectToLoginAfterAccountRemoval();
+          return;
+        }
+
         Alert.alert(
           uiStrings[systemLang].error || 'Error',
-          err || 'Failed to create match'
+          typeof err === 'string' ? err : err?.message || 'Failed to create match'
         );
       });
   };

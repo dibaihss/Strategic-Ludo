@@ -27,6 +27,9 @@ const ANDROID_API_URL = "http://192.168.178.130:8080/api";
 export const API_URL =
   ENV_API || (__DEV__ ? (Platform.OS === "android" ? ANDROID_API_URL : LOCALHOST_API_URL) : PRODUCTION_API_URL);
 
+export const getBackendBaseUrl = (apiUrl) => apiUrl.replace(/\/api\/?$/, "");
+export const BACKEND_WARMUP_URL = `${getBackendBaseUrl(API_URL)}/health`;
+
 export const isE2EMode = (() => {
   const envFlag =
     (typeof process !== "undefined" && process?.env?.EXPO_PUBLIC_E2E === "true") ||
@@ -83,4 +86,36 @@ export const requireAuthToken = async (getState, rejectWithValue, actionName) =>
     return { error: rejectWithValue("Authentication required") };
   }
   return { token };
+};
+
+let hasTriggeredBackendWarmup = false;
+
+export const warmBackendOnAppOpen = async ({ timeoutMs = 5000, fetchFn = globalThis.fetch } = {}) => {
+  if (isE2EMode || hasTriggeredBackendWarmup || typeof fetchFn !== "function") {
+    return false;
+  }
+
+  hasTriggeredBackendWarmup = true;
+
+  const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timeoutId = controller && timeoutMs > 0
+    ? setTimeout(() => controller.abort(), timeoutMs)
+    : null;
+
+  try {
+    await fetchFn(BACKEND_WARMUP_URL, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+      signal: controller?.signal,
+    });
+    return true;
+  } catch {
+    return false;
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
 };
