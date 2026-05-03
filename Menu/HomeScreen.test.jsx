@@ -125,4 +125,32 @@ describe('HomeScreen', () => {
     expect(reloadMock).toHaveBeenCalled();
     expect(navigation.navigate).not.toHaveBeenCalled();
   });
+
+  test('offline local mode navigates directly to Game when window reload is unavailable', async () => {
+    const navigation = { navigate: jest.fn() };
+    const state = createState();
+
+    useSelector.mockImplementation((selector) => selector(state));
+
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      value: {},
+    });
+
+    const { getByTestId } = render(<HomeScreen navigation={navigation} />);
+
+    fireEvent.press(getByTestId('home-play-offline-button'));
+
+    await act(async () => {
+      fireEvent.press(getByTestId('offline-choice-local-button'));
+    });
+
+    await waitFor(() => {
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith('REDIRECT_TO_GAME', 'true');
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith('REDIRECT_GAME_MODE', 'local');
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith('REDIRECT_ISLOGGED_IN', 'true');
+    });
+
+    expect(navigation.navigate).toHaveBeenCalledWith('Game', { mode: 'local' });
+  });
 });

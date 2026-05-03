@@ -1,8 +1,8 @@
 import { Dimensions } from 'react-native';
 
 export const SMALL_SCREEN_BREAKPOINTS = Object.freeze({
-    maxWidth: 375,
-    maxHeight: 720,
+    maxWidth: 475,
+    maxHeight: 820,
 });
 
 export const isSmallScreenViewport = ({ width = 0, height = 0 } = {}) => (

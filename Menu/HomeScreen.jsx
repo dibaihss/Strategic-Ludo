@@ -4,6 +4,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import HomePage from './Home.jsx';
 import { logout, clearAuth} from '../assets/store/authSlice.jsx';
 
+const canReloadWindowLocation = () => typeof globalThis.window?.location?.reload === 'function';
+
 export default function HomeScreen({ navigation }) {
   const dispatch = useDispatch();
   const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
@@ -26,8 +28,8 @@ export default function HomeScreen({ navigation }) {
     await AsyncStorage.setItem('REDIRECT_GAME_MODE', selectedMode);
     await AsyncStorage.setItem('REDIRECT_ISLOGGED_IN', isLoggedIn.toString());
 
-    if (typeof window !== 'undefined') {
-      window.location.reload();
+    if (canReloadWindowLocation()) {
+      globalThis.window.location.reload();
     } else {
       // For native, we rely on the App entry point to handle the flag on next boot
       // or we could use a library like react-native-restart if available.
@@ -54,8 +56,8 @@ export default function HomeScreen({ navigation }) {
     await AsyncStorage.setItem('REDIRECT_BOT_DIFFICULTY', botDifficulty);
     await AsyncStorage.setItem('REDIRECT_ISLOGGED_IN', isLoggedIn.toString());
 
-    if (typeof window !== 'undefined') {
-      window.location.reload();
+    if (canReloadWindowLocation()) {
+      globalThis.window.location.reload();
     } else {
       navigation.navigate('Game', { mode: 'bot', botDifficulty });
     }
@@ -68,8 +70,8 @@ export default function HomeScreen({ navigation }) {
     await AsyncStorage.setItem('REDIRECT_FORCE_TUTORIAL', 'true');
     await AsyncStorage.setItem('REDIRECT_ISLOGGED_IN', isLoggedIn.toString());
 
-    if (typeof window !== 'undefined') {
-      window.location.reload();
+    if (canReloadWindowLocation()) {
+      globalThis.window.location.reload();
     } else {
       navigation.navigate('Game', { mode: 'bot', botDifficulty: 'normal', forceTutorial: true });
     }
