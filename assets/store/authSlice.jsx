@@ -8,6 +8,36 @@ import {
   requireAuthToken,
 } from "./sessionApiShared.jsx";
 
+export const clearStoredAuthData = async () => {
+  await AsyncStorage.removeItem("user");
+  await AsyncStorage.removeItem("token");
+};
+
+export const doesStoredUserExist = async ({ user, token, fetchFn = globalThis.fetch } = {}) => {
+  if (isE2EMode || !user?.id || typeof fetchFn !== "function") {
+    return true;
+  }
+
+  try {
+    const headers = {
+      "Content-Type": "application/json",
+    };
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const response = await fetchFn(`${API_URL}/users/${user.id}`, {
+      method: "GET",
+      headers,
+    });
+
+    return response.status !== 404;
+  } catch {
+    return true;
+  }
+};
+
 export const updateUserStatus = createAsyncThunk(
   "auth/updateUserStatus",
   async (status, { getState, rejectWithValue }) => {
@@ -205,8 +235,7 @@ export const logout = createAsyncThunk(
       return { success: true };
     } catch (error) {
       console.error("Logout error:", error);
-      await AsyncStorage.removeItem("user");
-      await AsyncStorage.removeItem("token");
+      await clearStoredAuthData();
 
       return rejectWithValue("Logout failed");
     }

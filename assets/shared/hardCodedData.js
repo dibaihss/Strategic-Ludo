@@ -254,6 +254,8 @@ const uiStrings = {
         hard: 'Hard',
         loginRequiredTitle: 'Login required',
         loginRequiredMessage: 'You are not logged in yet. Go to the login screen to sign in before starting multiplayer.',
+        accountRemovedTitle: 'Session expired',
+        accountRemovedMessage: 'Your guest account no longer exists. Please sign in again to continue multiplayer.',
         developmentPhase: 'The game is in development phase',
         // --- Waiting Room Strings ---
         loadingMatch: 'Loading match details...',
@@ -362,6 +364,8 @@ const uiStrings = {
         hard: 'صعب',
         loginRequiredTitle: 'تسجيل الدخول مطلوب',
         loginRequiredMessage: 'أنت غير مسجل الدخول بعد. انتقل إلى شاشة تسجيل الدخول قبل بدء اللعب متعدد اللاعبين.',
+        accountRemovedTitle: 'انتهت الجلسة',
+        accountRemovedMessage: 'حساب الضيف لم يعد موجودًا. يرجى تسجيل الدخول مرة أخرى لمتابعة اللعب متعدد اللاعبين.',
         developmentPhase: 'اللعبة في مرحلة التطوير',
         // --- Waiting Room Strings ---
         loadingMatch: 'جارٍ تحميل تفاصيل المباراة...',
@@ -470,6 +474,8 @@ const uiStrings = {
         hard: 'Schwer',
         loginRequiredTitle: 'Anmeldung erforderlich',
         loginRequiredMessage: 'Sie sind noch nicht angemeldet. Wechseln Sie zum Anmeldebildschirm, bevor Sie ein Mehrspielerspiel starten.',
+        accountRemovedTitle: 'Sitzung abgelaufen',
+        accountRemovedMessage: 'Ihr Gastkonto existiert nicht mehr. Bitte melden Sie sich erneut an, um den Mehrspielermodus fortzusetzen.',
         developmentPhase: 'Das Spiel befindet sich in der Entwicklungsphase',
         // --- Waiting Room Strings ---
         loadingMatch: 'Lade Matchdetails...',

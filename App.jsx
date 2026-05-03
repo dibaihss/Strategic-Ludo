@@ -9,8 +9,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { store } from './assets/store/store.jsx';
 import { WebSocketProvider } from './assets/shared/webSocketConnection.jsx';
 import { initAudio } from './assets/shared/audioManager';
-import { loadStoredUser } from './assets/store/authSlice.jsx';
+import { clearAuth, clearStoredAuthData, doesStoredUserExist, loadStoredUser } from './assets/store/authSlice.jsx';
 import { updateMatch } from './assets/store/sessionSlice.jsx';
+import { warmBackendOnAppOpen } from './assets/store/sessionApiShared.jsx';
+import { setIsOnline } from './assets/store/gameSlice.jsx';
 
 import AppNavigator from './navigators/AppNavigator.jsx';
 import AuthNavigator from './navigators/AuthNavigator.jsx';
@@ -23,47 +25,87 @@ function RootNavigation() {
   const [initialNavState, setInitialNavState] = React.useState(undefined);
   const [isLoading, setIsLoading] = React.useState(true);
 
+  const clearRedirectStorage = async () => {
+    await AsyncStorage.removeItem('REDIRECT_TO_GAME');
+    await AsyncStorage.removeItem('REDIRECT_GAME_MODE');
+    await AsyncStorage.removeItem('REDIRECT_BOT_DIFFICULTY');
+    await AsyncStorage.removeItem('REDIRECT_FORCE_TUTORIAL');
+    await AsyncStorage.removeItem('REDIRECT_MATCH_DATA');
+  };
+
+  const loadStoredUserIfValid = async () => {
+    const storedAuth = await dispatch(loadStoredUser()).unwrap();
+    const userStillExists = await doesStoredUserExist(storedAuth);
+
+    if (userStillExists) {
+      return storedAuth;
+    }
+
+    await clearStoredAuthData();
+    dispatch(clearAuth());
+    dispatch(setIsOnline(true));
+    return null;
+  };
+
+  const restoreRedirectMatchData = async (mode, hasValidStoredUser) => {
+    if (!hasValidStoredUser || mode !== 'multiplayer') {
+      return;
+    }
+
+    const matchDataStr = await AsyncStorage.getItem('REDIRECT_MATCH_DATA');
+    if (!matchDataStr) {
+      return;
+    }
+
+    const matchData = JSON.parse(matchDataStr);
+    dispatch(updateMatch(matchData));
+  };
+
+  const buildInitialGameParams = ({ mode, botDifficulty, forceTutorial }) => {
+    const params = { mode };
+    if (botDifficulty) params.botDifficulty = botDifficulty;
+    if (forceTutorial === 'true') params.forceTutorial = true;
+    return params;
+  };
+
+  const bootstrapRedirectSession = async () => {
+    const mode = await AsyncStorage.getItem('REDIRECT_GAME_MODE');
+    const botDifficulty = await AsyncStorage.getItem('REDIRECT_BOT_DIFFICULTY');
+    const forceTutorial = await AsyncStorage.getItem('REDIRECT_FORCE_TUTORIAL');
+    const isLoggedINLocalStorage = await AsyncStorage.getItem('REDIRECT_ISLOGGED_IN');
+
+    const hasValidStoredUser = isLoggedINLocalStorage === 'true'
+      ? Boolean(await loadStoredUserIfValid())
+      : false;
+
+    await restoreRedirectMatchData(mode, hasValidStoredUser);
+    await clearRedirectStorage();
+
+    if (!hasValidStoredUser && isLoggedINLocalStorage === 'true') {
+      return;
+    }
+
+    const params = buildInitialGameParams({ mode, botDifficulty, forceTutorial });
+
+    setInitialNavState({
+      index: 1,
+      routes: [
+        { name: 'Home' },
+        { name: 'Game', params },
+      ],
+    });
+  };
+
   useEffect(() => {
     const handleBootRedirect = async () => {
       try {
+        warmBackendOnAppOpen();
+
         const redirectFlag = await AsyncStorage.getItem('REDIRECT_TO_GAME');
         if (redirectFlag === 'true') {
-          const mode = await AsyncStorage.getItem('REDIRECT_GAME_MODE');
-          const botDifficulty = await AsyncStorage.getItem('REDIRECT_BOT_DIFFICULTY');
-          const forceTutorial = await AsyncStorage.getItem('REDIRECT_FORCE_TUTORIAL');
-          const isLoggedINLocalStorage = await AsyncStorage.getItem('REDIRECT_ISLOGGED_IN');
-    
-          if(isLoggedINLocalStorage === "true") await dispatch(loadStoredUser()).unwrap();
-
-          // Restore match data from localStorage for multiplayer
-          if (mode === 'multiplayer') {
-            const matchDataStr = await AsyncStorage.getItem('REDIRECT_MATCH_DATA');
-            if (matchDataStr) {
-              const matchData = JSON.parse(matchDataStr);
-              dispatch(updateMatch(matchData));
-            }
-          }
-
-          const params = { mode };
-          if (botDifficulty) params.botDifficulty = botDifficulty;
-          if (forceTutorial === 'true') params.forceTutorial = true;
-
-          await AsyncStorage.removeItem('REDIRECT_TO_GAME');
-          await AsyncStorage.removeItem('REDIRECT_GAME_MODE');
-          await AsyncStorage.removeItem('REDIRECT_BOT_DIFFICULTY');
-          await AsyncStorage.removeItem('REDIRECT_FORCE_TUTORIAL');
-          await AsyncStorage.removeItem('REDIRECT_MATCH_DATA');
-
-          // Game is a root-level screen in both AppNavigator and OfflineNavigator
-          setInitialNavState({
-            index: 1, // index 1 = Game (Home is 0, Game is 1)
-            routes: [
-              { name: 'Home' },
-              { name: 'Game', params },
-            ],
-          });
+          await bootstrapRedirectSession();
         } else {
-          await dispatch(loadStoredUser()).unwrap();
+          await loadStoredUserIfValid();
         }
       } catch (e) {
         console.error("Boot redirect failed:", e);
@@ -82,8 +124,8 @@ function RootNavigation() {
   let Navigator;
 
   if (isLoggedIn) Navigator = AppNavigator;
-  else if (!isOnline) Navigator = OfflineNavigator;
-  else Navigator = AuthNavigator;
+  else if (isOnline) Navigator = AuthNavigator;
+  else Navigator = OfflineNavigator;
 
   return (
     <NavigationContainer initialState={initialNavState}>
