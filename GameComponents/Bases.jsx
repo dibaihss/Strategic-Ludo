@@ -156,6 +156,30 @@ export default function Bases() {
         });
     }, [dispatch]);
 
+    const getActiveTurnOutlineColor = useCallback((color) => {
+        if (!color) {
+            return theme.colors.shadowColor;
+        }
+
+        return theme.colors[color] || theme.colors.shadowColor;
+    }, [theme.colors]);
+
+    const getActiveTurnOutlineStyle = useCallback((color) => {
+        if (activePlayer !== color) {
+            return null;
+        }
+
+        const outlineColor = getActiveTurnOutlineColor(color);
+        return {
+            borderColor: outlineColor,
+            shadowColor: outlineColor,
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.85,
+            shadowRadius: isSmallScreen ? 22 : 34,
+            elevation: isSmallScreen ? 5 : 7,
+        };
+    }, [activePlayer, getActiveTurnOutlineColor, isSmallScreen]);
+
     // ─── Styles ───────────────────────────────────────────────────────────
     const styles = StyleSheet.create({
         circleContainer: {
@@ -219,14 +243,14 @@ export default function Bases() {
         top: { top: isSmallScreen ? 3 : 20, right: isSmallScreen ? 3 : 20, transform: [{ rotate: '180deg' }] },
         bottom: { bottom: isSmallScreen ? 3 : 20, left: isSmallScreen ? 3 : 20 },
         right: { bottom: isSmallScreen ? 3 : 20, right: isSmallScreen ? 3 : 20, transform: [{ rotate: '180deg' }] },
-        red: { backgroundColor: theme.colors.red, borderColor: theme.colors.border, shadowColor: activePlayer === "red" ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 50 },
-        yellow: { backgroundColor: theme.colors.yellow, borderColor: theme.colors.border, shadowColor: activePlayer === "yellow" ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 50 },
-        blue: { backgroundColor: theme.colors.blue, borderColor: theme.colors.border, shadowColor: activePlayer === "blue" ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 50 },
-        green: { backgroundColor: theme.colors.green, borderColor: theme.colors.border, shadowColor: activePlayer === "green" ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 50 },
-        blue2: { shadowColor: activePlayer === "blue" ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: activePlayer === "blue" ? 0.7 : "", shadowRadius: activePlayer === "blue" ? 50 : "" },
-        red0: { shadowColor: activePlayer === "red" ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: activePlayer === "red" ? 0.7 : "", shadowRadius: activePlayer === "red" ? 50 : "" },
-        yellow1: { shadowColor: activePlayer === "yellow" ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: activePlayer === "yellow" ? 0.7 : "", shadowRadius: activePlayer === "yellow" ? 50 : "" },
-        green3: { shadowColor: activePlayer === "green" ? theme.colors.shadowColor : "", shadowOffset: { width: 0, height: 0 }, shadowOpacity: activePlayer === "green" ? 0.7 : "", shadowRadius: activePlayer === "green" ? 50 : "" },
+        red: { backgroundColor: theme.colors.red, borderColor: theme.colors.border },
+        yellow: { backgroundColor: theme.colors.yellow, borderColor: theme.colors.border },
+        blue: { backgroundColor: theme.colors.blue, borderColor: theme.colors.border },
+        green: { backgroundColor: theme.colors.green, borderColor: theme.colors.border },
+        blue2: {},
+        red0: {},
+        yellow1: {},
+        green3: {},
     });
 
     const activePlayerRef = useRef(activePlayer);
@@ -572,6 +596,8 @@ export default function Bases() {
         { marginVertical: 5 },
         cardUsed && { backgroundColor: '#ddd', opacity: 0.7 },
         styles[color + i],
+        getActiveTurnOutlineStyle(color),
+        activePlayer === color && { borderWidth: isSmallScreen ? 1.5 : 2.5 },
         color === "green" && { transform: [{ rotate: '180deg' }] },
     ]);
 
@@ -629,7 +655,7 @@ export default function Bases() {
                             ))}
                         </View>
                     </View>
-                    <View style={[styles.corner, styles[color]]}>
+                    <View style={[styles.corner, styles[color], getActiveTurnOutlineStyle(color), activePlayer === color && { borderWidth: isSmallScreen ? 1 : 3 }]}>
                         {Array.from({ length: 4 }).map((_, j) => (
                             <View key={`${color}-${j + 1}`} style={styles.circle}>
                                 {renderInCirclePlayers(j, playerType, i)}
@@ -640,7 +666,12 @@ export default function Bases() {
                         testID={`enter-soldier-${color}`}
                         ref={color === 'blue' ? blueEnterSoldierRef : undefined}
                         onLayout={color === 'blue' ? reportBlueEnterSoldierAnchor : undefined}
-                        style={[styles.button, styles[color + i], { marginVertical: 5 }]}
+                        style={[
+                            styles.button,
+                            { marginVertical: 5 },
+                            getActiveTurnOutlineStyle(color),
+                            activePlayer === color && { borderWidth: isSmallScreen ? 1.5 : 2.5 },
+                        ]}
                         onPress={() => enterNewSoldierHandler(color)}
                     >
                         {
